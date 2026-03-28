@@ -91,7 +91,7 @@ struct AFTScoreSheet: View {
                     .foregroundStyle(MVMTheme.primaryText)
             }
 
-            Text("Log your AFT event results to track progress and identify weak events. Scores are estimated — use official scoring tables for record tests.")
+            Text("Log your AFT event results to track progress and identify weak events. Scores use age- and sex-normed AFT tables.")
                 .font(.subheadline)
                 .foregroundStyle(MVMTheme.secondaryText)
         }
@@ -157,7 +157,7 @@ struct AFTScoreSheet: View {
 
     private var scorePreview: some View {
         VStack(spacing: 16) {
-            Text("Estimated Total")
+            Text("Total Score")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(MVMTheme.secondaryText)
 

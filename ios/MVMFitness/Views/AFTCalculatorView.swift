@@ -108,7 +108,7 @@ struct AFTCalculatorView: View {
                     .foregroundStyle(MVMTheme.primaryText)
             }
 
-            Text("Enter soldier info and event results. Scores are placeholder estimates — official scoring tables will be added in a future update.")
+            Text("Enter soldier info and event results. Scores are calculated using age- and sex-normed AFT scoring tables.")
                 .font(.subheadline)
                 .foregroundStyle(MVMTheme.secondaryText)
         }
@@ -278,7 +278,7 @@ struct AFTCalculatorView: View {
 
     private var scorePreview: some View {
         VStack(spacing: 16) {
-            Text("Estimated Total")
+            Text("Total Score")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(MVMTheme.secondaryText)
 
