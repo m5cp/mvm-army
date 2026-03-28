@@ -199,7 +199,9 @@ struct ProfileView: View {
                 }
                 .padding(20)
                 .padding(.bottom, 40)
+                .adaptiveContainer()
             }
+            .scrollDismissesKeyboard(.interactively)
         }
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)

@@ -101,7 +101,9 @@ struct AFTCalculatorView: View {
                 }
                 .padding(20)
                 .padding(.bottom, 36)
+                .adaptiveContainer()
             }
+            .scrollDismissesKeyboard(.interactively)
         }
         .navigationTitle("AFT Calculator")
         .navigationBarTitleDisplayMode(.inline)

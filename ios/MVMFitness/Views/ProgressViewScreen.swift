@@ -16,12 +16,14 @@ struct ProgressViewScreen: View {
                 VStack(spacing: 20) {
                     thisWeekHero
                     weekStrip
+                    weeklyFrequencyChart
                     aftCard
                     activityCard
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .padding(.bottom, 40)
+                .adaptiveContainer()
             }
         }
         .navigationTitle("Progress")
@@ -36,7 +38,8 @@ struct ProgressViewScreen: View {
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(400))
                 vm.syncTodaySteps()
             }
             withAnimation(.easeOut(duration: 0.5).delay(0.1)) {
@@ -353,6 +356,97 @@ struct ProgressViewScreen: View {
         if value >= 60 { return MVMTheme.accent }
         if value >= 40 { return MVMTheme.warning }
         return MVMTheme.danger
+    }
+
+    // MARK: - Weekly Frequency Chart
+
+    private var weeklyFrequencyChart: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "chart.bar.fill")
+                    .foregroundStyle(MVMTheme.accent)
+                    .font(.subheadline.weight(.semibold))
+                Text("4-Week Training")
+                    .font(.headline)
+                    .foregroundStyle(MVMTheme.primaryText)
+            }
+
+            let weekData = last4WeeksData
+
+            if weekData.allSatisfy({ $0.count == 0 }) {
+                VStack(spacing: 8) {
+                    Image(systemName: "chart.bar")
+                        .font(.title2)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                    Text("Complete workouts to see your training frequency.")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+            } else {
+                Chart {
+                    ForEach(weekData, id: \.label) { week in
+                        BarMark(
+                            x: .value("Week", week.label),
+                            y: .value("Workouts", week.count)
+                        )
+                        .foregroundStyle(MVMTheme.heroGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                            .foregroundStyle(MVMTheme.border)
+                        AxisValueLabel()
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
+                }
+                .chartXAxis {
+                    AxisMarks { value in
+                        AxisValueLabel()
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
+                }
+                .frame(height: 140)
+            }
+        }
+        .padding(18)
+        .premiumCard()
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
+    }
+
+    private struct WeekFrequency {
+        let label: String
+        let count: Int
+    }
+
+    private var last4WeeksData: [WeekFrequency] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+
+        return (0..<4).reversed().map { weeksAgo in
+            let weekStart = calendar.date(byAdding: .weekOfYear, value: -weeksAgo, to: today).flatMap {
+                calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: $0))
+            } ?? today
+            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? today
+
+            let count = vm.completedRecords.filter { $0.date >= weekStart && $0.date < weekEnd }.count
+
+            let label: String
+            if weeksAgo == 0 {
+                label = "This"
+            } else if weeksAgo == 1 {
+                label = "Last"
+            } else {
+                label = "\(weeksAgo)w ago"
+            }
+
+            return WeekFrequency(label: label, count: count)
+        }
     }
 
     // MARK: - Activity Card

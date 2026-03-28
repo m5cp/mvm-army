@@ -21,7 +21,7 @@ struct StandaloneWorkoutSheet: View {
                         headerSection
                         progressSection
 
-                        ForEach(exercises.indices, id: \.self) { index in
+                        ForEach(Array(exercises.enumerated()), id: \.element.id) { index, _ in
                             exerciseCard(index: index)
                         }
 
@@ -29,7 +29,9 @@ struct StandaloneWorkoutSheet: View {
                     }
                     .padding(20)
                     .padding(.bottom, 36)
+                    .adaptiveContainer()
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(sheetTitle)
             .navigationBarTitleDisplayMode(.inline)

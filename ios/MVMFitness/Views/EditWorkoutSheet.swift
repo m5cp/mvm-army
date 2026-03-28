@@ -29,13 +29,15 @@ struct EditWorkoutSheet: View {
                         .padding(18)
                         .premiumCard()
 
-                        ForEach(exercises.indices, id: \.self) { index in
+                        ForEach(Array(exercises.enumerated()), id: \.element.id) { index, _ in
                             editableExerciseCard(index: index)
                         }
                     }
                     .padding(20)
                     .padding(.bottom, 36)
+                    .adaptiveContainer()
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle("Edit Workout")
             .navigationBarTitleDisplayMode(.inline)

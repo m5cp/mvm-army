@@ -98,6 +98,7 @@ struct QRDisplaySheet: View {
                     }
                     .padding(20)
                     .padding(.bottom, 36)
+                    .adaptiveContainer()
                 }
             }
             .navigationTitle("QR Code")

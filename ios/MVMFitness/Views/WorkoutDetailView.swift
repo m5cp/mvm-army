@@ -26,7 +26,7 @@ struct WorkoutDetailView: View {
                     headerCard
                     progressBar
 
-                    ForEach(exercises.indices, id: \.self) { index in
+                    ForEach(Array(exercises.enumerated()), id: \.element.id) { index, _ in
                         exerciseCard(index: index)
                     }
 
@@ -34,7 +34,9 @@ struct WorkoutDetailView: View {
                 }
                 .padding(20)
                 .padding(.bottom, 40)
+                .adaptiveContainer()
             }
+            .scrollDismissesKeyboard(.interactively)
         }
         .navigationTitle(workout?.title ?? "Workout")
         .navigationBarTitleDisplayMode(.inline)

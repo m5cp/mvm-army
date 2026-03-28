@@ -79,7 +79,8 @@ struct ActiveSessionView: View {
             if oldValue > 0 && newValue <= 0 && workoutTimer.hasTimer {
                 timerFinishedTrigger.toggle()
                 if workoutTimer.autoAdvance && currentIndex < exercises.count - 1 {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(500))
                         advanceToNext()
                     }
                 }
@@ -120,7 +121,7 @@ struct ActiveSessionView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     exerciseCard
-                    if workoutTimer.hasTimer {
+                    if currentIndex < exercises.count && workoutTimer.hasTimer {
                         timerSection
                     }
                     navigationControls
@@ -129,7 +130,9 @@ struct ActiveSessionView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
                 .padding(.bottom, 48)
+                .adaptiveContainer()
             }
+            .scrollDismissesKeyboard(.interactively)
         }
     }
 
@@ -173,9 +176,12 @@ struct ActiveSessionView: View {
     // MARK: - Current Exercise Card
 
     private var exerciseCard: some View {
+        guard currentIndex >= 0 && currentIndex < exercises.count else {
+            return AnyView(emptyState)
+        }
         let exercise = exercises[currentIndex]
 
-        return VStack(spacing: 0) {
+        return AnyView(VStack(spacing: 0) {
             VStack(spacing: 20) {
                 HStack {
                     categoryBadge(exercise)
@@ -263,7 +269,7 @@ struct ActiveSessionView: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 28))
             .shadow(color: MVMTheme.accent.opacity(0.2), radius: 24, y: 16)
-        }
+        })
     }
 
     // MARK: - Timer Section
@@ -488,7 +494,7 @@ struct ActiveSessionView: View {
 
     private var navigationControls: some View {
         VStack(spacing: 10) {
-            if exercises[currentIndex].isTimeBased == false && currentIndex < exercises.count - 1 {
+            if currentIndex < exercises.count && exercises[currentIndex].isTimeBased == false && currentIndex < exercises.count - 1 {
                 Button {
                     advanceWithRest()
                 } label: {

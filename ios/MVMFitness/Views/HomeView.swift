@@ -37,6 +37,7 @@ struct HomeView: View {
             .padding(.horizontal, 20)
             .padding(.top, 8)
             .padding(.bottom, 48)
+            .adaptiveContainer()
         }
         .background {
             ZStack {
@@ -118,7 +119,8 @@ struct HomeView: View {
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(400))
                 vm.syncTodaySteps()
             }
             vm.ensureTodayHasWorkout()

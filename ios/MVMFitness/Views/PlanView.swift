@@ -41,6 +41,7 @@ struct PlanView: View {
                     }
                     .padding(.top, 8)
                     .padding(.bottom, 48)
+                    .adaptiveContainer()
                 }
             }
         }

@@ -15,6 +15,7 @@ struct LegalTextView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(20)
                     .padding(.bottom, 40)
+                    .adaptiveContainer()
             }
         }
         .navigationTitle(title)

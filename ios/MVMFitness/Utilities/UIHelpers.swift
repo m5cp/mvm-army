@@ -23,4 +23,14 @@ extension View {
     func premiumCard() -> some View {
         self.premiumCardStyle()
     }
+
+    func adaptiveWidth() -> some View {
+        self.frame(maxWidth: 700)
+    }
+
+    func adaptiveContainer() -> some View {
+        self
+            .frame(maxWidth: 700)
+            .frame(maxWidth: .infinity)
+    }
 }

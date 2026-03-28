@@ -33,7 +33,9 @@ struct QRScannerSheet: View {
                     }
                     .padding(20)
                     .padding(.bottom, 36)
+                    .adaptiveContainer()
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle("Scan PT Plan")
             .navigationBarTitleDisplayMode(.inline)
