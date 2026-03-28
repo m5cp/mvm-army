@@ -18,23 +18,23 @@ struct HomeView: View {
     @State private var recoverySession: WorkoutDay?
 
     var body: some View {
-        ZStack {
-            MVMTheme.background.ignoresSafeArea()
-
-            backgroundAmbience
-
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 28) {
-                    headerSection
-                    heroSection
-                    metricsStrip
-                    aftInsightBanner
-                    toolsGrid
-                    dailyMotto
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 48)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 28) {
+                headerSection
+                heroSection
+                metricsStrip
+                aftInsightBanner
+                toolsGrid
+                dailyMotto
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 48)
+        }
+        .background {
+            ZStack {
+                MVMTheme.background.ignoresSafeArea()
+                backgroundAmbience
             }
         }
         .navigationBarTitleDisplayMode(.inline)
