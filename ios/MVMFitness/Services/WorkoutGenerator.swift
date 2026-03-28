@@ -20,8 +20,6 @@ enum WorkoutGenerator {
     ) -> WeeklyPlan {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
-        let weekday = calendar.component(.weekday, from: today)
-        let startOfWeek = calendar.date(byAdding: .day, value: -(weekday - 1), to: today) ?? today
 
         let armyMode = ArmyGenerator.mapArmyMode(ptMode: ptMode, dutyType: dutyType)
         let armyEquipment = ArmyGenerator.mapArmyEquipment(equipment)
@@ -41,7 +39,7 @@ enum WorkoutGenerator {
         var templateIndex = 0
 
         for dayOffset in 0..<7 {
-            let date = calendar.date(byAdding: .day, value: dayOffset, to: startOfWeek) ?? today
+            let date = calendar.date(byAdding: .day, value: dayOffset, to: today) ?? today
             let isWorkoutDay = selectedDays.contains(dayOffset)
 
             if isWorkoutDay && templateIndex < armyTemplates.count {
@@ -60,19 +58,20 @@ enum WorkoutGenerator {
                 ))
                 templateIndex += 1
             } else {
+                let recoveryTitle = recoveryDayTitle(for: dayOffset)
                 days.append(WorkoutDay(
                     dayIndex: dayOffset,
                     date: date,
-                    title: "Rest Day",
+                    title: recoveryTitle,
                     exercises: [],
                     isRestDay: true,
-                    templateTag: "rest"
+                    templateTag: "recovery"
                 ))
             }
         }
 
         return WeeklyPlan(
-            weekStartDate: startOfWeek,
+            weekStartDate: today,
             goal: focus.rawValue,
             level: level.rawValue,
             equipment: equipment.rawValue,
@@ -200,13 +199,20 @@ enum WorkoutGenerator {
 
     private static func distributeDays(count: Int) -> Set<Int> {
         switch count {
-        case 2: return [1, 4]
-        case 3: return [1, 3, 5]
-        case 4: return [1, 2, 4, 5]
-        case 5: return [1, 2, 3, 4, 5]
+        case 1: return [0]
+        case 2: return [0, 3]
+        case 3: return [0, 2, 4]
+        case 4: return [0, 1, 3, 5]
+        case 5: return [0, 1, 2, 4, 5]
         case 6: return [0, 1, 2, 3, 4, 5]
-        default: return [1, 3, 5]
+        case 7: return [0, 1, 2, 3, 4, 5, 6]
+        default: return [0, 2, 4]
         }
+    }
+
+    private static func recoveryDayTitle(for dayOffset: Int) -> String {
+        let titles = ["Recovery & Mobility", "Active Recovery", "Easy Movement", "Maintenance Session", "Light Mobility"]
+        return titles[dayOffset % titles.count]
     }
 
     private static func fallbackWorkoutDay(focus: TrainingFocus, ptMode: PTMode, dutyType: DutyType) -> WorkoutDay {

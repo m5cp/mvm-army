@@ -102,7 +102,7 @@ struct OnboardingView: View {
                                             .foregroundStyle(MVMTheme.accent)
                                     }
                                     Picker("Days", selection: $daysPerWeek) {
-                                        ForEach(2...6, id: \.self) { d in
+                                        ForEach(1...7, id: \.self) { d in
                                             Text("\(d)").tag(d)
                                         }
                                     }

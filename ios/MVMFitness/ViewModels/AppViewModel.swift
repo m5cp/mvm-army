@@ -83,7 +83,7 @@ final class AppViewModel {
 
     func generateWeeklyPlan() {
         let days = UserDefaults.standard.integer(forKey: "daysPerWeek")
-        let daysPerWeek = days > 0 ? days : 3
+        let daysPerWeek = days > 0 ? min(days, 7) : 3
 
         currentPlan = WorkoutGenerator.generateWeeklyPlan(
             focus: currentFocus,
@@ -95,6 +95,20 @@ final class AppViewModel {
             dutyType: currentDutyType
         )
         persistAll()
+    }
+
+    func ensureTodayHasWorkout() {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+
+        if let plan = currentPlan {
+            let hasTodayInPlan = plan.days.contains { calendar.isDate($0.date, inSameDayAs: today) }
+            if !hasTodayInPlan {
+                generateWeeklyPlan()
+            }
+        } else {
+            generateWeeklyPlan()
+        }
     }
 
     func generateWorkoutOfDay() -> WorkoutDay {

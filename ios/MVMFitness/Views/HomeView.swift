@@ -1,5 +1,10 @@
 import SwiftUI
 
+private enum HomeMode: String, CaseIterable {
+    case individual = "Individual PT"
+    case unit = "Unit PT"
+}
+
 struct HomeView: View {
     @Environment(AppViewModel.self) private var vm
 
@@ -13,14 +18,15 @@ struct HomeView: View {
     @State private var showAFTSheet: Bool = false
     @State private var showAFTCalculator: Bool = false
     @State private var showRecoveryDetail: Bool = false
-    @State private var wodWorkout: WorkoutDay?
     @State private var randomWorkout: WorkoutDay?
     @State private var recoverySession: WorkoutDay?
+    @State private var homeMode: HomeMode = .individual
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 28) {
                 headerSection
+                modeSelector
                 heroSection
                 metricsStrip
                 aftInsightBanner
@@ -59,9 +65,7 @@ struct HomeView: View {
             }
         }
         .sheet(isPresented: $showWODSheet) {
-            if let workout = wodWorkout {
-                StandaloneWorkoutSheet(workout: workout, sheetTitle: "Workout of the Day")
-            }
+            WODDetailView()
         }
         .sheet(isPresented: $showRandomSheet) {
             if let workout = randomWorkout {
@@ -85,15 +89,45 @@ struct HomeView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 vm.syncTodaySteps()
             }
-            if vm.currentPlan == nil {
-                vm.generateWeeklyPlan()
-            }
+            vm.ensureTodayHasWorkout()
             withAnimation(.spring(response: 0.7, dampingFraction: 0.82)) {
                 animateHero = true
             }
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.25)) {
                 animateMetrics = true
             }
+        }
+    }
+
+    // MARK: - Mode Selector
+
+    private var modeSelector: some View {
+        HStack(spacing: 4) {
+            ForEach(HomeMode.allCases, id: \.rawValue) { mode in
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        homeMode = mode
+                    }
+                } label: {
+                    Text(mode.rawValue)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(homeMode == mode ? .white : MVMTheme.tertiaryText)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background {
+                            if homeMode == mode {
+                                Capsule()
+                                    .fill(MVMTheme.accent.opacity(0.25))
+                                    .overlay {
+                                        Capsule()
+                                            .stroke(MVMTheme.accent.opacity(0.4), lineWidth: 1)
+                                    }
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
         }
     }
 
@@ -157,6 +191,19 @@ struct HomeView: View {
 
     private var heroSection: some View {
         Group {
+            switch homeMode {
+            case .individual:
+                individualHeroContent
+            case .unit:
+                unitHeroContent
+            }
+        }
+        .scaleEffect(animateHero ? 1 : 0.96)
+        .opacity(animateHero ? 1 : 0)
+    }
+
+    private var individualHeroContent: some View {
+        Group {
             if let today = vm.todayWorkout {
                 if today.isCompleted {
                     completedHero(today)
@@ -169,8 +216,79 @@ struct HomeView: View {
                 emptyHero
             }
         }
-        .scaleEffect(animateHero ? 1 : 0.96)
-        .opacity(animateHero ? 1 : 0)
+    }
+
+    private var unitHeroContent: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(spacing: 8) {
+                Image(systemName: "person.3.fill")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.9))
+
+                Text("UNIT PT")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(1.0)
+                    .foregroundStyle(.white.opacity(0.8))
+
+                Spacer()
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                if let latest = vm.unitPTPlans.first {
+                    Text(latest.title)
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+
+                    Text(latest.objective)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .lineLimit(2)
+                } else {
+                    Text("No Unit PT Plans")
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(.white)
+
+                    Text("Build a unit session for your formation.")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+            }
+
+            Button {
+                showUnitPTSheet = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.subheadline.weight(.bold))
+                    Text(vm.unitPTPlans.isEmpty ? "Build Unit PT" : "New Unit PT")
+                        .font(.headline.weight(.bold))
+                }
+                .foregroundStyle(Color(hex: "#1A1A2E"))
+                .frame(height: 52)
+                .frame(maxWidth: .infinity)
+                .background(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+        }
+        .padding(24)
+        .background {
+            ZStack {
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "#2563EB"), Color(hex: "#1E40AF").opacity(0.95)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(MVMTheme.subtleGradient)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .shadow(color: Color(hex: "#2563EB").opacity(0.2), radius: 24, y: 16)
     }
 
     private func activeHero(_ workout: WorkoutDay) -> some View {
@@ -548,7 +666,6 @@ struct HomeView: View {
                 .buttonStyle(PressScaleButtonStyle())
 
                 Button {
-                    wodWorkout = vm.generateWorkoutOfDay()
                     showWODSheet = true
                 } label: {
                     HStack(spacing: 8) {
@@ -740,7 +857,6 @@ struct HomeView: View {
                     icon: "star.fill",
                     color: MVMTheme.accent
                 ) {
-                    wodWorkout = vm.generateWorkoutOfDay()
                     showWODSheet = true
                 }
 
