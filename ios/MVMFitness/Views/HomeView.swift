@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var showWorkoutDetail = false
     @State private var showUnitPTSheet = false
     @State private var showScanSheet = false
+    @State private var showAFTSheet = false
     @State private var wodWorkout: WorkoutDay?
     @State private var randomWorkout: WorkoutDay?
 
@@ -34,6 +35,7 @@ struct HomeView: View {
                 VStack(spacing: 20) {
                     topHeader
                     heroCard
+                    aftScoreCard
                     todayWorkoutCard
                     quickActions
                     mottoCard
@@ -72,6 +74,9 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showScanSheet) {
             QRScannerSheet()
+        }
+        .sheet(isPresented: $showAFTSheet) {
+            AFTScoreSheet()
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
@@ -182,6 +187,61 @@ struct HomeView: View {
         .shadow(color: MVMTheme.accent.opacity(0.18), radius: 24, y: 16)
     }
 
+    private var aftScoreCard: some View {
+        Group {
+            if let score = vm.latestAFTScore {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        sectionLabel(title: "Latest AFT Score", icon: "shield.fill")
+                        Spacer()
+                        Button {
+                            showAFTSheet = true
+                        } label: {
+                            Text("Log New")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(MVMTheme.accent)
+                        }
+                    }
+
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Text("\(score.totalScore)")
+                            .font(.system(size: 42, weight: .bold, design: .rounded))
+                            .foregroundStyle(MVMTheme.primaryText)
+                            .contentTransition(.numericText())
+
+                        Text("/ 500")
+                            .font(.title3.weight(.medium))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+
+                        Spacer()
+
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text(score.date.formatted(date: .abbreviated, time: .omitted))
+                                .font(.caption)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+
+                            if !score.weakestEvents.isEmpty {
+                                Text("Focus: \(score.weakestEvents.joined(separator: ", "))")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(MVMTheme.warning)
+                            }
+                        }
+                    }
+
+                    HStack(spacing: 6) {
+                        aftMiniPill("MDL", score.deadliftPoints)
+                        aftMiniPill("HRP", score.pushUpPoints)
+                        aftMiniPill("SDC", score.sdcPoints)
+                        aftMiniPill("PLK", score.plankPoints)
+                        aftMiniPill("2MR", score.runPoints)
+                    }
+                }
+                .padding(18)
+                .premiumCard()
+            }
+        }
+    }
+
     private var todayWorkoutCard: some View {
         Group {
             if let today = vm.todayWorkout {
@@ -282,6 +342,14 @@ struct HomeView: View {
     private var quickActions: some View {
         VStack(spacing: 14) {
             actionButton(
+                title: "Log AFT Score",
+                subtitle: "Track your Army Fitness Test results",
+                icon: "shield.fill",
+                gradient: LinearGradient(colors: [Color(hex: "#059669"), Color(hex: "#10B981")], startPoint: .leading, endPoint: .trailing),
+                action: { showAFTSheet = true }
+            )
+
+            actionButton(
                 title: "Workout of the Day",
                 subtitle: "Quick session based on your preferences",
                 icon: "star.fill",
@@ -305,7 +373,7 @@ struct HomeView: View {
 
             actionButton(
                 title: "Build Unit PT",
-                subtitle: "Create a formal PT plan for your unit",
+                subtitle: "Create a formal PRT plan for your unit",
                 icon: "person.3.fill",
                 gradient: LinearGradient(colors: [Color(hex: "#2563EB"), Color(hex: "#3B82F6")], startPoint: .leading, endPoint: .trailing),
                 action: { showUnitPTSheet = true }
@@ -315,7 +383,7 @@ struct HomeView: View {
                 title: "Scan PT Plan",
                 subtitle: "Import a shared PT session via QR",
                 icon: "qrcode.viewfinder",
-                gradient: LinearGradient(colors: [Color(hex: "#059669"), Color(hex: "#10B981")], startPoint: .leading, endPoint: .trailing),
+                gradient: LinearGradient(colors: [Color(hex: "#7C3AED"), Color(hex: "#8B5CF6")], startPoint: .leading, endPoint: .trailing),
                 action: { showScanSheet = true }
             )
 
@@ -323,7 +391,7 @@ struct HomeView: View {
                 title: "Regenerate Week",
                 subtitle: "Get a fresh weekly plan",
                 icon: "arrow.clockwise",
-                gradient: LinearGradient(colors: [Color(hex: "#7C3AED"), Color(hex: "#8B5CF6")], startPoint: .leading, endPoint: .trailing),
+                gradient: LinearGradient(colors: [Color(hex: "#DC2626"), Color(hex: "#EF4444")], startPoint: .leading, endPoint: .trailing),
                 action: { vm.generateWeeklyPlan() }
             )
         }
@@ -375,6 +443,28 @@ struct HomeView: View {
         .padding(14)
         .background(Color.white.opacity(0.12))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func aftMiniPill(_ label: String, _ value: Int) -> some View {
+        VStack(spacing: 2) {
+            Text(label)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(MVMTheme.secondaryText)
+            Text("\(value)")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(aftPillColor(value))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(MVMTheme.cardSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func aftPillColor(_ value: Int) -> Color {
+        if value >= 80 { return MVMTheme.success }
+        if value >= 60 { return MVMTheme.accent }
+        if value >= 40 { return MVMTheme.warning }
+        return MVMTheme.danger
     }
 
     private func actionButton(title: String, subtitle: String, icon: String, gradient: LinearGradient, action: @escaping () -> Void) -> some View {

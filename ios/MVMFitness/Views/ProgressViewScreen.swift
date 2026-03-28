@@ -4,6 +4,8 @@ import Charts
 struct ProgressViewScreen: View {
     @Environment(AppViewModel.self) private var vm
 
+    @State private var showAFTSheet = false
+
     var body: some View {
         ZStack {
             MVMTheme.background.ignoresSafeArea()
@@ -12,6 +14,11 @@ struct ProgressViewScreen: View {
                 VStack(spacing: 20) {
                     topMetrics
                     weeklyCompletionCard
+
+                    if !vm.aftScores.isEmpty {
+                        aftScoreCard
+                        aftTrendChart
+                    }
 
                     if !vm.stepHistory.isEmpty {
                         stepsChart
@@ -27,6 +34,9 @@ struct ProgressViewScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .sheet(isPresented: $showAFTSheet) {
+            AFTScoreSheet()
+        }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
@@ -100,6 +110,167 @@ struct ProgressViewScreen: View {
                     .font(.subheadline)
                     .foregroundStyle(MVMTheme.secondaryText)
             }
+        }
+        .padding(18)
+        .premiumCard()
+    }
+
+    private var aftScoreCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "shield.fill")
+                        .foregroundStyle(MVMTheme.accent)
+                    Text("AFT Score History")
+                        .font(.headline)
+                        .foregroundStyle(MVMTheme.primaryText)
+                }
+
+                Spacer()
+
+                Button {
+                    showAFTSheet = true
+                } label: {
+                    Text("Log New")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(MVMTheme.accent)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(MVMTheme.accent.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+            }
+
+            if let latest = vm.latestAFTScore {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Latest")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                        Text("\(latest.totalScore)")
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundStyle(MVMTheme.primaryText)
+                            .contentTransition(.numericText())
+                    }
+
+                    Spacer()
+
+                    if vm.aftScores.count > 1 {
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text("Average")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(MVMTheme.secondaryText)
+                            Text("\(vm.averageAFTScore)")
+                                .font(.title2.weight(.bold))
+                                .foregroundStyle(MVMTheme.primaryText)
+                        }
+                    }
+                }
+
+                HStack(spacing: 6) {
+                    aftEventPill("MDL", latest.deadliftPoints)
+                    aftEventPill("HRP", latest.pushUpPoints)
+                    aftEventPill("SDC", latest.sdcPoints)
+                    aftEventPill("PLK", latest.plankPoints)
+                    aftEventPill("2MR", latest.runPoints)
+                }
+
+                if !latest.weakestEvents.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.caption)
+                            .foregroundStyle(MVMTheme.warning)
+                        Text("Focus: \(latest.weakestEvents.joined(separator: ", "))")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(MVMTheme.warning)
+                    }
+                }
+            }
+
+            ForEach(vm.aftScores.prefix(5)) { record in
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(record.date.formatted(date: .abbreviated, time: .omitted))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(MVMTheme.primaryText)
+
+                        Text("Weakest: \(record.weakestEvents.joined(separator: ", "))")
+                            .font(.caption)
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
+
+                    Spacer()
+
+                    Text("\(record.totalScore)")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                }
+
+                if record.id != vm.aftScores.prefix(5).last?.id {
+                    Divider()
+                        .overlay(MVMTheme.border)
+                }
+            }
+        }
+        .padding(18)
+        .premiumCard()
+    }
+
+    private var aftTrendChart: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .foregroundStyle(MVMTheme.accent)
+                Text("AFT Score Trend")
+                    .font(.headline)
+                    .foregroundStyle(MVMTheme.primaryText)
+            }
+
+            Chart(vm.aftScores.prefix(10).reversed()) { item in
+                AreaMark(
+                    x: .value("Date", item.date),
+                    y: .value("Score", item.totalScore)
+                )
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [MVMTheme.accent.opacity(0.35), Color.clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+
+                LineMark(
+                    x: .value("Date", item.date),
+                    y: .value("Score", item.totalScore)
+                )
+                .foregroundStyle(MVMTheme.accent)
+                .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
+
+                PointMark(
+                    x: .value("Date", item.date),
+                    y: .value("Score", item.totalScore)
+                )
+                .foregroundStyle(MVMTheme.accent2)
+            }
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4))
+                        .foregroundStyle(MVMTheme.border)
+                    AxisTick()
+                        .foregroundStyle(MVMTheme.border)
+                    AxisValueLabel()
+                        .foregroundStyle(MVMTheme.secondaryText)
+                }
+            }
+            .chartYAxis {
+                AxisMarks { _ in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.4))
+                        .foregroundStyle(MVMTheme.border)
+                    AxisValueLabel()
+                        .foregroundStyle(MVMTheme.secondaryText)
+                }
+            }
+            .frame(height: 200)
         }
         .padding(18)
         .premiumCard()
@@ -214,6 +385,28 @@ struct ProgressViewScreen: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .premiumCardStyle()
+    }
+
+    private func aftEventPill(_ label: String, _ value: Int) -> some View {
+        VStack(spacing: 3) {
+            Text(label)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(MVMTheme.secondaryText)
+            Text("\(value)")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(aftPillColor(value))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(MVMTheme.cardSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func aftPillColor(_ value: Int) -> Color {
+        if value >= 80 { return MVMTheme.success }
+        if value >= 60 { return MVMTheme.accent }
+        if value >= 40 { return MVMTheme.warning }
+        return MVMTheme.danger
     }
 
     private func dayBarColor(_ day: WorkoutDay) -> Color {
