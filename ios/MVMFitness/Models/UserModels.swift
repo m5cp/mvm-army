@@ -1,27 +1,39 @@
 import Foundation
 
-nonisolated enum TrainingGoal: String, CaseIterable, Codable, Identifiable, Sendable {
-    case muscleBuilding = "Muscle Building"
-    case generalFitness = "General Fitness"
-    case sportsTraining = "Sports Training"
-    case militaryFitness = "Military Fitness"
-    case policeFitness = "Police Fitness"
-    case fireRescue = "Fire / Rescue"
-    case distanceRunning = "Distance Running"
-    case conditioning = "Conditioning"
+nonisolated enum PTMode: String, CaseIterable, Codable, Identifiable, Sendable {
+    case individual = "Individual PT"
+    case unit = "Unit PT"
+    case both = "Both"
+
+    var id: String { rawValue }
+}
+
+nonisolated enum DutyType: String, CaseIterable, Codable, Identifiable, Sendable {
+    case onDuty = "On-Duty"
+    case offDuty = "Off-Duty"
+    case both = "Both"
+
+    var id: String { rawValue }
+}
+
+nonisolated enum TrainingFocus: String, CaseIterable, Codable, Identifiable, Sendable {
+    case aftPrep = "AFT Prep"
+    case strength = "Strength"
+    case endurance = "Endurance"
+    case tacticalConditioning = "Tactical Conditioning"
+    case recovery = "Recovery"
+    case generalArmyFitness = "General Army Fitness"
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
-        case .muscleBuilding: return "figure.strengthtraining.traditional"
-        case .generalFitness: return "figure.mixed.cardio"
-        case .sportsTraining: return "sportscourt.fill"
-        case .militaryFitness: return "shield.fill"
-        case .policeFitness: return "star.shield.fill"
-        case .fireRescue: return "flame.fill"
-        case .distanceRunning: return "figure.run"
-        case .conditioning: return "bolt.heart.fill"
+        case .aftPrep: return "shield.fill"
+        case .strength: return "figure.strengthtraining.traditional"
+        case .endurance: return "figure.run"
+        case .tacticalConditioning: return "bolt.heart.fill"
+        case .recovery: return "figure.cooldown"
+        case .generalArmyFitness: return "figure.mixed.cardio"
         }
     }
 }
@@ -36,18 +48,20 @@ nonisolated enum FitnessLevel: String, CaseIterable, Codable, Identifiable, Send
 
 nonisolated enum EquipmentOption: String, CaseIterable, Codable, Identifiable, Sendable {
     case bodyweight = "Bodyweight"
-    case dumbbells = "Dumbbells"
+    case minimal = "Minimal"
     case gym = "Full Gym"
-    case outdoor = "Outdoor / Running"
+    case running = "Running"
+    case field = "Field"
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
         case .bodyweight: return "figure.stand"
-        case .dumbbells: return "dumbbell.fill"
+        case .minimal: return "dumbbell.fill"
         case .gym: return "building.2.fill"
-        case .outdoor: return "sun.max.fill"
+        case .running: return "figure.run"
+        case .field: return "leaf.fill"
         }
     }
 }

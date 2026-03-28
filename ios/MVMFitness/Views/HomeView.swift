@@ -3,21 +3,27 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppViewModel.self) private var vm
 
-    @AppStorage("trainingGoal") private var trainingGoalRaw = TrainingGoal.generalFitness.rawValue
+    @AppStorage("trainingFocus") private var trainingFocusRaw = TrainingFocus.generalArmyFitness.rawValue
+    @AppStorage("ptMode") private var ptModeRaw = PTMode.both.rawValue
+    @AppStorage("dutyType") private var dutyTypeRaw = DutyType.both.rawValue
 
     @State private var animateHero = false
     @State private var showWODSheet = false
     @State private var showRandomSheet = false
     @State private var showWorkoutDetail = false
+    @State private var showUnitPTSheet = false
+    @State private var showScanSheet = false
     @State private var wodWorkout: WorkoutDay?
     @State private var randomWorkout: WorkoutDay?
 
-    private let tips = [
-        "The only competition is yesterday.",
+    private let mottos = [
+        "You vs You.",
+        "Execute.",
+        "Train for the standard.",
+        "Consistency wins.",
+        "Show up. Do the work.",
         "Simple plans get executed.",
-        "Consistency compounds faster than motivation.",
-        "Show up. Do the work. Repeat.",
-        "Progress is built in weeks, not days."
+        "The only competition is yesterday."
     ]
 
     var body: some View {
@@ -30,7 +36,7 @@ struct HomeView: View {
                     heroCard
                     todayWorkoutCard
                     quickActions
-                    tipCard
+                    mottoCard
                 }
                 .padding(20)
                 .padding(.bottom, 40)
@@ -39,7 +45,7 @@ struct HomeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("MVM Fitness")
+                Text("MVM Army")
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(MVMTheme.primaryText)
             }
@@ -60,6 +66,12 @@ struct HomeView: View {
             if let workout = randomWorkout {
                 StandaloneWorkoutSheet(workout: workout, sheetTitle: "Random Workout")
             }
+        }
+        .sheet(isPresented: $showUnitPTSheet) {
+            UnitPTBuilderSheet()
+        }
+        .sheet(isPresented: $showScanSheet) {
+            QRScannerSheet()
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
@@ -82,7 +94,7 @@ struct HomeView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(MVMTheme.secondaryText)
 
-                Text("Plan. Train. Repeat.")
+                Text("Plan. Train. Execute.")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundStyle(MVMTheme.primaryText)
             }
@@ -94,7 +106,7 @@ struct HomeView: View {
                     .fill(MVMTheme.cardSoft)
                     .frame(width: 48, height: 48)
 
-                Image(systemName: "figure.run")
+                Image(systemName: "shield.fill")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.accent)
             }
@@ -125,25 +137,46 @@ struct HomeView: View {
                     Spacer()
 
                     VStack(alignment: .trailing, spacing: 8) {
-                        Text(trainingGoalRaw)
+                        Text(trainingFocusRaw)
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(Color.white.opacity(0.14))
                             .clipShape(Capsule())
+
+                        if let today = vm.todayWorkout {
+                            Text("\(today.exercises.count) exercises")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.72))
+                        }
                     }
                 }
 
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     heroMetric(title: "Steps", value: "\(vm.pedometer.todaySteps)")
                     heroMetric(title: "Streak", value: "\(vm.streak)")
                     heroMetric(title: "Total", value: "\(vm.totalWorkoutsCompleted)")
                 }
+
+                if !buildTagsList().isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(buildTagsList(), id: \.self) { tag in
+                                Text(tag)
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.white.opacity(0.14))
+                                    .clipShape(Capsule())
+                            }
+                        }
+                    }
+                }
             }
             .padding(22)
         }
-        .frame(height: 230)
         .scaleEffect(animateHero ? 1 : 0.97)
         .opacity(animateHero ? 1 : 0.85)
         .shadow(color: MVMTheme.accent.opacity(0.18), radius: 24, y: 16)
@@ -271,31 +304,55 @@ struct HomeView: View {
             )
 
             actionButton(
+                title: "Build Unit PT",
+                subtitle: "Create a formal PT plan for your unit",
+                icon: "person.3.fill",
+                gradient: LinearGradient(colors: [Color(hex: "#2563EB"), Color(hex: "#3B82F6")], startPoint: .leading, endPoint: .trailing),
+                action: { showUnitPTSheet = true }
+            )
+
+            actionButton(
+                title: "Scan PT Plan",
+                subtitle: "Import a shared PT session via QR",
+                icon: "qrcode.viewfinder",
+                gradient: LinearGradient(colors: [Color(hex: "#059669"), Color(hex: "#10B981")], startPoint: .leading, endPoint: .trailing),
+                action: { showScanSheet = true }
+            )
+
+            actionButton(
                 title: "Regenerate Week",
                 subtitle: "Get a fresh weekly plan",
                 icon: "arrow.clockwise",
-                gradient: LinearGradient(colors: [Color(hex: "#2563EB"), Color(hex: "#3B82F6")], startPoint: .leading, endPoint: .trailing),
-                action: {
-                    vm.generateWeeklyPlan()
-                }
+                gradient: LinearGradient(colors: [Color(hex: "#7C3AED"), Color(hex: "#8B5CF6")], startPoint: .leading, endPoint: .trailing),
+                action: { vm.generateWeeklyPlan() }
             )
         }
     }
 
-    private var tipCard: some View {
+    private var mottoCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionLabel(title: "Daily Insight", icon: "sparkles")
+            sectionLabel(title: "MVM Army", icon: "shield.fill")
 
-            Text(tips[Calendar.current.component(.day, from: .now) % tips.count])
-                .font(.headline)
+            Text(mottos[Calendar.current.component(.hour, from: .now) % mottos.count])
+                .font(.title3.weight(.bold))
                 .foregroundStyle(MVMTheme.primaryText)
-
-            Text("Consistency beats intensity.")
-                .font(.subheadline)
-                .foregroundStyle(MVMTheme.secondaryText)
         }
         .padding(20)
         .premiumCard()
+    }
+
+    private func buildTagsList() -> [String] {
+        var tags: [String] = []
+        if let mode = PTMode(rawValue: ptModeRaw) {
+            tags.append(mode.rawValue)
+        }
+        if let duty = DutyType(rawValue: dutyTypeRaw) {
+            tags.append(duty.rawValue)
+        }
+        if trainingFocusRaw == TrainingFocus.aftPrep.rawValue {
+            tags.append("AFT Prep")
+        }
+        return tags
     }
 
     private func exerciseIcon(_ exercise: WorkoutExercise) -> String {

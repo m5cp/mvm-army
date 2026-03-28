@@ -2,7 +2,9 @@ import SwiftUI
 
 struct OnboardingView: View {
     @AppStorage("onboardingComplete") private var onboardingComplete = false
-    @AppStorage("trainingGoal") private var trainingGoalRaw = TrainingGoal.generalFitness.rawValue
+    @AppStorage("ptMode") private var ptModeRaw = PTMode.both.rawValue
+    @AppStorage("dutyType") private var dutyTypeRaw = DutyType.both.rawValue
+    @AppStorage("trainingFocus") private var trainingFocusRaw = TrainingFocus.generalArmyFitness.rawValue
     @AppStorage("fitnessLevel") private var fitnessLevelRaw = FitnessLevel.intermediate.rawValue
     @AppStorage("equipment") private var equipmentRaw = EquipmentOption.bodyweight.rawValue
     @AppStorage("daysPerWeek") private var daysPerWeek = 3
@@ -23,7 +25,7 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 24) {
                 HStack {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("MVM Fitness")
+                        Text("MVM Army")
                             .font(.system(size: 34, weight: .bold, design: .rounded))
                             .foregroundStyle(MVMTheme.primaryText)
 
@@ -49,34 +51,46 @@ struct OnboardingView: View {
                     switch step {
                     case 1:
                         onboardingCard(
-                            title: "What's your training goal?",
-                            subtitle: "We'll build your weekly plan around this."
+                            title: "PT Mode",
+                            subtitle: "How will you use this app?"
                         ) {
-                            selectableGrid(TrainingGoal.allCases.map(\.rawValue), selection: $trainingGoalRaw)
+                            selectableGrid(PTMode.allCases.map(\.rawValue), selection: $ptModeRaw)
                         }
 
                     case 2:
                         onboardingCard(
-                            title: "Your fitness level",
-                            subtitle: "This adjusts volume and intensity."
+                            title: "Duty Type",
+                            subtitle: "When do you train?"
                         ) {
-                            selectableGrid(FitnessLevel.allCases.map(\.rawValue), selection: $fitnessLevelRaw)
+                            selectableGrid(DutyType.allCases.map(\.rawValue), selection: $dutyTypeRaw)
                         }
 
                     case 3:
                         onboardingCard(
-                            title: "Equipment available",
-                            subtitle: "We'll tailor exercises to what you have."
+                            title: "Training Focus",
+                            subtitle: "We'll build your weekly plan around this."
                         ) {
-                            selectableGrid(EquipmentOption.allCases.map(\.rawValue), selection: $equipmentRaw)
+                            selectableGrid(TrainingFocus.allCases.map(\.rawValue), selection: $trainingFocusRaw)
                         }
 
                     case 4:
                         onboardingCard(
-                            title: "Training schedule",
-                            subtitle: "How many days and how long per session."
+                            title: "Setup",
+                            subtitle: "Adjust level, schedule, and equipment."
                         ) {
                             VStack(alignment: .leading, spacing: 20) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Level")
+                                        .font(.headline)
+                                        .foregroundStyle(MVMTheme.primaryText)
+                                    Picker("Level", selection: $fitnessLevelRaw) {
+                                        ForEach(FitnessLevel.allCases) { level in
+                                            Text(level.rawValue).tag(level.rawValue)
+                                        }
+                                    }
+                                    .pickerStyle(.segmented)
+                                }
+
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
                                         Text("Days per week")
@@ -113,13 +127,20 @@ struct OnboardingView: View {
                                     }
                                     .pickerStyle(.segmented)
                                 }
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Equipment")
+                                        .font(.headline)
+                                        .foregroundStyle(MVMTheme.primaryText)
+                                    selectableGrid(EquipmentOption.allCases.map(\.rawValue), selection: $equipmentRaw)
+                                }
                             }
                         }
 
                     default:
                         onboardingCard(
                             title: "You're ready",
-                            subtitle: "Plan. Train. Repeat."
+                            subtitle: "Execute."
                         ) {
                             VStack(alignment: .leading, spacing: 16) {
                                 Toggle(isOn: $dailyReminderEnabled) {
@@ -137,7 +158,7 @@ struct OnboardingView: View {
                                 DatePicker("Reminder time", selection: $reminderTime, displayedComponents: .hourAndMinute)
                                     .colorScheme(.dark)
 
-                                Text("MVM Fitness provides example workout structures for planning, organization, and accountability purposes only. It does not provide medical advice or prescribe exercise. Consult a physician before beginning any exercise program.")
+                                Text("MVM Army provides example workout structures for planning, organization, and accountability purposes only. It does not provide medical advice or prescribe exercise. Workouts are based on Army fitness test structures and general fitness formats. Consult a physician before beginning any exercise program.")
                                     .font(.caption)
                                     .foregroundStyle(MVMTheme.tertiaryText)
                             }

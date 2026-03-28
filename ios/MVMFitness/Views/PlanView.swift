@@ -143,6 +143,22 @@ struct PlanView: View {
                 }
             }
 
+            if !day.tags.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(day.tags, id: \.self) { tag in
+                            Text(tag)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(MVMTheme.accent)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(MVMTheme.accent.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
+            }
+
             HStack(spacing: 16) {
                 Label("\(day.exercises.count) exercises", systemImage: "list.bullet")
                     .font(.caption)

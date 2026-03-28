@@ -8,6 +8,8 @@ final class AppViewModel {
     var stepHistory: [StepDay] = []
     var pedometer = PedometerManager()
     var lastWorkoutTag: String = ""
+    var unitPTPlans: [UnitPTPlan] = []
+    var importedWorkouts: [WorkoutDay] = []
 
     init() {
         loadLocalData()
@@ -20,6 +22,8 @@ final class AppViewModel {
         completedRecords = LocalStore.load([CompletedWorkoutRecord].self, forKey: "completedRecords", fallback: [])
         stepHistory = LocalStore.load([StepDay].self, forKey: "stepHistory", fallback: [])
         lastWorkoutTag = UserDefaults.standard.string(forKey: "lastWorkoutTag") ?? ""
+        unitPTPlans = LocalStore.load([UnitPTPlan].self, forKey: "unitPTPlans", fallback: [])
+        importedWorkouts = LocalStore.load([WorkoutDay].self, forKey: "importedWorkouts", fallback: [])
     }
 
     func persistAll() {
@@ -27,6 +31,8 @@ final class AppViewModel {
         LocalStore.save(completedRecords, forKey: "completedRecords")
         LocalStore.save(stepHistory, forKey: "stepHistory")
         UserDefaults.standard.set(lastWorkoutTag, forKey: "lastWorkoutTag")
+        LocalStore.save(unitPTPlans, forKey: "unitPTPlans")
+        LocalStore.save(importedWorkouts, forKey: "importedWorkouts")
     }
 
     func syncTodaySteps() {
@@ -40,51 +46,72 @@ final class AppViewModel {
         persistAll()
     }
 
+    // MARK: - Preferences
+
+    var currentFocus: TrainingFocus {
+        TrainingFocus(rawValue: UserDefaults.standard.string(forKey: "trainingFocus") ?? "") ?? .generalArmyFitness
+    }
+
+    var currentLevel: FitnessLevel {
+        FitnessLevel(rawValue: UserDefaults.standard.string(forKey: "fitnessLevel") ?? "") ?? .intermediate
+    }
+
+    var currentEquipment: EquipmentOption {
+        EquipmentOption(rawValue: UserDefaults.standard.string(forKey: "equipment") ?? "") ?? .bodyweight
+    }
+
+    var currentMinutes: Int {
+        let m = UserDefaults.standard.integer(forKey: "minutesPerWorkout")
+        return m > 0 ? m : 30
+    }
+
+    var currentPTMode: PTMode {
+        PTMode(rawValue: UserDefaults.standard.string(forKey: "ptMode") ?? "") ?? .both
+    }
+
+    var currentDutyType: DutyType {
+        DutyType(rawValue: UserDefaults.standard.string(forKey: "dutyType") ?? "") ?? .both
+    }
+
     // MARK: - Plan Generation
 
     func generateWeeklyPlan() {
-        let goal = TrainingGoal(rawValue: UserDefaults.standard.string(forKey: "trainingGoal") ?? TrainingGoal.generalFitness.rawValue) ?? .generalFitness
-        let level = FitnessLevel(rawValue: UserDefaults.standard.string(forKey: "fitnessLevel") ?? FitnessLevel.intermediate.rawValue) ?? .intermediate
-        let equipment = EquipmentOption(rawValue: UserDefaults.standard.string(forKey: "equipment") ?? EquipmentOption.bodyweight.rawValue) ?? .bodyweight
         let days = UserDefaults.standard.integer(forKey: "daysPerWeek")
         let daysPerWeek = days > 0 ? days : 3
-        let mins = UserDefaults.standard.integer(forKey: "minutesPerWorkout")
-        let minutesPerWorkout = mins > 0 ? mins : 30
 
         currentPlan = WorkoutGenerator.generateWeeklyPlan(
-            goal: goal,
-            level: level,
-            equipment: equipment,
+            focus: currentFocus,
+            level: currentLevel,
+            equipment: currentEquipment,
             daysPerWeek: daysPerWeek,
-            minutesPerWorkout: minutesPerWorkout
+            minutesPerWorkout: currentMinutes,
+            ptMode: currentPTMode,
+            dutyType: currentDutyType
         )
         persistAll()
     }
 
     func generateWorkoutOfDay() -> WorkoutDay {
-        let goal = currentTrainingGoal
-        let level = currentFitnessLevel
-        let equipment = currentEquipment
-        let mins = currentMinutes
-
-        let wod = WorkoutGenerator.generateWorkoutOfDay(
-            goal: goal, level: level, equipment: equipment,
-            minutes: mins, lastWorkoutTag: lastWorkoutTag
+        WorkoutGenerator.generateWorkoutOfDay(
+            focus: currentFocus, level: currentLevel, equipment: currentEquipment,
+            minutes: currentMinutes, lastWorkoutTag: lastWorkoutTag,
+            ptMode: currentPTMode, dutyType: currentDutyType
         )
-        return wod
     }
 
     func generateRandomWorkout() -> WorkoutDay {
-        let level = currentFitnessLevel
-        let equipment = currentEquipment
-        let mins = currentMinutes
-        let goal = currentTrainingGoal
-
-        let random = WorkoutGenerator.generateRandomWorkout(
-            goal: goal, level: level, equipment: equipment,
-            minutes: mins, lastWorkoutTag: lastWorkoutTag
+        WorkoutGenerator.generateRandomWorkout(
+            focus: currentFocus, level: currentLevel, equipment: currentEquipment,
+            minutes: currentMinutes, lastWorkoutTag: lastWorkoutTag,
+            ptMode: currentPTMode, dutyType: currentDutyType
         )
-        return random
+    }
+
+    func generateUnitPT() -> UnitPTPlan {
+        let plan = WorkoutGenerator.generateUnitPT(focus: currentFocus, level: currentLevel)
+        unitPTPlans.insert(plan, at: 0)
+        persistAll()
+        return plan
     }
 
     // MARK: - Completion
@@ -129,6 +156,11 @@ final class AppViewModel {
               let idx = plan.days.firstIndex(where: { $0.dayIndex == dayIndex }) else { return }
         plan.days[idx].exercises = exercises
         currentPlan = plan
+        persistAll()
+    }
+
+    func saveImportedWorkout(_ workout: WorkoutDay) {
+        importedWorkouts.insert(workout, at: 0)
         persistAll()
     }
 
@@ -184,25 +216,8 @@ final class AppViewModel {
         completedRecords = []
         stepHistory = []
         lastWorkoutTag = ""
+        unitPTPlans = []
+        importedWorkouts = []
         persistAll()
-    }
-
-    // MARK: - Preferences Helpers
-
-    private var currentTrainingGoal: TrainingGoal {
-        TrainingGoal(rawValue: UserDefaults.standard.string(forKey: "trainingGoal") ?? "") ?? .generalFitness
-    }
-
-    private var currentFitnessLevel: FitnessLevel {
-        FitnessLevel(rawValue: UserDefaults.standard.string(forKey: "fitnessLevel") ?? "") ?? .intermediate
-    }
-
-    private var currentEquipment: EquipmentOption {
-        EquipmentOption(rawValue: UserDefaults.standard.string(forKey: "equipment") ?? "") ?? .bodyweight
-    }
-
-    private var currentMinutes: Int {
-        let m = UserDefaults.standard.integer(forKey: "minutesPerWorkout")
-        return m > 0 ? m : 30
     }
 }

@@ -7,7 +7,7 @@ nonisolated enum CardioType: String, Codable, CaseIterable, Identifiable, Sendab
     case row = "Row"
     case swim = "Swim"
     case walk = "Walk"
-    case elliptical = "Elliptical"
+    case ruck = "Ruck"
 
     var id: String { rawValue }
 
@@ -19,7 +19,7 @@ nonisolated enum CardioType: String, Codable, CaseIterable, Identifiable, Sendab
         case .row: return "figure.rowing"
         case .swim: return "figure.pool.swim"
         case .walk: return "figure.walk"
-        case .elliptical: return "figure.elliptical"
+        case .ruck: return "figure.hiking"
         }
     }
 }
@@ -145,6 +145,7 @@ nonisolated struct WorkoutDay: Codable, Identifiable, Hashable, Sendable {
     var isCompleted: Bool
     var isRestDay: Bool
     var templateTag: String
+    var tags: [String]
 
     var completedExerciseCount: Int {
         exercises.filter(\.isCompleted).count
@@ -161,7 +162,8 @@ nonisolated struct WorkoutDay: Codable, Identifiable, Hashable, Sendable {
         exercises: [WorkoutExercise],
         isCompleted: Bool = false,
         isRestDay: Bool = false,
-        templateTag: String = ""
+        templateTag: String = "",
+        tags: [String] = []
     ) {
         self.id = UUID()
         self.dayIndex = dayIndex
@@ -171,6 +173,20 @@ nonisolated struct WorkoutDay: Codable, Identifiable, Hashable, Sendable {
         self.isCompleted = isCompleted
         self.isRestDay = isRestDay
         self.templateTag = templateTag
+        self.tags = tags
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        dayIndex = try container.decode(Int.self, forKey: .dayIndex)
+        date = try container.decode(Date.self, forKey: .date)
+        title = try container.decode(String.self, forKey: .title)
+        exercises = try container.decode([WorkoutExercise].self, forKey: .exercises)
+        isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
+        isRestDay = try container.decode(Bool.self, forKey: .isRestDay)
+        templateTag = try container.decode(String.self, forKey: .templateTag)
+        tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
     }
 }
 

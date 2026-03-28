@@ -3,7 +3,9 @@ import SwiftUI
 struct ProfileView: View {
     @Environment(AppViewModel.self) private var vm
 
-    @AppStorage("trainingGoal") private var trainingGoalRaw = TrainingGoal.generalFitness.rawValue
+    @AppStorage("ptMode") private var ptModeRaw = PTMode.both.rawValue
+    @AppStorage("dutyType") private var dutyTypeRaw = DutyType.both.rawValue
+    @AppStorage("trainingFocus") private var trainingFocusRaw = TrainingFocus.generalArmyFitness.rawValue
     @AppStorage("fitnessLevel") private var fitnessLevelRaw = FitnessLevel.intermediate.rawValue
     @AppStorage("equipment") private var equipmentRaw = EquipmentOption.bodyweight.rawValue
     @AppStorage("daysPerWeek") private var daysPerWeek = 3
@@ -24,10 +26,14 @@ struct ProfileView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     profileSection {
-                        profilePicker("Training Goal", selection: $trainingGoalRaw, values: TrainingGoal.allCases.map(\.rawValue))
+                        profilePicker("PT Mode", selection: $ptModeRaw, values: PTMode.allCases.map(\.rawValue))
+                        profilePicker("Duty Type", selection: $dutyTypeRaw, values: DutyType.allCases.map(\.rawValue))
+                        profilePicker("Training Focus", selection: $trainingFocusRaw, values: TrainingFocus.allCases.map(\.rawValue))
                         profilePicker("Fitness Level", selection: $fitnessLevelRaw, values: FitnessLevel.allCases.map(\.rawValue))
                         profilePicker("Equipment", selection: $equipmentRaw, values: EquipmentOption.allCases.map(\.rawValue))
+                    }
 
+                    profileSection {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text("Days per week")
@@ -129,8 +135,8 @@ struct ProfileView: View {
                     disclaimerCard
 
                     profileSection {
-                        profileInfo("Version", "2.0")
-                        profileInfo("Brand", "MVM Fitness")
+                        profileInfo("Version", "3.0")
+                        profileInfo("Brand", "MVM Army")
                         profileInfo("Tagline", "Me vs Me")
                     }
                 }
@@ -151,7 +157,7 @@ struct ProfileView: View {
                 vm.resetAllData()
             }
         } message: {
-            Text("This will erase all saved workouts, completed records, and step history from this device.")
+            Text("This will erase all saved workouts, completed records, unit PT plans, and step history from this device.")
         }
     }
 
@@ -165,7 +171,7 @@ struct ProfileView: View {
                     .foregroundStyle(MVMTheme.primaryText)
             }
 
-            Text("MVM Fitness provides example workout structures for planning, organization, and accountability purposes only. It does not provide medical advice or prescribe exercise. Workouts are based on common training formats and fitness test styles. Consult a physician before beginning any exercise program.")
+            Text("MVM Army provides example workout structures for planning, organization, and accountability purposes only. It does not provide medical advice or prescribe exercise. Workouts are based on Army fitness test structures and general fitness formats. Consult a physician before beginning any exercise program.")
                 .font(.caption)
                 .foregroundStyle(MVMTheme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
