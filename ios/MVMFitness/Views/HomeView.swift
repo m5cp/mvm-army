@@ -3,54 +3,47 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppViewModel.self) private var vm
 
-    @AppStorage("trainingFocus") private var trainingFocusRaw = TrainingFocus.generalArmyFitness.rawValue
-    @AppStorage("ptMode") private var ptModeRaw = PTMode.both.rawValue
-    @AppStorage("dutyType") private var dutyTypeRaw = DutyType.both.rawValue
-
-    @State private var animateHero = false
-    @State private var showWODSheet = false
-    @State private var showRandomSheet = false
-    @State private var showWorkoutDetail = false
-    @State private var showUnitPTSheet = false
-    @State private var showScanSheet = false
-    @State private var showAFTSheet = false
-    @State private var showAFTCalculator = false
-    @State private var showEditSheet = false
+    @State private var animateHero: Bool = false
+    @State private var animateMetrics: Bool = false
+    @State private var showWODSheet: Bool = false
+    @State private var showRandomSheet: Bool = false
+    @State private var showWorkoutDetail: Bool = false
+    @State private var showUnitPTSheet: Bool = false
+    @State private var showScanSheet: Bool = false
+    @State private var showAFTSheet: Bool = false
+    @State private var showAFTCalculator: Bool = false
+    @State private var showRecoveryDetail: Bool = false
     @State private var wodWorkout: WorkoutDay?
     @State private var randomWorkout: WorkoutDay?
-
-    private let mottos = [
-        "You vs You.",
-        "Execute.",
-        "Train for the standard.",
-        "Consistency wins.",
-        "Show up. Do the work.",
-        "Simple plans get executed.",
-        "The only competition is yesterday."
-    ]
+    @State private var recoverySession: WorkoutDay?
 
     var body: some View {
         ZStack {
             MVMTheme.background.ignoresSafeArea()
 
+            backgroundAmbience
+
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
-                    missionHeader
-                    missionHeroCard
-                    weeklyProgressStrip
-                    toolsSection
-                    mottoCard
+                VStack(spacing: 28) {
+                    headerSection
+                    heroSection
+                    metricsStrip
+                    aftInsightBanner
+                    toolsGrid
+                    dailyMotto
                 }
-                .padding(20)
-                .padding(.bottom, 40)
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 48)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("MVM Army")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(MVMTheme.primaryText)
+                Text("MVM ARMY")
+                    .font(.caption.weight(.heavy))
+                    .tracking(2.4)
+                    .foregroundStyle(MVMTheme.secondaryText)
             }
         }
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
@@ -58,8 +51,11 @@ struct HomeView: View {
         .navigationDestination(isPresented: $showWorkoutDetail) {
             if let today = vm.todayWorkout {
                 WorkoutDetailView(dayIndex: today.dayIndex, isStandalone: false)
-            } else if let recovery = recoveryWorkout {
-                WorkoutDetailView(dayIndex: recovery.dayIndex, isStandalone: false)
+            }
+        }
+        .navigationDestination(isPresented: $showRecoveryDetail) {
+            if let session = recoverySession {
+                WorkoutDetailView(dayIndex: session.dayIndex, isStandalone: false)
             }
         }
         .sheet(isPresented: $showWODSheet) {
@@ -92,170 +88,193 @@ struct HomeView: View {
             if vm.currentPlan == nil {
                 vm.generateWeeklyPlan()
             }
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.85)) {
+            withAnimation(.spring(response: 0.7, dampingFraction: 0.82)) {
                 animateHero = true
+            }
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.25)) {
+                animateMetrics = true
             }
         }
     }
 
-    // MARK: - Mission Header
+    // MARK: - Background Ambience
 
-    private var missionHeader: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(greetingText)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(MVMTheme.secondaryText)
+    private var backgroundAmbience: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [MVMTheme.accent.opacity(0.08), .clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 300
+                    )
+                )
+                .frame(width: 600, height: 600)
+                .offset(y: -200)
+                .blur(radius: 80)
 
-                Text("Today's Mission")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [MVMTheme.accent2.opacity(0.05), .clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 200
+                    )
+                )
+                .frame(width: 400, height: 400)
+                .offset(x: 120, y: 100)
+                .blur(radius: 60)
+        }
+        .ignoresSafeArea()
+    }
+
+    // MARK: - Header
+
+    private var headerSection: some View {
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(greetingText.uppercased())
+                    .font(.caption.weight(.semibold))
+                    .tracking(1.2)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                Text("Today")
+                    .font(.system(size: 34, weight: .bold))
                     .foregroundStyle(MVMTheme.primaryText)
             }
 
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(MVMTheme.cardSoft)
-                    .frame(width: 48, height: 48)
-
-                Image(systemName: "shield.fill")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(MVMTheme.accent)
-            }
+            Text(todayDateString)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(MVMTheme.tertiaryText)
         }
     }
 
-    // MARK: - Mission Hero Card
+    // MARK: - Hero Section
 
-    private var missionHeroCard: some View {
+    private var heroSection: some View {
         Group {
             if let today = vm.todayWorkout {
-                activeWorkoutHero(today)
+                if today.isCompleted {
+                    completedHero(today)
+                } else {
+                    activeHero(today)
+                }
+            } else if let recovery = todayRecoveryDay {
+                recoveryHero(recovery)
             } else {
-                noWorkoutHero
+                emptyHero
             }
         }
-        .scaleEffect(animateHero ? 1 : 0.97)
-        .opacity(animateHero ? 1 : 0.85)
+        .scaleEffect(animateHero ? 1 : 0.96)
+        .opacity(animateHero ? 1 : 0)
     }
 
-    private func activeWorkoutHero(_ workout: WorkoutDay) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(workout.isCompleted ? completedGradient : MVMTheme.heroGradient)
+    private func activeHero(_ workout: WorkoutDay) -> some View {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack(spacing: 8) {
+                    Image(systemName: "bolt.heart.fill")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.9))
 
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(MVMTheme.subtleGradient)
+                    Text("READY TO EXECUTE")
+                        .font(.caption2.weight(.heavy))
+                        .tracking(1.0)
+                        .foregroundStyle(.white.opacity(0.8))
 
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        if workout.isCompleted {
-                            Label("Mission Complete", systemImage: "checkmark.seal.fill")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.white)
-                        } else {
-                            Label("Ready to Execute", systemImage: "bolt.heart.fill")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.white.opacity(0.9))
-                        }
+                    Spacer()
 
-                        Spacer()
-
-                        if !workout.tags.isEmpty {
-                            Text(workout.tags.first ?? "")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.white.opacity(0.14))
-                                .clipShape(Capsule())
-                        }
+                    if let tag = workout.tags.first {
+                        Text(tag)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(.white.opacity(0.15))
+                            .clipShape(Capsule())
                     }
+                }
 
+                VStack(alignment: .leading, spacing: 8) {
                     Text(workout.title)
-                        .font(.title2.weight(.bold))
+                        .font(.title.weight(.bold))
                         .foregroundStyle(.white)
                         .lineLimit(2)
 
-                    HStack(spacing: 16) {
+                    HStack(spacing: 14) {
                         Label("\(workout.exercises.count) exercises", systemImage: "list.bullet")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.white.opacity(0.85))
-
-                        if workout.completedExerciseCount > 0 && !workout.isCompleted {
+                        Label(estimatedDuration(workout), systemImage: "clock")
+                        if workout.completedExerciseCount > 0 {
                             Label("\(workout.completedExerciseCount)/\(workout.exercises.count)", systemImage: "checkmark.circle")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.white.opacity(0.85))
                         }
                     }
-
-                    exercisePreview(workout)
-
-                    if workout.isCompleted {
-                        Button {
-                            showWorkoutDetail = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "eye")
-                                Text("Review Workout")
-                            }
-                            .font(.headline)
-                            .foregroundStyle(MVMTheme.accent)
-                            .frame(height: 52)
-                            .frame(maxWidth: .infinity)
-                            .background(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                        }
-                        .buttonStyle(PressScaleButtonStyle())
-                    } else {
-                        Button {
-                            showWorkoutDetail = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "play.fill")
-                                Text("Start Workout")
-                            }
-                            .font(.headline.weight(.bold))
-                            .foregroundStyle(MVMTheme.accent)
-                            .frame(height: 56)
-                            .frame(maxWidth: .infinity)
-                            .background(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                        }
-                        .buttonStyle(PressScaleButtonStyle())
-                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.7))
                 }
-                .padding(22)
-            }
-            .shadow(color: MVMTheme.accent.opacity(0.2), radius: 24, y: 16)
 
-            if !workout.isCompleted {
-                heroSecondaryActions(workout)
+                exerciseGlance(workout)
+
+                Button {
+                    showWorkoutDetail = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "play.fill")
+                            .font(.subheadline.weight(.bold))
+                        Text("Start Workout")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(Color(hex: "#1A1A2E"))
+                    .frame(height: 54)
+                    .frame(maxWidth: .infinity)
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .white.opacity(0.15), radius: 12, y: 4)
+                }
+                .sensoryFeedback(.impact(weight: .medium), trigger: showWorkoutDetail)
+                .buttonStyle(PressScaleButtonStyle())
             }
+            .padding(24)
+            .background {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 28)
+                        .fill(heroCardGradient)
+
+                    RoundedRectangle(cornerRadius: 28)
+                        .fill(MVMTheme.subtleGradient)
+
+                    heroShimmerOverlay
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 28))
+            .shadow(color: MVMTheme.accent.opacity(0.25), radius: 32, y: 20)
+
+            activeSecondaryActions(workout)
         }
     }
 
-    private func exercisePreview(_ workout: WorkoutDay) -> some View {
-        VStack(spacing: 8) {
+    private func exerciseGlance(_ workout: WorkoutDay) -> some View {
+        VStack(spacing: 6) {
             ForEach(workout.exercises.prefix(3)) { exercise in
                 HStack(spacing: 10) {
-                    Image(systemName: exercise.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(exercise.isCompleted ? .white : .white.opacity(0.5))
+                    Circle()
+                        .fill(exercise.isCompleted ? .white : .white.opacity(0.3))
+                        .frame(width: 6, height: 6)
 
                     Text(exercise.name)
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(exercise.isCompleted ? .white.opacity(0.6) : .white.opacity(0.9))
-                        .strikethrough(exercise.isCompleted, color: .white.opacity(0.4))
+                        .foregroundStyle(exercise.isCompleted ? .white.opacity(0.5) : .white.opacity(0.85))
+                        .strikethrough(exercise.isCompleted, color: .white.opacity(0.3))
                         .lineLimit(1)
 
                     Spacer()
 
                     Text(exercise.displayDetail)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.5))
                         .lineLimit(1)
                 }
             }
@@ -263,180 +282,357 @@ struct HomeView: View {
             if workout.exercises.count > 3 {
                 HStack {
                     Text("+\(workout.exercises.count - 3) more")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.4))
                     Spacer()
                 }
+                .padding(.top, 2)
             }
         }
-        .padding(14)
-        .background(Color.white.opacity(0.08))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(.white.opacity(0.07))
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
-    private func heroSecondaryActions(_ workout: WorkoutDay) -> some View {
+    private func activeSecondaryActions(_ workout: WorkoutDay) -> some View {
         HStack(spacing: 10) {
             Button {
                 vm.markDayCompleted(dayIndex: workout.dayIndex)
             } label: {
-                Label("Complete", systemImage: "checkmark")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(MVMTheme.success)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(MVMTheme.success.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark")
+                        .font(.caption.weight(.bold))
+                    Text("Complete")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(MVMTheme.success)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(MVMTheme.success.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
+            .sensoryFeedback(.success, trigger: workout.isCompleted)
             .buttonStyle(PressScaleButtonStyle())
 
             Button {
                 showWorkoutDetail = true
             } label: {
-                Label("Edit", systemImage: "pencil")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(MVMTheme.secondaryText)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(MVMTheme.cardSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                HStack(spacing: 6) {
+                    Image(systemName: "pencil")
+                        .font(.caption.weight(.bold))
+                    Text("Edit")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(MVMTheme.secondaryText)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(MVMTheme.cardSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(PressScaleButtonStyle())
 
             Button {
                 vm.generateWeeklyPlan()
             } label: {
-                Label("New", systemImage: "arrow.clockwise")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(MVMTheme.secondaryText)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(MVMTheme.cardSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption.weight(.bold))
+                    Text("New")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(MVMTheme.secondaryText)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(MVMTheme.cardSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(PressScaleButtonStyle())
         }
-        .padding(.top, 10)
+        .padding(.top, 12)
     }
 
-    private var noWorkoutHero: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(MVMTheme.heroGradient.opacity(0.7))
+    private func completedHero(_ workout: WorkoutDay) -> some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
 
+                Text("MISSION COMPLETE")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(1.0)
+                    .foregroundStyle(.white.opacity(0.9))
+
+                Spacer()
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(workout.title)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+
+                Text("\(workout.exercises.count) exercises completed")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+
+            Button {
+                showWorkoutDetail = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "eye")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Review Workout")
+                        .font(.headline.weight(.semibold))
+                }
+                .foregroundStyle(.white)
+                .frame(height: 50)
+                .frame(maxWidth: .infinity)
+                .background(.white.opacity(0.18))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+        }
+        .padding(24)
+        .background {
+            RoundedRectangle(cornerRadius: 28)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "#059669"), Color(hex: "#10B981").opacity(0.9)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .shadow(color: Color(hex: "#059669").opacity(0.2), radius: 24, y: 16)
+    }
+
+    private func recoveryHero(_ day: WorkoutDay) -> some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(spacing: 8) {
+                Image(systemName: "leaf.fill")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.9))
+
+                Text("RECOVERY DAY")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(1.0)
+                    .foregroundStyle(.white.opacity(0.8))
+
+                Spacer()
+
+                Text("Active Rest")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(.white.opacity(0.15))
+                    .clipShape(Capsule())
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Recovery & Mobility")
+                    .font(.title.weight(.bold))
+                    .foregroundStyle(.white)
+
+                Text("Light movement keeps the plan moving forward.")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+
+            HStack(spacing: 12) {
+                Button {
+                    let session = vm.generateRecoverySession()
+                    recoverySession = session
+                    showRecoveryDetail = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "figure.cooldown")
+                            .font(.subheadline.weight(.bold))
+                        Text("Start Recovery")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(Color(hex: "#1A1A2E"))
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    vm.generateWeeklyPlan()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.subheadline.weight(.bold))
+                        Text("Swap")
+                            .font(.headline.weight(.semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
+                    .background(.white.opacity(0.16))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+            }
+        }
+        .padding(24)
+        .background {
+            ZStack {
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(hex: "#1E3A5F").opacity(0.9),
+                                Color(hex: "#2D4A6F").opacity(0.85)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                 RoundedRectangle(cornerRadius: 28)
                     .fill(MVMTheme.subtleGradient)
-
-                VStack(alignment: .leading, spacing: 16) {
-                    Label("Recovery Day", systemImage: "leaf.fill")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.white.opacity(0.9))
-
-                    Text("Active Recovery")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.white)
-
-                    Text("No session planned. Stay loose, stay ready.")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.75))
-
-                    HStack(spacing: 12) {
-                        Button {
-                            wodWorkout = vm.generateWorkoutOfDay()
-                            showWODSheet = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "bolt.fill")
-                                Text("Quick Workout")
-                            }
-                            .font(.headline.weight(.bold))
-                            .foregroundStyle(MVMTheme.accent)
-                            .frame(height: 52)
-                            .frame(maxWidth: .infinity)
-                            .background(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                        }
-                        .buttonStyle(PressScaleButtonStyle())
-
-                        Button {
-                            vm.generateWeeklyPlan()
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "calendar.badge.plus")
-                                Text("Build Plan")
-                            }
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(height: 52)
-                            .frame(maxWidth: .infinity)
-                            .background(Color.white.opacity(0.18))
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                        }
-                        .buttonStyle(PressScaleButtonStyle())
-                    }
-                }
-                .padding(22)
             }
-            .shadow(color: MVMTheme.accent.opacity(0.14), radius: 24, y: 16)
         }
+        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .shadow(color: Color(hex: "#1E3A5F").opacity(0.2), radius: 24, y: 16)
     }
 
-    // MARK: - Weekly Progress Strip
+    private var emptyHero: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(spacing: 8) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.9))
 
-    private var weeklyProgressStrip: some View {
+                Text("NO PT BUILT YET")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(1.0)
+                    .foregroundStyle(.white.opacity(0.8))
+
+                Spacer()
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Build Today's Session")
+                    .font(.title.weight(.bold))
+                    .foregroundStyle(.white)
+
+                Text("Generate a workout and get moving.")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+
+            HStack(spacing: 12) {
+                Button {
+                    vm.generateWeeklyPlan()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.subheadline.weight(.bold))
+                        Text("Build Today's PT")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(Color(hex: "#1A1A2E"))
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .white.opacity(0.12), radius: 10, y: 4)
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    wodWorkout = vm.generateWorkoutOfDay()
+                    showWODSheet = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "bolt.fill")
+                            .font(.subheadline.weight(.bold))
+                        Text("Quick")
+                            .font(.headline.weight(.semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
+                    .background(.white.opacity(0.16))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+            }
+        }
+        .padding(24)
+        .background {
+            ZStack {
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(heroCardGradient)
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(MVMTheme.subtleGradient)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .shadow(color: MVMTheme.accent.opacity(0.2), radius: 24, y: 16)
+    }
+
+    // MARK: - Metrics Strip
+
+    private var metricsStrip: some View {
         HStack(spacing: 0) {
-            stripMetric(
-                icon: "flame.fill",
-                value: "\(vm.streak)",
-                label: "Streak",
-                color: MVMTheme.warning
-            )
-
-            stripDivider
-
-            stripMetric(
+            metricPill(
                 icon: "figure.walk",
                 value: formattedSteps,
                 label: "Steps",
                 color: MVMTheme.accent
             )
 
-            stripDivider
+            metricDivider
 
-            stripMetric(
+            metricPill(
                 icon: "checkmark.circle.fill",
                 value: "\(vm.weeklyCompletedCount)/\(vm.weeklyTotalDays)",
                 label: "This Week",
                 color: MVMTheme.success
             )
 
-            stripDivider
+            metricDivider
 
-            stripMetric(
-                icon: "trophy.fill",
-                value: "\(vm.totalWorkoutsCompleted)",
-                label: "Total",
-                color: MVMTheme.accent2
+            metricPill(
+                icon: "flame.fill",
+                value: "\(vm.streak)",
+                label: vm.streak == 1 ? "Day" : "Days",
+                color: MVMTheme.warning
             )
         }
-        .padding(.vertical, 16)
-        .premiumCard()
+        .padding(.vertical, 18)
+        .background(MVMTheme.card)
+        .overlay {
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(MVMTheme.border)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .opacity(animateMetrics ? 1 : 0)
+        .offset(y: animateMetrics ? 0 : 12)
     }
 
-    private var stripDivider: some View {
+    private var metricDivider: some View {
         Rectangle()
             .fill(MVMTheme.border)
-            .frame(width: 1, height: 36)
+            .frame(width: 1, height: 32)
     }
 
-    private func stripMetric(icon: String, value: String, label: String, color: Color) -> some View {
+    private func metricPill(icon: String, value: String, label: String, color: Color) -> some View {
         VStack(spacing: 6) {
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 Image(systemName: icon)
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(color)
                 Text(value)
-                    .font(.headline.weight(.bold))
+                    .font(.system(.headline, design: .rounded).weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
                     .contentTransition(.numericText())
             }
@@ -447,30 +643,100 @@ struct HomeView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Tools Section
+    // MARK: - AFT Insight Banner
 
-    private var toolsSection: some View {
+    @ViewBuilder
+    private var aftInsightBanner: some View {
+        if let score = vm.latestAFTScore {
+            Button {
+                showAFTCalculator = true
+            } label: {
+                HStack(spacing: 16) {
+                    VStack(spacing: 4) {
+                        Text("\(score.totalScore)")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundStyle(MVMTheme.primaryText)
+                            .contentTransition(.numericText())
+                        Text("AFT")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
+                    .frame(width: 60)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            ForEach(aftEventPills(score), id: \.label) { pill in
+                                VStack(spacing: 2) {
+                                    Text(pill.label)
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundStyle(MVMTheme.tertiaryText)
+                                    Text("\(pill.value)")
+                                        .font(.caption2.weight(.bold))
+                                        .foregroundStyle(pill.color)
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                        }
+
+                        if !score.weakestEvents.isEmpty {
+                            HStack(spacing: 4) {
+                                Image(systemName: "target")
+                                    .font(.system(size: 9, weight: .bold))
+                                Text("Focus: \(score.weakestEvents.prefix(2).joined(separator: ", "))")
+                                    .font(.caption2.weight(.medium))
+                            }
+                            .foregroundStyle(MVMTheme.warning)
+                        }
+                    }
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                .padding(16)
+                .background(MVMTheme.card)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(MVMTheme.border)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+        }
+    }
+
+    // MARK: - Tools Grid
+
+    private var toolsGrid: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("TOOLS")
                 .font(.caption.weight(.bold))
+                .tracking(1.0)
                 .foregroundStyle(MVMTheme.tertiaryText)
                 .padding(.leading, 4)
 
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                toolTile(
-                    title: "AFT Calculator",
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 10),
+                    GridItem(.flexible(), spacing: 10),
+                    GridItem(.flexible(), spacing: 10)
+                ],
+                spacing: 10
+            ) {
+                compactTool(
+                    title: "AFT Calc",
                     icon: "shield.checkered",
                     color: Color(hex: "#059669")
                 ) { showAFTCalculator = true }
 
-                toolTile(
-                    title: "Quick AFT Log",
+                compactTool(
+                    title: "Quick Log",
                     icon: "shield.fill",
                     color: Color(hex: "#047857")
                 ) { showAFTSheet = true }
 
-                toolTile(
-                    title: "Workout of the Day",
+                compactTool(
+                    title: "WOD",
                     icon: "star.fill",
                     color: MVMTheme.accent
                 ) {
@@ -478,8 +744,8 @@ struct HomeView: View {
                     showWODSheet = true
                 }
 
-                toolTile(
-                    title: "Random Workout",
+                compactTool(
+                    title: "Random",
                     icon: "shuffle",
                     color: Color(hex: "#6366F1")
                 ) {
@@ -487,158 +753,156 @@ struct HomeView: View {
                     showRandomSheet = true
                 }
 
-                toolTile(
-                    title: "Build Unit PT",
+                compactTool(
+                    title: "Unit PT",
                     icon: "person.3.fill",
                     color: Color(hex: "#2563EB")
                 ) { showUnitPTSheet = true }
 
-                toolTile(
-                    title: "Scan PT Plan",
+                compactTool(
+                    title: "Scan QR",
                     icon: "qrcode.viewfinder",
                     color: Color(hex: "#7C3AED")
                 ) { showScanSheet = true }
             }
-
-            if let score = vm.latestAFTScore {
-                aftScoreBanner(score)
-            }
         }
     }
 
-    private func toolTile(title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
+    private func compactTool(title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
         Button {
             action()
         } label: {
             VStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(color.opacity(0.14))
-                        .frame(width: 44, height: 44)
-
-                    Image(systemName: icon)
-                        .font(.body.weight(.bold))
-                        .foregroundStyle(color)
-                }
+                Image(systemName: icon)
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(color)
+                    .frame(width: 40, height: 40)
+                    .background(color.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(MVMTheme.primaryText)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
-            .premiumCardStyle()
-        }
-        .buttonStyle(PressScaleButtonStyle())
-    }
-
-    private func aftScoreBanner(_ score: AFTScoreRecord) -> some View {
-        Button {
-            showAFTCalculator = true
-        } label: {
-            HStack(spacing: 14) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Latest AFT")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(MVMTheme.secondaryText)
-
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(score.totalScore)")
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(MVMTheme.primaryText)
-                            .contentTransition(.numericText())
-                        Text("/ 500")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(MVMTheme.tertiaryText)
-                    }
-                }
-
-                Spacer()
-
-                HStack(spacing: 4) {
-                    aftMiniPill("MDL", score.deadliftPoints)
-                    aftMiniPill("HRP", score.pushUpPoints)
-                    aftMiniPill("SDC", score.sdcPoints)
-                    aftMiniPill("PLK", score.plankPoints)
-                    aftMiniPill("2MR", score.runPoints)
-                }
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(MVMTheme.tertiaryText)
+            .padding(.vertical, 16)
+            .background(MVMTheme.card)
+            .overlay {
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(MVMTheme.border)
             }
-            .padding(16)
-            .premiumCardStyle()
+            .clipShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(PressScaleButtonStyle())
     }
 
     // MARK: - Motto
 
-    private var mottoCard: some View {
+    private let mottos = [
+        "You vs You.",
+        "Execute.",
+        "Train for the standard.",
+        "Consistency wins.",
+        "Show up. Do the work.",
+        "Simple plans get executed.",
+        "The only competition is yesterday."
+    ]
+
+    private var dailyMotto: some View {
         HStack(spacing: 12) {
             Image(systemName: "shield.fill")
-                .font(.title3)
-                .foregroundStyle(MVMTheme.accent.opacity(0.6))
+                .font(.callout)
+                .foregroundStyle(MVMTheme.accent.opacity(0.5))
 
-            Text(mottos[Calendar.current.component(.hour, from: .now) % mottos.count])
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(MVMTheme.secondaryText)
+            Text(mottos[Calendar.current.component(.day, from: .now) % mottos.count])
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .italic()
 
             Spacer()
         }
-        .padding(16)
-        .premiumCard()
+        .padding(.horizontal, 4)
     }
 
     // MARK: - Helpers
 
     private var greetingText: String {
         let hour = Calendar.current.component(.hour, from: .now)
-        if hour < 5 { return "Late night grind" }
-        if hour < 10 { return "Good morning, soldier" }
+        if hour < 5 { return "Late night" }
+        if hour < 10 { return "Good morning" }
         if hour < 14 { return "Drive on" }
-        if hour < 18 { return "Afternoon push" }
-        return "Evening session"
+        if hour < 18 { return "Afternoon" }
+        return "Evening"
+    }
+
+    private var todayDateString: String {
+        let f = DateFormatter()
+        f.dateFormat = "EEEE, d MMM"
+        return f.string(from: .now)
     }
 
     private var formattedSteps: String {
         let steps = vm.pedometer.todaySteps
-        if steps >= 10000 { return String(format: "%.1fk", Double(steps) / 1000) }
         if steps >= 1000 { return String(format: "%.1fk", Double(steps) / 1000) }
         return "\(steps)"
     }
 
-    private var recoveryWorkout: WorkoutDay? {
+    private var todayRecoveryDay: WorkoutDay? {
         guard let plan = vm.currentPlan else { return nil }
         let today = Calendar.current.startOfDay(for: .now)
         return plan.days.first { Calendar.current.isDate($0.date, inSameDayAs: today) && $0.isRestDay }
     }
 
-    private var completedGradient: LinearGradient {
+    private func estimatedDuration(_ workout: WorkoutDay) -> String {
+        let mins = max(workout.exercises.count * 4, 15)
+        return "~\(mins) min"
+    }
+
+    private var heroCardGradient: LinearGradient {
         LinearGradient(
-            colors: [Color(hex: "#059669").opacity(0.9), Color(hex: "#10B981").opacity(0.85)],
+            colors: [
+                Color(hex: "#3B6DE0"),
+                Color(hex: "#5B4DC7").opacity(0.95),
+                Color(hex: "#4A3DAF").opacity(0.9)
+            ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
 
-    private func aftMiniPill(_ label: String, _ value: Int) -> some View {
-        VStack(spacing: 1) {
-            Text(label)
-                .font(.system(size: 8, weight: .bold))
-                .foregroundStyle(MVMTheme.tertiaryText)
-            Text("\(value)")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(aftPillColor(value))
-        }
-        .frame(width: 32)
+    private var heroShimmerOverlay: some View {
+        RoundedRectangle(cornerRadius: 28)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        .white.opacity(0.04),
+                        .clear
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
     }
 
-    private func aftPillColor(_ value: Int) -> Color {
+    private struct AFTEventPill {
+        let label: String
+        let value: Int
+        let color: Color
+    }
+
+    private func aftEventPills(_ score: AFTScoreRecord) -> [AFTEventPill] {
+        [
+            AFTEventPill(label: "MDL", value: score.deadliftPoints, color: pillColor(score.deadliftPoints)),
+            AFTEventPill(label: "HRP", value: score.pushUpPoints, color: pillColor(score.pushUpPoints)),
+            AFTEventPill(label: "SDC", value: score.sdcPoints, color: pillColor(score.sdcPoints)),
+            AFTEventPill(label: "PLK", value: score.plankPoints, color: pillColor(score.plankPoints)),
+            AFTEventPill(label: "2MR", value: score.runPoints, color: pillColor(score.runPoints))
+        ]
+    }
+
+    private func pillColor(_ value: Int) -> Color {
         if value >= 80 { return MVMTheme.success }
         if value >= 60 { return MVMTheme.accent }
         if value >= 40 { return MVMTheme.warning }

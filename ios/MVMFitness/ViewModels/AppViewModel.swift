@@ -113,6 +113,37 @@ final class AppViewModel {
         )
     }
 
+    func generateRecoverySession() -> WorkoutDay {
+        let recoveryTemplates = ArmyTemplateLibrary.templates.filter { $0.focus == .recovery }
+        let template = recoveryTemplates.randomElement()
+
+        if let template {
+            let exercises = ArmyGenerator.convertToWorkoutExercises(template)
+            return WorkoutDay(
+                dayIndex: -1,
+                date: Calendar.current.startOfDay(for: .now),
+                title: template.title,
+                exercises: exercises,
+                templateTag: template.title,
+                tags: ["Recovery", "Active Rest"]
+            )
+        }
+
+        return WorkoutDay(
+            dayIndex: -1,
+            date: Calendar.current.startOfDay(for: .now),
+            title: "Recovery & Mobility",
+            exercises: [
+                WorkoutExercise(name: "PMCS Drill", sets: 1, durationSeconds: 360, notes: "Full mobility sequence", category: .timed),
+                WorkoutExercise(name: "Hip Stability Drill", sets: 1, durationSeconds: 300, notes: "Through sequence", category: .timed),
+                WorkoutExercise(name: "Shoulder Stability Drill", sets: 1, durationSeconds: 300, notes: "Through sequence", category: .timed),
+                WorkoutExercise(name: "Recovery Drill", sets: 1, durationSeconds: 300, notes: "Full sequence", category: .timed)
+            ],
+            templateTag: "recovery_fallback",
+            tags: ["Recovery", "Active Rest"]
+        )
+    }
+
     func generateUnitPT() -> UnitPTPlan {
         let plan = WorkoutGenerator.generateUnitPT(focus: currentFocus, level: currentLevel)
         unitPTPlans.insert(plan, at: 0)
