@@ -77,16 +77,42 @@ struct PlanView: View {
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationDestination(isPresented: $navigateToDetail) {
-            WorkoutDetailView(dayIndex: detailDayIndex, isStandalone: false)
+            if vm.currentPlan?.days.contains(where: { $0.dayIndex == detailDayIndex }) == true {
+                WorkoutDetailView(dayIndex: detailDayIndex, isStandalone: false)
+            } else {
+                UnavailableFallbackView(title: "Workout Unavailable", message: "This workout could not be loaded.", action: "Go Back") {
+                    navigateToDetail = false
+                }
+            }
         }
         .navigationDestination(isPresented: $navigateToSession) {
-            ActiveSessionView(dayIndex: sessionDayIndex, isStandalone: false)
+            if vm.currentPlan?.days.contains(where: { $0.dayIndex == sessionDayIndex }) == true {
+                ActiveSessionView(dayIndex: sessionDayIndex, isStandalone: false)
+            } else {
+                UnavailableFallbackView(title: "Session Unavailable", message: "This workout session could not be loaded.", action: "Go Back") {
+                    navigateToSession = false
+                }
+            }
         }
         .sheet(isPresented: $showEditSheet) {
             if let dayIndex = selectedDayIndex,
                let plan = vm.currentPlan,
                let day = plan.days.first(where: { $0.dayIndex == dayIndex }) {
                 EditWorkoutSheet(day: day)
+            } else {
+                NavigationStack {
+                    UnavailableFallbackView(title: "Edit Unavailable", message: "This workout could not be loaded for editing.", action: "Dismiss") {
+                        showEditSheet = false
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") { showEditSheet = false }
+                                .foregroundStyle(MVMTheme.primaryText)
+                        }
+                    }
+                    .toolbarBackground(MVMTheme.background, for: .navigationBar)
+                    .toolbarColorScheme(.dark, for: .navigationBar)
+                }
             }
         }
         .sheet(isPresented: $showCalendarSheet) {

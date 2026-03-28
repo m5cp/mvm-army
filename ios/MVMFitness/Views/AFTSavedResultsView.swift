@@ -52,6 +52,20 @@ struct AFTSavedResultsView: View {
         .sheet(isPresented: $showExportSheet) {
             if let result = exportResult {
                 DAForm705ExportView(result: result)
+            } else {
+                NavigationStack {
+                    UnavailableFallbackView(title: "Export Unavailable", message: "Unable to load the selected result for export.", action: "Dismiss") {
+                        showExportSheet = false
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") { showExportSheet = false }
+                                .foregroundStyle(MVMTheme.primaryText)
+                        }
+                    }
+                    .toolbarBackground(MVMTheme.background, for: .navigationBar)
+                    .toolbarColorScheme(.dark, for: .navigationBar)
+                }
             }
         }
     }

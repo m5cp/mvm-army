@@ -6,6 +6,7 @@ struct ProgressViewScreen: View {
 
     @State private var showAFTSheet: Bool = false
     @State private var appeared: Bool = false
+    @State private var showAFTCalculator: Bool = false
 
     var body: some View {
         ZStack {
@@ -29,6 +30,9 @@ struct ProgressViewScreen: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .sheet(isPresented: $showAFTSheet) {
             AFTScoreSheet()
+        }
+        .navigationDestination(isPresented: $showAFTCalculator) {
+            AFTCalculatorView()
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()

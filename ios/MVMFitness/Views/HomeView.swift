@@ -58,16 +58,28 @@ struct HomeView: View {
         .navigationDestination(isPresented: $showWorkoutDetail) {
             if let today = vm.todayWorkout {
                 WorkoutDetailView(dayIndex: today.dayIndex, isStandalone: false)
+            } else {
+                UnavailableFallbackView(title: "Workout Unavailable", message: "No workout found for today.", action: "Return Home") {
+                    showWorkoutDetail = false
+                }
             }
         }
         .navigationDestination(isPresented: $showActiveSession) {
             if let today = vm.todayWorkout {
                 ActiveSessionView(dayIndex: today.dayIndex, isStandalone: false)
+            } else {
+                UnavailableFallbackView(title: "Session Unavailable", message: "No workout found to start.", action: "Return Home") {
+                    showActiveSession = false
+                }
             }
         }
         .navigationDestination(isPresented: $showRecoveryDetail) {
             if let session = recoverySession {
                 WorkoutDetailView(dayIndex: session.dayIndex, isStandalone: false)
+            } else {
+                UnavailableFallbackView(title: "Recovery Unavailable", message: "Unable to load recovery session.", action: "Return Home") {
+                    showRecoveryDetail = false
+                }
             }
         }
         .sheet(isPresented: $showWODSheet) {
@@ -76,6 +88,20 @@ struct HomeView: View {
         .sheet(isPresented: $showRandomSheet) {
             if let workout = randomWorkout {
                 StandaloneWorkoutSheet(workout: workout, sheetTitle: "Random Workout")
+            } else {
+                NavigationStack {
+                    UnavailableFallbackView(title: "Workout Unavailable", message: "Unable to generate a random workout.", action: "Dismiss") {
+                        showRandomSheet = false
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") { showRandomSheet = false }
+                                .foregroundStyle(MVMTheme.primaryText)
+                        }
+                    }
+                    .toolbarBackground(MVMTheme.background, for: .navigationBar)
+                    .toolbarColorScheme(.dark, for: .navigationBar)
+                }
             }
         }
         .sheet(isPresented: $showUnitPTSheet) {

@@ -126,6 +126,20 @@ struct AFTCalculatorView: View {
         .sheet(isPresented: $showFocusWorkout) {
             if let workout = focusWorkout {
                 StandaloneWorkoutSheet(workout: workout, sheetTitle: "Focus PT")
+            } else {
+                NavigationStack {
+                    UnavailableFallbackView(title: "Focus PT Unavailable", message: "Unable to generate a focus workout for your weak events.", action: "Dismiss") {
+                        showFocusWorkout = false
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") { showFocusWorkout = false }
+                                .foregroundStyle(MVMTheme.primaryText)
+                        }
+                    }
+                    .toolbarBackground(MVMTheme.background, for: .navigationBar)
+                    .toolbarColorScheme(.dark, for: .navigationBar)
+                }
             }
         }
     }
