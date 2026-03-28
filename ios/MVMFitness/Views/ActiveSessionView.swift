@@ -12,6 +12,11 @@ struct ActiveSessionView: View {
     @State private var showCompletion: Bool = false
     @State private var sessionStartDate: Date = .now
     @State private var completionScale: CGFloat = 0.8
+    @State private var workoutTimer: WorkoutTimer = WorkoutTimer()
+    @State private var timerFinishedTrigger: Bool = false
+    @State private var restFinishedTrigger: Bool = false
+    @State private var timerStartTrigger: Bool = false
+    @State private var restDuration: Int = 60
 
     private var workout: WorkoutDay? {
         if isStandalone { return nil }
@@ -30,6 +35,8 @@ struct ActiveSessionView: View {
                 completionView
             } else if exercises.isEmpty {
                 emptyState
+            } else if workoutTimer.showRestTimer {
+                restTimerOverlay
             } else {
                 sessionContent
             }
@@ -42,6 +49,7 @@ struct ActiveSessionView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if !showCompletion && !exercises.isEmpty {
                     Button("End") {
+                        workoutTimer.stopAll()
                         finishSession()
                     }
                     .font(.subheadline.weight(.semibold))
@@ -49,6 +57,9 @@ struct ActiveSessionView: View {
                 }
             }
         }
+        .sensoryFeedback(.impact(weight: .light), trigger: timerStartTrigger)
+        .sensoryFeedback(.success, trigger: timerFinishedTrigger)
+        .sensoryFeedback(.warning, trigger: restFinishedTrigger)
         .onAppear {
             if let w = workout {
                 exercises = w.exercises
@@ -57,9 +68,45 @@ struct ActiveSessionView: View {
                 } else {
                     currentIndex = 0
                 }
+                configureTimerForCurrentExercise()
             }
             sessionStartDate = .now
         }
+        .onChange(of: currentIndex) { _, _ in
+            configureTimerForCurrentExercise()
+        }
+        .onChange(of: workoutTimer.timeRemaining) { oldValue, newValue in
+            if oldValue > 0 && newValue <= 0 && workoutTimer.hasTimer {
+                timerFinishedTrigger.toggle()
+                if workoutTimer.autoAdvance && currentIndex < exercises.count - 1 {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        advanceToNext()
+                    }
+                }
+            }
+        }
+        .onChange(of: workoutTimer.showRestTimer) { oldValue, newValue in
+            if oldValue && !newValue {
+                restFinishedTrigger.toggle()
+            }
+        }
+    }
+
+    private func configureTimerForCurrentExercise() {
+        guard currentIndex < exercises.count else { return }
+        workoutTimer.configure(for: exercises[currentIndex])
+    }
+
+    private func advanceToNext() {
+        guard currentIndex < exercises.count - 1 else { return }
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+            currentIndex += 1
+        }
+    }
+
+    private func advanceWithRest() {
+        guard currentIndex < exercises.count - 1 else { return }
+        workoutTimer.startRest(seconds: restDuration)
     }
 
     // MARK: - Session Content
@@ -73,6 +120,9 @@ struct ActiveSessionView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     exerciseCard
+                    if workoutTimer.hasTimer {
+                        timerSection
+                    }
                     navigationControls
                     exerciseList
                 }
@@ -216,6 +266,198 @@ struct ActiveSessionView: View {
         }
     }
 
+    // MARK: - Timer Section
+
+    private var timerSection: some View {
+        VStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .stroke(MVMTheme.cardSoft, lineWidth: 6)
+
+                Circle()
+                    .trim(from: 0, to: workoutTimer.progress)
+                    .stroke(
+                        MVMTheme.heroGradient,
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear(duration: 0.3), value: workoutTimer.progress)
+
+                VStack(spacing: 4) {
+                    Text(workoutTimer.formattedTime)
+                        .font(.system(size: 36, weight: .bold, design: .monospaced))
+                        .foregroundStyle(timerTextColor)
+                        .contentTransition(.numericText())
+                        .animation(.default, value: workoutTimer.timeRemaining)
+
+                    Text(timerLabel)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .textCase(.uppercase)
+                }
+            }
+            .frame(width: 140, height: 140)
+
+            HStack(spacing: 12) {
+                Button {
+                    if !workoutTimer.isRunning {
+                        timerStartTrigger.toggle()
+                    }
+                    workoutTimer.startPause()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: workoutTimer.isRunning ? "pause.fill" : "play.fill")
+                            .font(.caption.weight(.bold))
+                        Text(workoutTimer.isRunning ? "Pause" : "Start")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(workoutTimer.isRunning ? MVMTheme.warning : MVMTheme.accent)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    workoutTimer.reset()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.caption.weight(.bold))
+                        Text("Reset")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(MVMTheme.card)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(MVMTheme.border)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+            }
+        }
+        .padding(20)
+        .background(MVMTheme.card)
+        .overlay {
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(MVMTheme.border)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    private var timerTextColor: Color {
+        if workoutTimer.timeRemaining <= 10 && workoutTimer.timeRemaining > 0 && workoutTimer.isRunning {
+            return MVMTheme.warning
+        }
+        if workoutTimer.timeRemaining <= 0 {
+            return MVMTheme.success
+        }
+        return .white
+    }
+
+    private var timerLabel: String {
+        if workoutTimer.timeRemaining <= 0 { return "Complete" }
+        if workoutTimer.isRunning { return "Running" }
+        return "Ready"
+    }
+
+    // MARK: - Rest Timer Overlay
+
+    private var restTimerOverlay: some View {
+        VStack(spacing: 32) {
+            Spacer()
+
+            VStack(spacing: 20) {
+                Image(systemName: "pause.circle.fill")
+                    .font(.system(size: 40))
+                    .foregroundStyle(MVMTheme.accent.opacity(0.6))
+
+                Text("REST")
+                    .font(.caption.weight(.heavy))
+                    .tracking(2.0)
+                    .foregroundStyle(MVMTheme.secondaryText)
+
+                Text(workoutTimer.formattedRestTime)
+                    .font(.system(size: 56, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .contentTransition(.numericText())
+                    .animation(.default, value: workoutTimer.restTimeRemaining)
+
+                if currentIndex < exercises.count - 1 {
+                    VStack(spacing: 4) {
+                        Text("Up Next")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                        Text(exercises[currentIndex + 1].name)
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(MVMTheme.primaryText)
+                    }
+                    .padding(.top, 8)
+                }
+            }
+
+            Spacer()
+
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    ForEach([30, 60, 90], id: \.self) { seconds in
+                        Button {
+                            restDuration = seconds
+                            workoutTimer.skipRest()
+                            workoutTimer.startRest(seconds: seconds)
+                        } label: {
+                            Text("\(seconds)s")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(restDuration == seconds ? .white : MVMTheme.secondaryText)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 40)
+                                .background(restDuration == seconds ? MVMTheme.accent.opacity(0.3) : MVMTheme.cardSoft)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .overlay {
+                                    if restDuration == seconds {
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(MVMTheme.accent.opacity(0.4))
+                                    }
+                                }
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
+                    }
+                }
+
+                Button {
+                    workoutTimer.skipRest()
+                    advanceToNext()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "forward.fill")
+                            .font(.caption.weight(.bold))
+                        Text("Skip Rest")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
+                    .background(MVMTheme.accent)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .sensoryFeedback(.selection, trigger: restFinishedTrigger)
+                .buttonStyle(PressScaleButtonStyle())
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+        }
+        .onChange(of: workoutTimer.showRestTimer) { _, showing in
+            if !showing {
+                advanceToNext()
+            }
+        }
+    }
+
     private func categoryBadge(_ exercise: WorkoutExercise) -> some View {
         let label: String
         let icon: String
@@ -245,70 +487,98 @@ struct ActiveSessionView: View {
     // MARK: - Navigation Controls
 
     private var navigationControls: some View {
-        HStack(spacing: 12) {
-            if currentIndex > 0 {
+        VStack(spacing: 10) {
+            if exercises[currentIndex].isTimeBased == false && currentIndex < exercises.count - 1 {
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                        currentIndex -= 1
-                    }
+                    advanceWithRest()
                 } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: "chevron.left")
+                        Image(systemName: "timer")
                             .font(.caption.weight(.bold))
-                        Text("Previous")
+                        Text("Rest \(restDuration)s → Next")
                             .font(.subheadline.weight(.semibold))
                     }
-                    .foregroundStyle(MVMTheme.secondaryText)
+                    .foregroundStyle(MVMTheme.accent)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(MVMTheme.card)
+                    .frame(height: 44)
+                    .background(MVMTheme.accent.opacity(0.1))
                     .overlay {
                         RoundedRectangle(cornerRadius: 14)
-                            .stroke(MVMTheme.border)
+                            .stroke(MVMTheme.accent.opacity(0.25))
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
                 .buttonStyle(PressScaleButtonStyle())
             }
 
-            if currentIndex < exercises.count - 1 {
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                        currentIndex += 1
+            HStack(spacing: 12) {
+                if currentIndex > 0 {
+                    Button {
+                        workoutTimer.pause()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                            currentIndex -= 1
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chevron.left")
+                                .font(.caption.weight(.bold))
+                            Text("Previous")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .foregroundStyle(MVMTheme.secondaryText)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(MVMTheme.card)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(MVMTheme.border)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
-                } label: {
-                    HStack(spacing: 6) {
-                        Text("Next")
-                            .font(.subheadline.weight(.semibold))
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.bold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(MVMTheme.accent)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .buttonStyle(PressScaleButtonStyle())
                 }
-                .sensoryFeedback(.selection, trigger: currentIndex)
-                .buttonStyle(PressScaleButtonStyle())
-            } else {
-                Button {
-                    finishSession()
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "flag.checkered")
-                            .font(.subheadline.weight(.bold))
-                        Text("Finish Workout")
-                            .font(.subheadline.weight(.bold))
+
+                if currentIndex < exercises.count - 1 {
+                    Button {
+                        workoutTimer.pause()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                            currentIndex += 1
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("Next")
+                                .font(.subheadline.weight(.semibold))
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.bold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(MVMTheme.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(MVMTheme.success)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .sensoryFeedback(.selection, trigger: currentIndex)
+                    .buttonStyle(PressScaleButtonStyle())
+                } else {
+                    Button {
+                        workoutTimer.stopAll()
+                        finishSession()
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "flag.checkered")
+                                .font(.subheadline.weight(.bold))
+                            Text("Finish Workout")
+                                .font(.subheadline.weight(.bold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(MVMTheme.success)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .sensoryFeedback(.success, trigger: showCompletion)
+                    .buttonStyle(PressScaleButtonStyle())
                 }
-                .sensoryFeedback(.success, trigger: showCompletion)
-                .buttonStyle(PressScaleButtonStyle())
             }
         }
     }
@@ -325,6 +595,7 @@ struct ActiveSessionView: View {
 
             ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
                 Button {
+                    workoutTimer.pause()
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
                         currentIndex = index
                     }
@@ -359,6 +630,12 @@ struct ActiveSessionView: View {
                         }
 
                         Spacer()
+
+                        if exercise.isTimeBased {
+                            Image(systemName: "timer")
+                                .font(.caption2)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
 
                         if index == currentIndex {
                             Image(systemName: "arrowtriangle.right.fill")
