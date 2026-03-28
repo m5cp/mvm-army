@@ -198,6 +198,57 @@ enum ArmyGenerator {
         )
     }
 
+    static func mapWeakEventToFocus(_ eventName: String) -> ArmyFocus {
+        switch eventName {
+        case "Deadlift", "3RM Deadlift", "MDL":
+            return .lowerStrength
+        case "Hand-Release Push-Up", "HRP":
+            return .upperEndurance
+        case "Sprint-Drag-Carry", "SDC":
+            return .workCapacity
+        case "Plank", "PLK":
+            return .coreRun
+        case "2-Mile Run", "2MR":
+            return .endurance
+        default:
+            return .aftPrep
+        }
+    }
+
+    static func focusLabel(for armyFocus: ArmyFocus) -> String {
+        switch armyFocus {
+        case .lowerStrength: return "Lower Strength"
+        case .upperEndurance: return "Upper Endurance"
+        case .workCapacity: return "Work Capacity"
+        case .coreRun: return "Core Endurance"
+        case .endurance: return "Running Endurance"
+        case .aftPrep: return "AFT Prep"
+        case .tactical: return "Tactical Conditioning"
+        case .recovery: return "Recovery"
+        }
+    }
+
+    static func generateFocusSession(
+        weakEvents: [String],
+        equipment: ArmyEquipment,
+        mode: ArmyWorkoutMode,
+        lastTitle: String?
+    ) -> ArmyWorkoutTemplate? {
+        let focuses = weakEvents.map { mapWeakEventToFocus($0) }
+        let primaryFocus = focuses.first ?? .aftPrep
+
+        if let template = nextTemplate(mode: mode, focus: primaryFocus, equipment: equipment, excluding: lastTitle) {
+            return template
+        }
+
+        if let secondFocus = focuses.dropFirst().first,
+           let template = nextTemplate(mode: mode, focus: secondFocus, equipment: equipment, excluding: lastTitle) {
+            return template
+        }
+
+        return nextTemplate(mode: .workoutOfDay, focus: primaryFocus, equipment: equipment, excluding: lastTitle)
+    }
+
     static func convertToUnitPTPlan(_ template: ArmyWorkoutTemplate) -> UnitPTPlan {
         let warmupText = template.warmup.map { ex in
             "\(ex.name)\(ex.reps.map { " — \($0)" } ?? "")\(ex.duration.map { " — \($0)" } ?? "")"

@@ -147,6 +147,63 @@ final class AppViewModel {
         persistAll()
     }
 
+    func generateFocusWorkout(weakEvents: [String]) -> WorkoutDay? {
+        let armyEquipment = ArmyGenerator.mapArmyEquipment(currentEquipment)
+        let armyMode = ArmyGenerator.mapArmyMode(ptMode: currentPTMode, dutyType: currentDutyType)
+
+        guard let template = ArmyGenerator.generateFocusSession(
+            weakEvents: weakEvents,
+            equipment: armyEquipment,
+            mode: armyMode,
+            lastTitle: lastWorkoutTag
+        ) else { return nil }
+
+        let exercises = ArmyGenerator.convertToWorkoutExercises(template)
+        let focusLabels = weakEvents.map { ArmyGenerator.mapWeakEventToFocus($0) }.map { ArmyGenerator.focusLabel(for: $0) }
+
+        return WorkoutDay(
+            dayIndex: 0,
+            date: Calendar.current.startOfDay(for: .now),
+            title: template.title,
+            exercises: exercises,
+            templateTag: template.title,
+            tags: ["Focus PT"] + focusLabels
+        )
+    }
+
+    func addFocusSessionToPlan(weakEvents: [String]) -> Bool {
+        guard var plan = currentPlan,
+              let workout = generateFocusWorkout(weakEvents: weakEvents) else { return false }
+
+        if let restIdx = plan.days.firstIndex(where: { $0.isRestDay && !$0.isCompleted }) {
+            plan.days[restIdx] = WorkoutDay(
+                dayIndex: plan.days[restIdx].dayIndex,
+                date: plan.days[restIdx].date,
+                title: workout.title,
+                exercises: workout.exercises,
+                templateTag: workout.templateTag,
+                tags: workout.tags
+            )
+        } else {
+            if let lastIdx = plan.days.lastIndex(where: { !$0.isCompleted }) {
+                plan.days[lastIdx] = WorkoutDay(
+                    dayIndex: plan.days[lastIdx].dayIndex,
+                    date: plan.days[lastIdx].date,
+                    title: workout.title,
+                    exercises: workout.exercises,
+                    templateTag: workout.templateTag,
+                    tags: workout.tags
+                )
+            } else {
+                return false
+            }
+        }
+
+        currentPlan = plan
+        persistAll()
+        return true
+    }
+
     // MARK: - Completion
 
     func markDayCompleted(dayIndex: Int) {
