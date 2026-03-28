@@ -14,6 +14,7 @@ struct HomeView: View {
     @State private var showUnitPTSheet = false
     @State private var showScanSheet = false
     @State private var showAFTSheet = false
+    @State private var showAFTCalculator = false
     @State private var wodWorkout: WorkoutDay?
     @State private var randomWorkout: WorkoutDay?
 
@@ -77,6 +78,9 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showAFTSheet) {
             AFTScoreSheet()
+        }
+        .navigationDestination(isPresented: $showAFTCalculator) {
+            AFTCalculatorView()
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
@@ -342,10 +346,18 @@ struct HomeView: View {
     private var quickActions: some View {
         VStack(spacing: 14) {
             actionButton(
-                title: "Log AFT Score",
-                subtitle: "Track your Army Fitness Test results",
-                icon: "shield.fill",
+                title: "AFT Calculator",
+                subtitle: "Full AFT scoring with soldier info",
+                icon: "shield.checkered",
                 gradient: LinearGradient(colors: [Color(hex: "#059669"), Color(hex: "#10B981")], startPoint: .leading, endPoint: .trailing),
+                action: { showAFTCalculator = true }
+            )
+
+            actionButton(
+                title: "Quick AFT Log",
+                subtitle: "Fast event entry without soldier details",
+                icon: "shield.fill",
+                gradient: LinearGradient(colors: [Color(hex: "#047857"), Color(hex: "#059669")], startPoint: .leading, endPoint: .trailing),
                 action: { showAFTSheet = true }
             )
 

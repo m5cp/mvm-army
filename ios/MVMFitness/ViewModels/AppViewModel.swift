@@ -11,6 +11,7 @@ final class AppViewModel {
     var unitPTPlans: [UnitPTPlan] = []
     var importedWorkouts: [WorkoutDay] = []
     var aftScores: [AFTScoreRecord] = []
+    var aftCalculatorResults: [AFTCalculatorResult] = []
 
     init() {
         loadLocalData()
@@ -26,6 +27,7 @@ final class AppViewModel {
         unitPTPlans = LocalStore.load([UnitPTPlan].self, forKey: "unitPTPlans", fallback: [])
         importedWorkouts = LocalStore.load([WorkoutDay].self, forKey: "importedWorkouts", fallback: [])
         aftScores = LocalStore.load([AFTScoreRecord].self, forKey: "aftScores", fallback: [])
+        aftCalculatorResults = LocalStore.load([AFTCalculatorResult].self, forKey: "aftCalculatorResults", fallback: [])
     }
 
     func persistAll() {
@@ -36,6 +38,7 @@ final class AppViewModel {
         LocalStore.save(unitPTPlans, forKey: "unitPTPlans")
         LocalStore.save(importedWorkouts, forKey: "importedWorkouts")
         LocalStore.save(aftScores, forKey: "aftScores")
+        LocalStore.save(aftCalculatorResults, forKey: "aftCalculatorResults")
     }
 
     func syncTodaySteps() {
@@ -135,6 +138,13 @@ final class AppViewModel {
 
     var aftWeakestEvents: [String] {
         latestAFTScore?.weakestEvents ?? []
+    }
+
+    // MARK: - AFT Calculator
+
+    func saveAFTCalculatorResult(_ result: AFTCalculatorResult) {
+        aftCalculatorResults.insert(result, at: 0)
+        persistAll()
     }
 
     // MARK: - Completion
@@ -242,6 +252,7 @@ final class AppViewModel {
         unitPTPlans = []
         importedWorkouts = []
         aftScores = []
+        aftCalculatorResults = []
         persistAll()
     }
 }
