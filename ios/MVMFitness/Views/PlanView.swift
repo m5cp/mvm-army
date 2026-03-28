@@ -8,6 +8,8 @@ struct PlanView: View {
     @State private var selectedDayIndex: Int?
     @State private var navigateToDetail: Bool = false
     @State private var detailDayIndex: Int = 0
+    @State private var navigateToSession: Bool = false
+    @State private var sessionDayIndex: Int = 0
     @State private var animateCards: Bool = false
     @State private var calendarService = CalendarExportService()
     @State private var showCalendarSheet: Bool = false
@@ -76,6 +78,9 @@ struct PlanView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationDestination(isPresented: $navigateToDetail) {
             WorkoutDetailView(dayIndex: detailDayIndex, isStandalone: false)
+        }
+        .navigationDestination(isPresented: $navigateToSession) {
+            ActiveSessionView(dayIndex: sessionDayIndex, isStandalone: false)
         }
         .sheet(isPresented: $showEditSheet) {
             if let dayIndex = selectedDayIndex,
@@ -354,13 +359,13 @@ struct PlanView: View {
                     .buttonStyle(PressScaleButtonStyle())
                 } else {
                     Button {
-                        detailDayIndex = day.dayIndex
-                        navigateToDetail = true
+                        sessionDayIndex = day.dayIndex
+                        navigateToSession = true
                     } label: {
                         HStack(spacing: 6) {
-                            Image(systemName: "checkmark.circle.fill")
+                            Image(systemName: "play.fill")
                                 .font(.caption.weight(.bold))
-                            Text("Log")
+                            Text("Start")
                                 .font(.subheadline.weight(.bold))
                         }
                         .foregroundStyle(Color(hex: "#1A1A2E"))
@@ -368,6 +373,20 @@ struct PlanView: View {
                         .frame(height: 44)
                         .background(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .sensoryFeedback(.impact(weight: .medium), trigger: navigateToSession)
+                    .buttonStyle(PressScaleButtonStyle())
+
+                    Button {
+                        detailDayIndex = day.dayIndex
+                        navigateToDetail = true
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(.white.opacity(0.18))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(PressScaleButtonStyle())
 

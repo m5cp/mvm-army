@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var showWODSheet: Bool = false
     @State private var showRandomSheet: Bool = false
     @State private var showWorkoutDetail: Bool = false
+    @State private var showActiveSession: Bool = false
     @State private var showUnitPTSheet: Bool = false
     @State private var showScanSheet: Bool = false
     @State private var showAFTSheet: Bool = false
@@ -57,6 +58,11 @@ struct HomeView: View {
         .navigationDestination(isPresented: $showWorkoutDetail) {
             if let today = vm.todayWorkout {
                 WorkoutDetailView(dayIndex: today.dayIndex, isStandalone: false)
+            }
+        }
+        .navigationDestination(isPresented: $showActiveSession) {
+            if let today = vm.todayWorkout {
+                ActiveSessionView(dayIndex: today.dayIndex, isStandalone: false)
             }
         }
         .navigationDestination(isPresented: $showRecoveryDetail) {
@@ -336,24 +342,43 @@ struct HomeView: View {
 
                 exerciseGlance(workout)
 
-                Button {
-                    showWorkoutDetail = true
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.subheadline.weight(.bold))
-                        Text("Log Workout")
-                            .font(.headline.weight(.bold))
+                HStack(spacing: 12) {
+                    Button {
+                        showActiveSession = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "play.fill")
+                                .font(.subheadline.weight(.bold))
+                            Text("Start Workout")
+                                .font(.headline.weight(.bold))
+                        }
+                        .foregroundStyle(Color(hex: "#1A1A2E"))
+                        .frame(height: 54)
+                        .frame(maxWidth: .infinity)
+                        .background(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: .white.opacity(0.15), radius: 12, y: 4)
                     }
-                    .foregroundStyle(Color(hex: "#1A1A2E"))
-                    .frame(height: 54)
-                    .frame(maxWidth: .infinity)
-                    .background(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .white.opacity(0.15), radius: 12, y: 4)
+                    .sensoryFeedback(.impact(weight: .medium), trigger: showActiveSession)
+                    .buttonStyle(PressScaleButtonStyle())
+
+                    Button {
+                        showWorkoutDetail = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "pencil")
+                                .font(.subheadline.weight(.bold))
+                            Text("Log")
+                                .font(.headline.weight(.bold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(height: 54)
+                        .frame(width: 90)
+                        .background(.white.opacity(0.18))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
                 }
-                .sensoryFeedback(.impact(weight: .medium), trigger: showWorkoutDetail)
-                .buttonStyle(PressScaleButtonStyle())
             }
             .padding(24)
             .background {
