@@ -447,6 +447,28 @@ final class AppViewModel {
         return stepHistory.map(\.steps).reduce(0, +) / stepHistory.count
     }
 
+    var unitPTSessionsCompleted: Int {
+        unitPTPlans.count
+    }
+
+    var previousAFTScore: AFTScoreRecord? {
+        guard aftScores.count > 1 else { return nil }
+        return aftScores[1]
+    }
+
+    var aftScoreDifference: Int? {
+        guard let latest = latestAFTScore, let previous = previousAFTScore else { return nil }
+        return latest.totalScore - previous.totalScore
+    }
+
+    var weeklyStepAverage: Int {
+        let calendar = Calendar.current
+        let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: .now) ?? .now
+        let recentSteps = stepHistory.filter { $0.date >= sevenDaysAgo }
+        guard !recentSteps.isEmpty else { return 0 }
+        return recentSteps.map(\.steps).reduce(0, +) / recentSteps.count
+    }
+
     func resetAllData() {
         currentPlan = nil
         completedRecords = []
