@@ -2,6 +2,8 @@ import SwiftUI
 
 struct AFTSavedResultsView: View {
     @Environment(AppViewModel.self) private var vm
+    @State private var exportResult: AFTCalculatorResult?
+    @State private var showExportSheet = false
 
     var body: some View {
         ZStack {
@@ -28,6 +30,14 @@ struct AFTSavedResultsView: View {
                     VStack(spacing: 14) {
                         ForEach(vm.aftCalculatorResults) { result in
                             resultCard(result)
+                                .contextMenu {
+                                    Button {
+                                        exportResult = result
+                                        showExportSheet = true
+                                    } label: {
+                                        Label("Export DA Form 705", systemImage: "doc.text.fill")
+                                    }
+                                }
                         }
                     }
                     .padding(20)
@@ -39,6 +49,11 @@ struct AFTSavedResultsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .sheet(isPresented: $showExportSheet) {
+            if let result = exportResult {
+                DAForm705ExportView(result: result)
+            }
+        }
     }
 
     private func resultCard(_ result: AFTCalculatorResult) -> some View {

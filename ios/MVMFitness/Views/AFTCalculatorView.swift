@@ -19,6 +19,7 @@ struct AFTCalculatorView: View {
 
     @State private var didSave = false
     @State private var showSavedResults = false
+    @State private var showExportSheet = false
 
     private var sdcTotalSeconds: Int {
         (Int(sdcMinutes) ?? 0) * 60 + (Int(sdcSeconds) ?? 0)
@@ -74,6 +75,25 @@ struct AFTCalculatorView: View {
                     }
                     .buttonStyle(PressScaleButtonStyle())
                     .sensoryFeedback(.success, trigger: didSave)
+
+                    Button {
+                        showExportSheet = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "doc.text.fill")
+                            Text("Export DA Form 705")
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.accent)
+                        .frame(height: 50)
+                        .frame(maxWidth: .infinity)
+                        .background(MVMTheme.accent.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.accent.opacity(0.3))
+                        }
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
                 }
                 .padding(20)
                 .padding(.bottom, 36)
@@ -95,6 +115,9 @@ struct AFTCalculatorView: View {
         }
         .navigationDestination(isPresented: $showSavedResults) {
             AFTSavedResultsView()
+        }
+        .sheet(isPresented: $showExportSheet) {
+            DAForm705ExportView(result: preview)
         }
     }
 
