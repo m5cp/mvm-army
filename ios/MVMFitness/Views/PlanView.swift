@@ -577,6 +577,20 @@ struct PlanView: View {
             }
 
             Button {
+                vm.regenerateSingleDay(dayIndex: day.dayIndex)
+            } label: {
+                Label("Regenerate", systemImage: "arrow.clockwise")
+            }
+
+            if !day.isCompleted {
+                Button {
+                    vm.convertDayToRecovery(dayIndex: day.dayIndex)
+                } label: {
+                    Label("Make Recovery Day", systemImage: "leaf")
+                }
+            }
+
+            Button {
                 Task {
                     let result = await calendarService.exportWorkout(day)
                     handleExportResult(result)

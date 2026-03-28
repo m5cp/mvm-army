@@ -294,6 +294,107 @@ final class AppViewModel {
         persistAll()
     }
 
+    func replaceRestDayWithWorkout(dayIndex: Int) {
+        guard var plan = currentPlan,
+              let idx = plan.days.firstIndex(where: { $0.dayIndex == dayIndex && $0.isRestDay }) else { return }
+
+        let armyMode = ArmyGenerator.mapArmyMode(ptMode: currentPTMode, dutyType: currentDutyType)
+        let armyEquipment = ArmyGenerator.mapArmyEquipment(currentEquipment)
+        let armyFocuses = ArmyGenerator.mapArmyFocuses(currentFocus)
+        let randomFocus = armyFocuses.randomElement() ?? .aftPrep
+
+        let template = ArmyGenerator.nextTemplate(
+            mode: armyMode,
+            focus: randomFocus,
+            equipment: armyEquipment,
+            excluding: lastWorkoutTag
+        )
+
+        let modeTags = WorkoutGenerator.buildModeTags(ptMode: currentPTMode, dutyType: currentDutyType, focus: currentFocus)
+
+        if let template {
+            let exercises = ArmyGenerator.convertToWorkoutExercises(template)
+            plan.days[idx] = WorkoutDay(
+                dayIndex: dayIndex,
+                date: plan.days[idx].date,
+                title: template.title,
+                exercises: exercises,
+                isRestDay: false,
+                templateTag: template.title,
+                tags: modeTags + [template.focus.rawValue]
+            )
+        } else {
+            plan.days[idx] = WorkoutDay(
+                dayIndex: dayIndex,
+                date: plan.days[idx].date,
+                title: "General Army PT",
+                exercises: [
+                    WorkoutExercise(name: "Preparation Drill", sets: 1, durationSeconds: 300, notes: "PD: 10 exercises, 5 reps each", category: .timed),
+                    WorkoutExercise(name: "Push-Up", sets: 4, reps: 15, category: .bodyweight),
+                    WorkoutExercise(name: "Air Squat", sets: 4, reps: 20, category: .bodyweight),
+                    WorkoutExercise(name: "Plank Hold", sets: 3, durationSeconds: 60, category: .timed),
+                    WorkoutExercise(name: "Recovery Drill", sets: 1, durationSeconds: 240, notes: "RD: Full sequence", category: .timed)
+                ],
+                isRestDay: false,
+                templateTag: "fallback_general",
+                tags: modeTags + ["General"]
+            )
+        }
+        currentPlan = plan
+        persistAll()
+    }
+
+    func regenerateSingleDay(dayIndex: Int) {
+        guard var plan = currentPlan,
+              let idx = plan.days.firstIndex(where: { $0.dayIndex == dayIndex }) else { return }
+
+        let armyMode = ArmyGenerator.mapArmyMode(ptMode: currentPTMode, dutyType: currentDutyType)
+        let armyEquipment = ArmyGenerator.mapArmyEquipment(currentEquipment)
+        let armyFocuses = ArmyGenerator.mapArmyFocuses(currentFocus)
+        let randomFocus = armyFocuses.randomElement() ?? .aftPrep
+        let currentTag = plan.days[idx].templateTag
+
+        let template = ArmyGenerator.nextTemplate(
+            mode: armyMode,
+            focus: randomFocus,
+            equipment: armyEquipment,
+            excluding: currentTag
+        )
+
+        let modeTags = WorkoutGenerator.buildModeTags(ptMode: currentPTMode, dutyType: currentDutyType, focus: currentFocus)
+
+        if let template {
+            let exercises = ArmyGenerator.convertToWorkoutExercises(template)
+            plan.days[idx] = WorkoutDay(
+                dayIndex: dayIndex,
+                date: plan.days[idx].date,
+                title: template.title,
+                exercises: exercises,
+                isRestDay: false,
+                templateTag: template.title,
+                tags: modeTags + [template.focus.rawValue]
+            )
+        }
+        currentPlan = plan
+        persistAll()
+    }
+
+    func convertDayToRecovery(dayIndex: Int) {
+        guard var plan = currentPlan,
+              let idx = plan.days.firstIndex(where: { $0.dayIndex == dayIndex }) else { return }
+        let titles = ["Recovery & Mobility", "Active Recovery", "Easy Movement", "Maintenance Session", "Light Mobility"]
+        plan.days[idx] = WorkoutDay(
+            dayIndex: dayIndex,
+            date: plan.days[idx].date,
+            title: titles[dayIndex % titles.count],
+            exercises: [],
+            isRestDay: true,
+            templateTag: "recovery"
+        )
+        currentPlan = plan
+        persistAll()
+    }
+
     func saveImportedWorkout(_ workout: WorkoutDay) {
         importedWorkouts.insert(workout, at: 0)
         persistAll()

@@ -33,7 +33,7 @@ enum WorkoutGenerator {
         )
 
         let selectedDays = distributeDays(count: daysPerWeek)
-        let modeTags = buildTags(ptMode: ptMode, dutyType: dutyType, focus: focus)
+        let modeTags = buildModeTags(ptMode: ptMode, dutyType: dutyType, focus: focus)
 
         var days: [WorkoutDay] = []
         var templateIndex = 0
@@ -110,7 +110,7 @@ enum WorkoutGenerator {
         }
 
         let exercises = ArmyGenerator.convertToWorkoutExercises(chosen)
-        let modeTags = buildTags(ptMode: ptMode, dutyType: dutyType, focus: focus)
+        let modeTags = buildModeTags(ptMode: ptMode, dutyType: dutyType, focus: focus)
 
         return WorkoutDay(
             dayIndex: 0,
@@ -152,7 +152,7 @@ enum WorkoutGenerator {
         }
 
         let exercises = ArmyGenerator.convertToWorkoutExercises(chosen)
-        let modeTags = buildTags(ptMode: ptMode, dutyType: dutyType, focus: focus)
+        let modeTags = buildModeTags(ptMode: ptMode, dutyType: dutyType, focus: focus)
 
         return WorkoutDay(
             dayIndex: 0,
@@ -181,7 +181,7 @@ enum WorkoutGenerator {
 
     // MARK: - Private
 
-    private static func buildTags(ptMode: PTMode, dutyType: DutyType, focus: TrainingFocus) -> [String] {
+    static func buildModeTags(ptMode: PTMode, dutyType: DutyType, focus: TrainingFocus) -> [String] {
         var tags: [String] = []
         switch ptMode {
         case .individual: tags.append("Individual")
@@ -216,7 +216,7 @@ enum WorkoutGenerator {
     }
 
     private static func fallbackWorkoutDay(focus: TrainingFocus, ptMode: PTMode, dutyType: DutyType) -> WorkoutDay {
-        let modeTags = buildTags(ptMode: ptMode, dutyType: dutyType, focus: focus)
+        let modeTags = buildModeTags(ptMode: ptMode, dutyType: dutyType, focus: focus)
         return WorkoutDay(
             dayIndex: 0,
             date: Calendar.current.startOfDay(for: .now),
