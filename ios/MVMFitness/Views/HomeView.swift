@@ -340,9 +340,9 @@ struct HomeView: View {
                     showWorkoutDetail = true
                 } label: {
                     HStack(spacing: 10) {
-                        Image(systemName: "play.fill")
+                        Image(systemName: "checkmark.circle.fill")
                             .font(.subheadline.weight(.bold))
-                        Text("Start Workout")
+                        Text("Log Workout")
                             .font(.headline.weight(.bold))
                     }
                     .foregroundStyle(Color(hex: "#1A1A2E"))

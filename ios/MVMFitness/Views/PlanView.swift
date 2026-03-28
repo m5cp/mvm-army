@@ -358,9 +358,9 @@ struct PlanView: View {
                         navigateToDetail = true
                     } label: {
                         HStack(spacing: 6) {
-                            Image(systemName: "play.fill")
+                            Image(systemName: "checkmark.circle.fill")
                                 .font(.caption.weight(.bold))
-                            Text("Start")
+                            Text("Log")
                                 .font(.subheadline.weight(.bold))
                         }
                         .foregroundStyle(Color(hex: "#1A1A2E"))

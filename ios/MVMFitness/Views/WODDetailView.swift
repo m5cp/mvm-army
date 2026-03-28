@@ -287,9 +287,9 @@ struct WODDetailView: View {
                     didComplete = true
                 } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: "play.fill")
+                        Image(systemName: "checkmark.circle.fill")
                             .font(.subheadline.weight(.bold))
-                        Text("Start Workout")
+                        Text("Log Workout")
                             .font(.headline.weight(.bold))
                     }
                     .foregroundStyle(.white)
