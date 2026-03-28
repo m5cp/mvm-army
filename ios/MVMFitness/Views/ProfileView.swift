@@ -171,7 +171,7 @@ struct ProfileView: View {
                     .foregroundStyle(MVMTheme.primaryText)
             }
 
-            Text("MVM Army provides example workout structures for planning, organization, and accountability purposes only. It does not provide medical advice or prescribe exercise. Workouts are based on Army fitness test structures and general fitness formats. Consult a physician before beginning any exercise program.")
+            Text("MVM Army provides example workout structures for planning, organization, and accountability purposes only. It does not provide medical advice or prescribe exercise. Workouts are based on Army fitness test structures, H2F drill categories, and general fitness formats. Consult a physician before beginning any exercise program.")
                 .font(.caption)
                 .foregroundStyle(MVMTheme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
