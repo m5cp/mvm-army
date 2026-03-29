@@ -107,7 +107,17 @@ final class AppViewModel {
         if let plan = currentPlan {
             let hasTodayInPlan = plan.days.contains { calendar.isDate($0.date, inSameDayAs: today) }
             if !hasTodayInPlan {
+                let completedDays = plan.days.filter(\.isCompleted)
                 generateWeeklyPlan()
+                if var newPlan = currentPlan {
+                    for completed in completedDays {
+                        if let idx = newPlan.days.firstIndex(where: { calendar.isDate($0.date, inSameDayAs: completed.date) }) {
+                            newPlan.days[idx].isCompleted = true
+                        }
+                    }
+                    currentPlan = newPlan
+                    persistAll()
+                }
             }
         } else {
             generateWeeklyPlan()
@@ -378,16 +388,19 @@ final class AppViewModel {
     func markDayCompleted(dayIndex: Int) {
         guard var plan = currentPlan,
               let idx = plan.days.firstIndex(where: { $0.dayIndex == dayIndex }) else { return }
+        let alreadyCompleted = plan.days[idx].isCompleted
         plan.days[idx].isCompleted = true
         lastWorkoutTag = plan.days[idx].templateTag
         currentPlan = plan
 
-        completedRecords.insert(
-            CompletedWorkoutRecord(
-                title: plan.days[idx].title,
-                exerciseCount: plan.days[idx].exercises.count
-            ), at: 0
-        )
+        if !alreadyCompleted {
+            completedRecords.insert(
+                CompletedWorkoutRecord(
+                    title: plan.days[idx].title,
+                    exerciseCount: plan.days[idx].exercises.count
+                ), at: 0
+            )
+        }
         persistAll()
     }
 

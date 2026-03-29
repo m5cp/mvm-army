@@ -756,13 +756,12 @@ struct ActiveSessionView: View {
 
             VStack(spacing: 12) {
                 Button {
-                    vm.markDayCompleted(dayIndex: dayIndex)
                     dismiss()
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.subheadline.weight(.bold))
-                        Text("Save & Done")
+                        Text("Done")
                             .font(.headline.weight(.bold))
                     }
                     .foregroundStyle(.white)
@@ -864,6 +863,7 @@ struct ActiveSessionView: View {
 
     private func finishSession() {
         syncExercises()
+        vm.markDayCompleted(dayIndex: dayIndex)
         withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
             showCompletion = true
         }
