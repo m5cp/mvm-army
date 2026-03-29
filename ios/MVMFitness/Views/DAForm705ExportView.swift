@@ -54,14 +54,14 @@ struct DAForm705ExportView: View {
     private var headerCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Image(systemName: "doc.text.fill")
+                Image(systemName: "doc.richtext.fill")
                     .foregroundStyle(MVMTheme.accent)
-                Text("Export DA Form 705-TEST")
+                Text("Export Official DA Form 705")
                     .font(.headline)
                     .foregroundStyle(MVMTheme.primaryText)
             }
 
-            Text("Review and add optional details before exporting. Pre-filled fields come from your saved AFT result.")
+            Text("Fills the official DA Form 705 PDF with your AFT data. Review and add optional details before exporting.")
                 .font(.subheadline)
                 .foregroundStyle(MVMTheme.secondaryText)
         }
@@ -269,7 +269,7 @@ struct DAForm705ExportView: View {
                 } else {
                     Image(systemName: "square.and.arrow.up")
                 }
-                Text(isGenerating ? "Generating..." : "Export DA Form 705")
+                Text(isGenerating ? "Generating..." : "Export Official DA Form 705")
             }
             .font(.headline)
             .foregroundStyle(.white)
@@ -346,11 +346,13 @@ struct DAForm705ExportView: View {
     private func generateAndShare() {
         isGenerating = true
         Task {
-            let pdfData = DAForm705PDFService.generatePDF(from: exportData)
-            if let url = DAForm705PDFService.savePDFToTemp(data: pdfData, soldierName: exportData.soldierName) {
-                pdfURL = url
-                showShareSheet = true
+            guard let pdfData = DAForm705PDFService.generatePDF(from: exportData),
+                  let url = DAForm705PDFService.savePDFToTemp(data: pdfData, soldierName: exportData.soldierName) else {
+                isGenerating = false
+                return
             }
+            pdfURL = url
+            showShareSheet = true
             isGenerating = false
         }
     }
