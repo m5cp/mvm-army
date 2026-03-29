@@ -370,38 +370,15 @@ struct ShareCardView: View {
 enum ShareCardRenderer {
     @MainActor
     static func renderImage(cardType: ShareCardType, date: Date = .now) -> UIImage? {
-        let view = ShareCardView(cardType: cardType, date: date)
+        let cardView = ShareCardView(cardType: cardType, date: date)
             .environment(\.colorScheme, .dark)
 
-        let controller = UIHostingController(rootView: view)
-        controller.view.backgroundColor = .clear
+        let renderer = ImageRenderer(content: cardView)
+        renderer.scale = 3.0
+        renderer.proposedSize = .init(width: 360, height: nil)
 
-        let fittingSize = controller.sizeThatFits(in: CGSize(width: 360, height: UIView.layoutFittingExpandedSize.height))
-        let size = CGSize(
-            width: max(fittingSize.width, 360),
-            height: max(fittingSize.height, 200)
-        )
-        controller.view.bounds = CGRect(origin: .zero, size: size)
-        controller.view.frame = CGRect(origin: .zero, size: size)
-
-        let window = UIWindow(frame: CGRect(origin: .zero, size: size))
-        window.rootViewController = controller
-        window.isHidden = false
-        window.layoutIfNeeded()
-
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 3.0
-        format.opaque = false
-
-        let renderer = UIGraphicsImageRenderer(size: size, format: format)
-        let image = renderer.image { _ in
-            controller.view.drawHierarchy(in: CGRect(origin: .zero, size: size), afterScreenUpdates: true)
-        }
-
-        window.isHidden = true
-        window.rootViewController = nil
-
-        return image
+        guard let cgImage = renderer.cgImage else { return nil }
+        return UIImage(cgImage: cgImage)
     }
 
     static func shareItems(cardType: ShareCardType, date: Date = .now) -> [Any] {
