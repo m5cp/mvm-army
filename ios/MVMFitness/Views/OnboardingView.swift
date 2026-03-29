@@ -18,47 +18,43 @@ struct OnboardingView: View {
     private let totalSteps = 6
 
     var body: some View {
-        GeometryReader { geo in
-            let isWide = geo.size.width > 600
-            let contentWidth = isWide ? min(geo.size.width * 0.55, 520.0) : geo.size.width - 48
+        ZStack {
+            MVMTheme.background.ignoresSafeArea()
+            backgroundAmbience
 
-            ZStack {
-                MVMTheme.background.ignoresSafeArea()
-                backgroundAmbience
-
-                VStack(spacing: 0) {
-                    if step > 0 && step < totalSteps - 1 {
-                        progressIndicator
-                            .frame(maxWidth: contentWidth)
-                            .padding(.top, 16)
-                            .padding(.bottom, 8)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    Group {
-                        switch step {
-                        case 0: welcomeStep(contentWidth: contentWidth)
-                        case 1: ptModeStep(contentWidth: contentWidth)
-                        case 2: focusStep(contentWidth: contentWidth)
-                        case 3: scheduleStep(contentWidth: contentWidth)
-                        case 4: equipmentStep(contentWidth: contentWidth)
-                        case 5: disclaimerStep(contentWidth: contentWidth)
-                        default: EmptyView()
-                        }
-                    }
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)
-                    ))
-
-                    Spacer(minLength: 0)
-
-                    bottomControls(contentWidth: contentWidth)
-                        .padding(.bottom, 16)
+            VStack(spacing: 0) {
+                if step > 0 && step < totalSteps - 1 {
+                    progressIndicator
+                        .padding(.top, 16)
+                        .padding(.bottom, 8)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                Spacer(minLength: 0)
+
+                Group {
+                    switch step {
+                    case 0: welcomeStep
+                    case 1: ptModeStep
+                    case 2: focusStep
+                    case 3: scheduleStep
+                    case 4: equipmentStep
+                    case 5: disclaimerStep
+                    default: EmptyView()
+                    }
+                }
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                ))
+
+                Spacer(minLength: 0)
+
+                bottomControls
+                    .padding(.bottom, 16)
             }
+            .padding(.horizontal, 24)
+            .frame(maxWidth: 500)
+            .frame(maxWidth: .infinity)
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.88), value: step)
     }
@@ -77,7 +73,7 @@ struct OnboardingView: View {
 
     // MARK: - Welcome
 
-    private func welcomeStep(contentWidth: CGFloat) -> some View {
+    private var welcomeStep: some View {
         VStack(spacing: 28) {
             ZStack {
                 Circle()
@@ -107,13 +103,13 @@ struct OnboardingView: View {
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
         }
-        .frame(maxWidth: contentWidth)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - PT Mode
 
-    private func ptModeStep(contentWidth: CGFloat) -> some View {
-        glassCard(contentWidth: contentWidth) {
+    private var ptModeStep: some View {
+        glassCard {
             VStack(spacing: 20) {
                 stepHeader(icon: "figure.strengthtraining.traditional", title: "How will you train?", subtitle: "Choose your PT mode")
 
@@ -151,8 +147,8 @@ struct OnboardingView: View {
 
     // MARK: - Focus
 
-    private func focusStep(contentWidth: CGFloat) -> some View {
-        glassCard(contentWidth: contentWidth) {
+    private var focusStep: some View {
+        glassCard {
             VStack(spacing: 20) {
                 stepHeader(icon: "target", title: "What's your focus?", subtitle: "We'll build your plan around this")
 
@@ -173,8 +169,8 @@ struct OnboardingView: View {
 
     // MARK: - Schedule
 
-    private func scheduleStep(contentWidth: CGFloat) -> some View {
-        glassCard(contentWidth: contentWidth) {
+    private var scheduleStep: some View {
+        glassCard {
             VStack(spacing: 24) {
                 stepHeader(icon: "calendar", title: "Set your schedule", subtitle: "Days per week and session length")
 
@@ -247,8 +243,8 @@ struct OnboardingView: View {
 
     // MARK: - Equipment
 
-    private func equipmentStep(contentWidth: CGFloat) -> some View {
-        glassCard(contentWidth: contentWidth) {
+    private var equipmentStep: some View {
+        glassCard {
             VStack(spacing: 20) {
                 stepHeader(icon: "dumbbell.fill", title: "Available equipment?", subtitle: "Pick what you have access to")
 
@@ -269,8 +265,8 @@ struct OnboardingView: View {
 
     // MARK: - Disclaimer
 
-    private func disclaimerStep(contentWidth: CGFloat) -> some View {
-        glassCard(contentWidth: contentWidth) {
+    private var disclaimerStep: some View {
+        glassCard {
             VStack(spacing: 20) {
                 ZStack {
                     Circle()
@@ -322,7 +318,7 @@ struct OnboardingView: View {
 
     // MARK: - Bottom Controls
 
-    private func bottomControls(contentWidth: CGFloat) -> some View {
+    private var bottomControls: some View {
         VStack(spacing: 10) {
             Button {
                 Task {
@@ -378,7 +374,6 @@ struct OnboardingView: View {
                 .buttonStyle(.plain)
             }
         }
-        .frame(maxWidth: contentWidth)
     }
 
     private var primaryButtonTitle: String {
@@ -391,32 +386,31 @@ struct OnboardingView: View {
 
     // MARK: - Glass Card Container
 
-    private func glassCard<Content: View>(contentWidth: CGFloat, @ViewBuilder content: () -> Content) -> some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            content()
-                .padding(20)
-        }
-        .frame(maxWidth: contentWidth)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color.white.opacity(0.05))
-                .background(
-                    RoundedRectangle(cornerRadius: 24)
-                        .fill(.ultraThinMaterial.opacity(0.3))
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.15), Color.white.opacity(0.05)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                }
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 24))
+    private func glassCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background {
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.ultraThinMaterial)
+                    .opacity(0.5)
+            }
+            .background {
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(Color.white.opacity(0.05))
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .overlay {
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.15), Color.white.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
     }
 
     // MARK: - Step Header
