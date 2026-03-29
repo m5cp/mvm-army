@@ -6,6 +6,7 @@ struct AFTShareSheet: View {
     let previous: AFTScoreRecord?
     @Environment(\.dismiss) private var dismiss
     @State private var renderedImage: UIImage?
+    @State private var showSavedToast: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -29,6 +30,31 @@ struct AFTShareSheet: View {
 
                         Button {
                             if let image = renderedImage {
+                                UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                                showSavedToast = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    showSavedToast = false
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "photo.on.rectangle.angled")
+                                Text("Save to Photos")
+                            }
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(height: 56)
+                            .frame(maxWidth: .infinity)
+                            .background(MVMTheme.heroGradient)
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                            .shadow(color: MVMTheme.accent.opacity(0.28), radius: 18, y: 10)
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
+                        .padding(.horizontal, 20)
+                        .disabled(renderedImage == nil)
+
+                        Button {
+                            if let image = renderedImage {
                                 let text = "MVM Army — AFT Score: \(score.totalScore)/500\n#MVMArmy #ArmyFitness"
                                 let activityVC = UIActivityViewController(activityItems: [image, text], applicationActivities: nil)
                                 guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
@@ -47,15 +73,14 @@ struct AFTShareSheet: View {
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "square.and.arrow.up")
-                                Text("Share to Social")
+                                Text("Share")
                             }
                             .font(.headline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(MVMTheme.accent)
                             .frame(height: 56)
                             .frame(maxWidth: .infinity)
-                            .background(MVMTheme.heroGradient)
+                            .background(MVMTheme.accent.opacity(0.12))
                             .clipShape(RoundedRectangle(cornerRadius: 18))
-                            .shadow(color: MVMTheme.accent.opacity(0.28), radius: 18, y: 10)
                         }
                         .buttonStyle(PressScaleButtonStyle())
                         .padding(.horizontal, 20)
@@ -72,6 +97,27 @@ struct AFTShareSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                         .foregroundStyle(MVMTheme.accent)
+                }
+            }
+            .overlay {
+                if showSavedToast {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(MVMTheme.success)
+                            Text("Saved to Photos")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Capsule())
+                        .padding(.bottom, 40)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showSavedToast)
                 }
             }
             .task {

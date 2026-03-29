@@ -58,6 +58,12 @@ enum ShareCardRenderer {
         presenter.present(activityVC, animated: true)
     }
 
+    static func saveToPhotos(cardType: ShareCardType, date: Date = .now) -> Bool {
+        guard let image = renderImage(cardType: cardType, date: date) else { return false }
+        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+        return true
+    }
+
     static func fallbackText(cardType: ShareCardType) -> String {
         switch cardType {
         case .workout(let title, let exercises, _):

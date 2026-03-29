@@ -11,6 +11,7 @@ struct WorkoutCompletionShareSheet: View {
     @State private var checkScale: CGFloat = 0
     @State private var ringScale: CGFloat = 0.6
     @State private var contentOpacity: Double = 0
+    @State private var showSavedToast: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -37,6 +38,31 @@ struct WorkoutCompletionShareSheet: View {
                     VStack(spacing: 12) {
                         Button {
                             if let image = renderedImage {
+                                UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                                showSavedToast = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    showSavedToast = false
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "photo.on.rectangle.angled")
+                                    .font(.subheadline.weight(.bold))
+                                Text("Save to Photos")
+                                    .font(.headline.weight(.bold))
+                            }
+                            .foregroundStyle(.white)
+                            .frame(height: 56)
+                            .frame(maxWidth: .infinity)
+                            .background(MVMTheme.heroGradient)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: MVMTheme.accent.opacity(0.3), radius: 16, y: 8)
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
+                        .disabled(renderedImage == nil)
+
+                        Button {
+                            if let image = renderedImage {
                                 let text = "MVM Army — Completed: \(title)\n\(exerciseCount) exercises\n#MVMArmy"
                                 let activityVC = UIActivityViewController(activityItems: [image, text], applicationActivities: nil)
                                 guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
@@ -56,15 +82,14 @@ struct WorkoutCompletionShareSheet: View {
                             HStack(spacing: 10) {
                                 Image(systemName: "square.and.arrow.up")
                                     .font(.subheadline.weight(.bold))
-                                Text("Share to Social")
+                                Text("Share")
                                     .font(.headline.weight(.bold))
                             }
-                            .foregroundStyle(.white)
+                            .foregroundStyle(MVMTheme.accent)
                             .frame(height: 56)
                             .frame(maxWidth: .infinity)
-                            .background(MVMTheme.heroGradient)
+                            .background(MVMTheme.accent.opacity(0.12))
                             .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .shadow(color: MVMTheme.accent.opacity(0.3), radius: 16, y: 8)
                         }
                         .buttonStyle(PressScaleButtonStyle())
                         .disabled(renderedImage == nil)
@@ -107,6 +132,27 @@ struct WorkoutCompletionShareSheet: View {
                 }
                 withAnimation(.easeOut(duration: 0.4).delay(0.25)) {
                     contentOpacity = 1.0
+                }
+            }
+            .overlay {
+                if showSavedToast {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(MVMTheme.success)
+                            Text("Saved to Photos")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Capsule())
+                        .padding(.bottom, 120)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showSavedToast)
                 }
             }
             .task {

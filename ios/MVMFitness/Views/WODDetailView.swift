@@ -11,6 +11,7 @@ struct WODDetailView: View {
     @State private var completeTrigger: Bool = false
     @State private var generateTrigger: Bool = false
     @State private var showQRSheet: Bool = false
+    @State private var showShareSheet: Bool = false
 
     let initialTemplate: WODTemplate?
 
@@ -44,6 +45,11 @@ struct WODDetailView: View {
             .sheet(isPresented: $showQRSheet) {
                 if let workout {
                     WorkoutQRSheet(workout: workout, workoutType: "WOD")
+                }
+            }
+            .sheet(isPresented: $showShareSheet) {
+                if let template = wodTemplate {
+                    WODShareSheet(template: template)
                 }
             }
         }
@@ -388,9 +394,7 @@ struct WODDetailView: View {
                 .buttonStyle(PressScaleButtonStyle())
 
                 Button {
-                    ShareCardRenderer.presentShareSheet(
-                        cardType: .workout(title: workout.title, exercises: workout.exercises, tags: [])
-                    )
+                    showShareSheet = true
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                         .font(.caption.weight(.bold))
