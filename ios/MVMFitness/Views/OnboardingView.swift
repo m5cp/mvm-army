@@ -18,80 +18,93 @@ struct OnboardingView: View {
     private let totalSteps = 6
 
     var body: some View {
-        ZStack {
-            MVMTheme.background.ignoresSafeArea()
-            backgroundAmbience
+        GeometryReader { geo in
+            ZStack {
+                MVMTheme.background.ignoresSafeArea()
+                backgroundGlow
 
-            VStack(spacing: 0) {
-                if step > 0 && step < totalSteps - 1 {
-                    progressIndicator
-                        .padding(.top, 16)
-                        .padding(.bottom, 8)
-                }
-
-                Spacer(minLength: 0)
-
-                Group {
-                    switch step {
-                    case 0: welcomeStep
-                    case 1: ptModeStep
-                    case 2: focusStep
-                    case 3: scheduleStep
-                    case 4: equipmentStep
-                    case 5: disclaimerStep
-                    default: EmptyView()
+                VStack(spacing: 0) {
+                    if step > 0 && step < totalSteps - 1 {
+                        progressBar
+                            .padding(.top, 12)
+                            .padding(.horizontal, 32)
                     }
+
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 0) {
+                            Spacer(minLength: 20)
+
+                            stepContent
+                                .padding(.horizontal, 24)
+                                .frame(maxWidth: min(geo.size.width - 48, 420))
+
+                            Spacer(minLength: 20)
+                        }
+                        .frame(minHeight: geo.size.height - 180)
+                    }
+
+                    buttons
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, geo.safeAreaInsets.bottom > 0 ? 8 : 16)
+                        .frame(maxWidth: min(geo.size.width - 48, 420))
                 }
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
-                ))
-
-                Spacer(minLength: 0)
-
-                bottomControls
-                    .padding(.bottom, 16)
+                .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 24)
-            .frame(maxWidth: 500)
-            .frame(maxWidth: .infinity)
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.88), value: step)
+        .animation(.easeInOut(duration: 0.3), value: step)
     }
 
-    // MARK: - Progress
+    // MARK: - Progress Bar
 
-    private var progressIndicator: some View {
+    private var progressBar: some View {
         HStack(spacing: 6) {
             ForEach(1..<totalSteps - 1, id: \.self) { i in
                 Capsule()
-                    .fill(i <= step ? MVMTheme.accent : MVMTheme.cardSoft)
+                    .fill(i <= step ? MVMTheme.accent : Color.white.opacity(0.1))
                     .frame(height: 4)
             }
         }
     }
 
-    // MARK: - Welcome
+    // MARK: - Step Content Router
 
-    private var welcomeStep: some View {
-        VStack(spacing: 28) {
+    @ViewBuilder
+    private var stepContent: some View {
+        switch step {
+        case 0: welcomeContent
+        case 1: ptModeContent
+        case 2: focusContent
+        case 3: scheduleContent
+        case 4: equipmentContent
+        case 5: disclaimerContent
+        default: EmptyView()
+        }
+    }
+
+    // MARK: - Step 0: Welcome
+
+    private var welcomeContent: some View {
+        VStack(spacing: 24) {
+            Spacer(minLength: 40)
+
             ZStack {
                 Circle()
                     .fill(MVMTheme.accent.opacity(0.08))
-                    .frame(width: 110, height: 110)
+                    .frame(width: 100, height: 100)
                 Circle()
                     .fill(MVMTheme.accent.opacity(0.15))
-                    .frame(width: 80, height: 80)
+                    .frame(width: 70, height: 70)
                 Image(systemName: "shield.fill")
-                    .font(.system(size: 36, weight: .bold))
+                    .font(.system(size: 32, weight: .bold))
                     .foregroundStyle(MVMTheme.heroGradient)
             }
 
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
                 Text("MVM ARMY")
-                    .font(.system(size: 32, weight: .heavy))
-                    .tracking(2.0)
-                    .foregroundStyle(MVMTheme.primaryText)
+                    .font(.system(size: 28, weight: .heavy))
+                    .tracking(2)
+                    .foregroundStyle(.white)
+
                 Text("Me vs Me")
                     .font(.title3.weight(.medium))
                     .foregroundStyle(MVMTheme.accent)
@@ -102,136 +115,165 @@ struct OnboardingView: View {
                 .foregroundStyle(MVMTheme.secondaryText)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
+
+            Spacer(minLength: 40)
         }
-        .frame(maxWidth: .infinity)
     }
 
-    // MARK: - PT Mode
+    // MARK: - Step 1: PT Mode
 
-    private var ptModeStep: some View {
-        glassCard {
+    private var ptModeContent: some View {
+        cardWrapper(icon: "figure.strengthtraining.traditional", title: "How will you train?", subtitle: "Choose your PT mode") {
+            VStack(spacing: 10) {
+                modeRow("Individual PT", icon: "person.fill", sub: "Personal training sessions", value: PTMode.individual.rawValue)
+                modeRow("Unit PT", icon: "person.3.fill", sub: "Lead formation PT", value: PTMode.unit.rawValue)
+                modeRow("Both", icon: "person.2.fill", sub: "Individual + Unit PT", value: PTMode.both.rawValue)
+            }
+        }
+    }
+
+    private func modeRow(_ title: String, icon: String, sub: String, value: String) -> some View {
+        let selected = ptModeRaw == value
+        return Button {
+            ptModeRaw = value
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(selected ? .white : MVMTheme.accent)
+                    .frame(width: 36, height: 36)
+                    .background(selected ? MVMTheme.accent : MVMTheme.accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    Text(sub)
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.secondaryText)
+                }
+
+                Spacer(minLength: 0)
+
+                if selected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(MVMTheme.accent)
+                }
+            }
+            .padding(12)
+            .background(selected ? MVMTheme.accent.opacity(0.1) : Color.white.opacity(0.03))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(selected ? MVMTheme.accent.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Step 2: Focus
+
+    private var focusContent: some View {
+        cardWrapper(icon: "target", title: "What's your focus?", subtitle: "We'll build your plan around this") {
+            VStack(spacing: 10) {
+                ForEach(TrainingFocus.allCases) { focus in
+                    let selected = trainingFocusRaw == focus.rawValue
+                    Button {
+                        trainingFocusRaw = focus.rawValue
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: focus.icon)
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(selected ? .white : MVMTheme.accent)
+                                .frame(width: 36, height: 36)
+                                .background(selected ? MVMTheme.accent : MVMTheme.accent.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                            Text(focus.rawValue)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+
+                            Spacer(minLength: 0)
+
+                            if selected {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(MVMTheme.accent)
+                            }
+                        }
+                        .padding(12)
+                        .background(selected ? MVMTheme.accent.opacity(0.1) : Color.white.opacity(0.03))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(selected ? MVMTheme.accent.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    // MARK: - Step 3: Schedule
+
+    private var scheduleContent: some View {
+        cardWrapper(icon: "calendar", title: "Set your schedule", subtitle: "Days per week and session length") {
             VStack(spacing: 20) {
-                stepHeader(icon: "figure.strengthtraining.traditional", title: "How will you train?", subtitle: "Choose your PT mode")
-
                 VStack(spacing: 10) {
-                    ForEach(PTMode.allCases) { mode in
-                        onboardingOption(
-                            title: mode.rawValue,
-                            icon: modeIcon(mode),
-                            subtitle: modeSubtitle(mode),
-                            isSelected: ptModeRaw == mode.rawValue
-                        ) {
-                            ptModeRaw = mode.rawValue
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func modeIcon(_ mode: PTMode) -> String {
-        switch mode {
-        case .individual: return "person.fill"
-        case .unit: return "person.3.fill"
-        case .both: return "person.2.fill"
-        }
-    }
-
-    private func modeSubtitle(_ mode: PTMode) -> String {
-        switch mode {
-        case .individual: return "Personal training sessions"
-        case .unit: return "Lead formation PT"
-        case .both: return "Individual + Unit PT"
-        }
-    }
-
-    // MARK: - Focus
-
-    private var focusStep: some View {
-        glassCard {
-            VStack(spacing: 20) {
-                stepHeader(icon: "target", title: "What's your focus?", subtitle: "We'll build your plan around this")
-
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                    ForEach(TrainingFocus.allCases) { focus in
-                        onboardingChip(
-                            title: focus.rawValue,
-                            icon: focus.icon,
-                            isSelected: trainingFocusRaw == focus.rawValue
-                        ) {
-                            trainingFocusRaw = focus.rawValue
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Schedule
-
-    private var scheduleStep: some View {
-        glassCard {
-            VStack(spacing: 24) {
-                stepHeader(icon: "calendar", title: "Set your schedule", subtitle: "Days per week and session length")
-
-                VStack(spacing: 12) {
                     HStack {
                         Text("Days per week")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(MVMTheme.primaryText)
+                            .foregroundStyle(.white)
                         Spacer()
                         Text("\(daysPerWeek)")
-                            .font(.title3.weight(.bold))
+                            .font(.headline.weight(.bold))
                             .foregroundStyle(MVMTheme.accent)
                             .contentTransition(.numericText())
                     }
 
-                    HStack(spacing: 8) {
-                        ForEach(2...6, id: \.self) { d in
+                    HStack(spacing: 6) {
+                        ForEach([2, 3, 4, 5, 6], id: \.self) { d in
                             Button {
-                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                                    daysPerWeek = d
-                                }
+                                withAnimation(.spring(response: 0.25)) { daysPerWeek = d }
                             } label: {
                                 Text("\(d)")
-                                    .font(.headline.weight(.bold))
+                                    .font(.subheadline.weight(.bold))
                                     .foregroundStyle(daysPerWeek == d ? .white : MVMTheme.secondaryText)
                                     .frame(maxWidth: .infinity)
-                                    .frame(height: 48)
+                                    .frame(height: 44)
                                     .background(daysPerWeek == d ? MVMTheme.accent : Color.white.opacity(0.06))
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
                             }
                             .buttonStyle(.plain)
                         }
                     }
                 }
 
-                VStack(spacing: 12) {
+                VStack(spacing: 10) {
                     HStack {
                         Text("Session length")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(MVMTheme.primaryText)
+                            .foregroundStyle(.white)
                         Spacer()
                         Text("\(minutesPerWorkout) min")
-                            .font(.title3.weight(.bold))
+                            .font(.headline.weight(.bold))
                             .foregroundStyle(MVMTheme.accent)
                             .contentTransition(.numericText())
                     }
 
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         ForEach([20, 30, 45, 60], id: \.self) { m in
                             Button {
-                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                                    minutesPerWorkout = m
-                                }
+                                withAnimation(.spring(response: 0.25)) { minutesPerWorkout = m }
                             } label: {
                                 Text("\(m)")
-                                    .font(.headline.weight(.bold))
+                                    .font(.subheadline.weight(.bold))
                                     .foregroundStyle(minutesPerWorkout == m ? .white : MVMTheme.secondaryText)
                                     .frame(maxWidth: .infinity)
-                                    .frame(height: 48)
+                                    .frame(height: 44)
                                     .background(minutesPerWorkout == m ? MVMTheme.accent : Color.white.opacity(0.06))
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
                             }
                             .buttonStyle(.plain)
                         }
@@ -241,111 +283,145 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Equipment
+    // MARK: - Step 4: Equipment
 
-    private var equipmentStep: some View {
-        glassCard {
-            VStack(spacing: 20) {
-                stepHeader(icon: "dumbbell.fill", title: "Available equipment?", subtitle: "Pick what you have access to")
+    private var equipmentContent: some View {
+        cardWrapper(icon: "dumbbell.fill", title: "Available equipment?", subtitle: "Pick what you have access to") {
+            VStack(spacing: 10) {
+                ForEach(EquipmentOption.allCases) { equip in
+                    let selected = equipmentRaw == equip.rawValue
+                    Button {
+                        equipmentRaw = equip.rawValue
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: equip.icon)
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(selected ? .white : MVMTheme.accent)
+                                .frame(width: 36, height: 36)
+                                .background(selected ? MVMTheme.accent : MVMTheme.accent.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                    ForEach(EquipmentOption.allCases) { equip in
-                        onboardingChip(
-                            title: equip.rawValue,
-                            icon: equip.icon,
-                            isSelected: equipmentRaw == equip.rawValue
-                        ) {
-                            equipmentRaw = equip.rawValue
+                            Text(equip.rawValue)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+
+                            Spacer(minLength: 0)
+
+                            if selected {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(MVMTheme.accent)
+                            }
                         }
+                        .padding(12)
+                        .background(selected ? MVMTheme.accent.opacity(0.1) : Color.white.opacity(0.03))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(selected ? MVMTheme.accent.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
+                        )
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
     }
 
-    // MARK: - Disclaimer
+    // MARK: - Step 5: Disclaimer
 
-    private var disclaimerStep: some View {
-        glassCard {
-            VStack(spacing: 20) {
-                ZStack {
-                    Circle()
-                        .fill(MVMTheme.warning.opacity(0.1))
-                        .frame(width: 72, height: 72)
-                    Image(systemName: "exclamationmark.shield.fill")
-                        .font(.system(size: 28))
-                        .foregroundStyle(MVMTheme.warning)
-                }
-
-                VStack(spacing: 8) {
-                    Text("Before you begin")
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(MVMTheme.primaryText)
-
-                    Text("MVM Army provides example workout structures for planning, organization, and accountability. It does not provide medical advice or prescribe exercise.")
-                        .font(.subheadline)
-                        .foregroundStyle(MVMTheme.secondaryText)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+    private var disclaimerContent: some View {
+        cardWrapper(icon: "exclamationmark.shield.fill", title: "Before you begin", subtitle: "Please read carefully", iconColor: MVMTheme.warning) {
+            VStack(spacing: 14) {
+                Text("MVM Army provides workout structures for planning and accountability. It does not provide medical advice or prescribe exercise.")
+                    .font(.subheadline)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(2)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    disclaimerBullet(icon: "heart.text.square", text: "Consult a physician before starting any exercise program")
-                    disclaimerBullet(icon: "shield.lefthalf.filled", text: "Workouts are based on Army fitness structures and templates")
-                    disclaimerBullet(icon: "person.fill.questionmark", text: "You are responsible for your own fitness decisions")
+                    bulletPoint(icon: "heart.text.square", text: "Consult a physician before starting any exercise program")
+                    bulletPoint(icon: "shield.lefthalf.filled", text: "Workouts are based on Army fitness templates")
+                    bulletPoint(icon: "person.fill.questionmark", text: "You are responsible for your own fitness decisions")
                 }
-                .padding(14)
+                .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.white.opacity(0.04))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }
     }
 
-    private func disclaimerBullet(icon: String, text: String) -> some View {
+    private func bulletPoint(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.subheadline.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(MVMTheme.warning)
-                .frame(width: 22)
+                .frame(width: 18)
             Text(text)
-                .font(.subheadline)
+                .font(.caption)
                 .foregroundStyle(MVMTheme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    // MARK: - Bottom Controls
+    // MARK: - Card Wrapper
 
-    private var bottomControls: some View {
-        VStack(spacing: 10) {
+    private func cardWrapper<Content: View>(
+        icon: String,
+        title: String,
+        subtitle: String,
+        iconColor: Color = MVMTheme.accent,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(spacing: 18) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(iconColor)
+
+                Text(title)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+            }
+
+            content()
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.12), Color.white.opacity(0.04)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    // MARK: - Buttons
+
+    private var buttons: some View {
+        VStack(spacing: 8) {
             Button {
-                Task {
-                    if step < totalSteps - 1 {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.88)) {
-                            step += 1
-                        }
-                    } else {
-                        let comps = Calendar.current.dateComponents([.hour, .minute], from: reminderTime)
-                        reminderHour = comps.hour ?? 6
-                        reminderMinute = comps.minute ?? 0
-
-                        if dailyReminderEnabled {
-                            let granted = await NotificationManager.requestPermission()
-                            if granted {
-                                await NotificationManager.scheduleDailyReminder(at: reminderTime)
-                            }
-                        }
-
-                        onboardingComplete = true
-                    }
-                }
+                handleNext()
             } label: {
-                Text(primaryButtonTitle)
+                Text(step == 0 ? "Get Started" : step == totalSteps - 1 ? "I Understand — Begin" : "Continue")
                     .font(.headline.weight(.bold))
                     .foregroundStyle(step == 0 ? Color(hex: "#0A0A0F") : .white)
-                    .frame(height: 54)
+                    .frame(height: 52)
                     .frame(maxWidth: .infinity)
                     .background {
                         if step == 0 {
@@ -354,21 +430,18 @@ struct OnboardingView: View {
                             MVMTheme.heroGradient
                         }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: (step == 0 ? Color.white : MVMTheme.accent).opacity(0.15), radius: 12, y: 6)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
             }
             .buttonStyle(PressScaleButtonStyle())
 
             if step > 0 {
                 Button {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.88)) {
-                        step -= 1
-                    }
+                    withAnimation(.easeInOut(duration: 0.3)) { step -= 1 }
                 } label: {
                     Text("Back")
-                        .font(.subheadline.weight(.semibold))
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(MVMTheme.secondaryText)
-                        .frame(height: 44)
+                        .frame(height: 40)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.plain)
@@ -376,179 +449,40 @@ struct OnboardingView: View {
         }
     }
 
-    private var primaryButtonTitle: String {
-        switch step {
-        case 0: return "Get Started"
-        case totalSteps - 1: return "I Understand — Begin"
-        default: return "Continue"
-        }
-    }
+    private func handleNext() {
+        if step < totalSteps - 1 {
+            withAnimation(.easeInOut(duration: 0.3)) { step += 1 }
+        } else {
+            Task {
+                let comps = Calendar.current.dateComponents([.hour, .minute], from: reminderTime)
+                reminderHour = comps.hour ?? 6
+                reminderMinute = comps.minute ?? 0
 
-    // MARK: - Glass Card Container
-
-    private func glassCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .padding(20)
-            .frame(maxWidth: .infinity)
-            .background {
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(.ultraThinMaterial)
-                    .opacity(0.5)
-            }
-            .background {
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color.white.opacity(0.05))
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 24))
-            .overlay {
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.15), Color.white.opacity(0.05)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
-                    )
-            }
-    }
-
-    // MARK: - Step Header
-
-    private func stepHeader(icon: String, title: String, subtitle: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(MVMTheme.accent)
-
-            Text(title)
-                .font(.title2.weight(.bold))
-                .foregroundStyle(MVMTheme.primaryText)
-                .multilineTextAlignment(.center)
-
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(MVMTheme.secondaryText)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Reusable Components
-
-    private func onboardingOption(
-        title: String,
-        icon: String,
-        subtitle: String,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                action()
-            }
-        } label: {
-            HStack(spacing: 14) {
-                Image(systemName: icon)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(isSelected ? .white : MVMTheme.accent)
-                    .frame(width: 40, height: 40)
-                    .background(isSelected ? MVMTheme.accent : MVMTheme.accent.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.secondaryText)
+                if dailyReminderEnabled {
+                    let granted = await NotificationManager.requestPermission()
+                    if granted {
+                        await NotificationManager.scheduleDailyReminder(at: reminderTime)
+                    }
                 }
 
-                Spacer(minLength: 0)
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.body)
-                        .foregroundStyle(MVMTheme.accent)
-                }
-            }
-            .padding(14)
-            .background(isSelected ? MVMTheme.accent.opacity(0.08) : Color.white.opacity(0.03))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? MVMTheme.accent.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
+                onboardingComplete = true
             }
         }
-        .buttonStyle(.plain)
-    }
-
-    private func onboardingChip(
-        title: String,
-        icon: String,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                action()
-            }
-        } label: {
-            VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(isSelected ? .white : MVMTheme.accent)
-                    .frame(width: 40, height: 40)
-                    .background(isSelected ? MVMTheme.accent : MVMTheme.accent.opacity(0.12))
-                    .clipShape(Circle())
-
-                Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(MVMTheme.primaryText)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.75)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .padding(.horizontal, 6)
-            .background(isSelected ? MVMTheme.accent.opacity(0.08) : Color.white.opacity(0.03))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? MVMTheme.accent.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Background
 
-    private var backgroundAmbience: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [MVMTheme.accent.opacity(0.06), .clear],
-                        center: .center, startRadius: 0, endRadius: 300
-                    )
+    private var backgroundGlow: some View {
+        Circle()
+            .fill(
+                RadialGradient(
+                    colors: [MVMTheme.accent.opacity(0.06), .clear],
+                    center: .center, startRadius: 0, endRadius: 250
                 )
-                .frame(width: 600, height: 600)
-                .offset(y: -200)
-                .blur(radius: 80)
-
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [MVMTheme.accent2.opacity(0.04), .clear],
-                        center: .center, startRadius: 0, endRadius: 200
-                    )
-                )
-                .frame(width: 400, height: 400)
-                .offset(x: 100, y: 200)
-                .blur(radius: 60)
-        }
-        .ignoresSafeArea()
+            )
+            .frame(width: 500, height: 500)
+            .offset(y: -180)
+            .blur(radius: 60)
+            .ignoresSafeArea()
     }
 }
