@@ -9,6 +9,7 @@ final class AppViewModel {
     var pedometer = PedometerManager()
     var lastWorkoutTag: String = ""
     var unitPTPlans: [UnitPTPlan] = []
+    var scheduledUnitPT: [WorkoutDay] = []
     var importedWorkouts: [WorkoutDay] = []
     var aftScores: [AFTScoreRecord] = []
     var aftCalculatorResults: [AFTCalculatorResult] = []
@@ -25,6 +26,7 @@ final class AppViewModel {
         stepHistory = LocalStore.load([StepDay].self, forKey: "stepHistory", fallback: [])
         lastWorkoutTag = UserDefaults.standard.string(forKey: "lastWorkoutTag") ?? ""
         unitPTPlans = LocalStore.load([UnitPTPlan].self, forKey: "unitPTPlans", fallback: [])
+        scheduledUnitPT = LocalStore.load([WorkoutDay].self, forKey: "scheduledUnitPT", fallback: [])
         importedWorkouts = LocalStore.load([WorkoutDay].self, forKey: "importedWorkouts", fallback: [])
         aftScores = LocalStore.load([AFTScoreRecord].self, forKey: "aftScores", fallback: [])
         aftCalculatorResults = LocalStore.load([AFTCalculatorResult].self, forKey: "aftCalculatorResults", fallback: [])
@@ -36,6 +38,7 @@ final class AppViewModel {
         LocalStore.save(stepHistory, forKey: "stepHistory")
         UserDefaults.standard.set(lastWorkoutTag, forKey: "lastWorkoutTag")
         LocalStore.save(unitPTPlans, forKey: "unitPTPlans")
+        LocalStore.save(scheduledUnitPT, forKey: "scheduledUnitPT")
         LocalStore.save(importedWorkouts, forKey: "importedWorkouts")
         LocalStore.save(aftScores, forKey: "aftScores")
         LocalStore.save(aftCalculatorResults, forKey: "aftCalculatorResults")
@@ -163,6 +166,60 @@ final class AppViewModel {
         unitPTPlans.insert(plan, at: 0)
         persistAll()
         return plan
+    }
+
+    func addUnitPTToCalendar(_ unitPlan: UnitPTPlan, on date: Date, startTime: Date? = nil, endTime: Date? = nil) {
+        let exercises = unitPlan.mainEffort.enumerated().map { index, block in
+            WorkoutExercise(
+                name: "Block \(index + 1)",
+                sets: 1,
+                notes: block.description,
+                category: .timed
+            )
+        }
+
+        let unitDay = WorkoutDay(
+            dayIndex: 100 + scheduledUnitPT.count,
+            date: Calendar.current.startOfDay(for: date),
+            title: unitPlan.title,
+            exercises: exercises,
+            source: .unit,
+            startTime: startTime,
+            endTime: endTime
+        )
+
+        scheduledUnitPT.append(unitDay)
+        persistAll()
+    }
+
+    func removeUnitPTFromCalendar(id: UUID) {
+        scheduledUnitPT.removeAll { $0.id == id }
+        persistAll()
+    }
+
+    func allWorkoutsForDate(_ date: Date) -> [WorkoutDay] {
+        let calendar = Calendar.current
+        var results: [WorkoutDay] = []
+
+        if let plan = currentPlan {
+            results += plan.days.filter { calendar.isDate($0.date, inSameDayAs: date) }
+        }
+
+        results += scheduledUnitPT.filter { calendar.isDate($0.date, inSameDayAs: date) }
+
+        return results
+    }
+
+    func markUnitPTCompleted(id: UUID) {
+        guard let idx = scheduledUnitPT.firstIndex(where: { $0.id == id }) else { return }
+        scheduledUnitPT[idx].isCompleted = true
+        completedRecords.insert(
+            CompletedWorkoutRecord(
+                title: scheduledUnitPT[idx].title,
+                exerciseCount: scheduledUnitPT[idx].exercises.count
+            ), at: 0
+        )
+        persistAll()
     }
 
     // MARK: - AFT Scores
@@ -475,6 +532,7 @@ final class AppViewModel {
         stepHistory = []
         lastWorkoutTag = ""
         unitPTPlans = []
+        scheduledUnitPT = []
         importedWorkouts = []
         aftScores = []
         aftCalculatorResults = []

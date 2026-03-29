@@ -1,5 +1,15 @@
 import Foundation
 
+nonisolated enum WorkoutSource: String, Codable, CaseIterable, Identifiable, Sendable {
+    case individual = "Individual"
+    case unit = "Unit PT"
+    case wod = "WOD"
+    case random = "Random"
+    case imported = "Imported"
+
+    var id: String { rawValue }
+}
+
 nonisolated enum CardioType: String, Codable, CaseIterable, Identifiable, Sendable {
     case run = "Run"
     case bike = "Bike"
@@ -146,6 +156,9 @@ nonisolated struct WorkoutDay: Codable, Identifiable, Hashable, Sendable {
     var isRestDay: Bool
     var templateTag: String
     var tags: [String]
+    var source: WorkoutSource
+    var startTime: Date?
+    var endTime: Date?
 
     var completedExerciseCount: Int {
         exercises.filter(\.isCompleted).count
@@ -163,7 +176,10 @@ nonisolated struct WorkoutDay: Codable, Identifiable, Hashable, Sendable {
         isCompleted: Bool = false,
         isRestDay: Bool = false,
         templateTag: String = "",
-        tags: [String] = []
+        tags: [String] = [],
+        source: WorkoutSource = .individual,
+        startTime: Date? = nil,
+        endTime: Date? = nil
     ) {
         self.id = UUID()
         self.dayIndex = dayIndex
@@ -174,6 +190,9 @@ nonisolated struct WorkoutDay: Codable, Identifiable, Hashable, Sendable {
         self.isRestDay = isRestDay
         self.templateTag = templateTag
         self.tags = tags
+        self.source = source
+        self.startTime = startTime
+        self.endTime = endTime
     }
 
     init(from decoder: Decoder) throws {
@@ -187,6 +206,9 @@ nonisolated struct WorkoutDay: Codable, Identifiable, Hashable, Sendable {
         isRestDay = try container.decode(Bool.self, forKey: .isRestDay)
         templateTag = try container.decode(String.self, forKey: .templateTag)
         tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+        source = try container.decodeIfPresent(WorkoutSource.self, forKey: .source) ?? .individual
+        startTime = try container.decodeIfPresent(Date.self, forKey: .startTime)
+        endTime = try container.decodeIfPresent(Date.self, forKey: .endTime)
     }
 }
 

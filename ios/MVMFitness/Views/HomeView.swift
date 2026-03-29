@@ -277,6 +277,7 @@ struct HomeView: View {
                     let dayData = workoutDay(for: date)
                     let hasWorkout = dayData != nil && !(dayData?.isRestDay ?? true)
                     let isCompleted = dayData?.isCompleted ?? false
+                    let hasUnit = hasUnitPT(for: date)
 
                     Button {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -301,13 +302,20 @@ struct HomeView: View {
                                     MVMTheme.primaryText
                                 )
 
-                            Circle()
-                                .fill(
-                                    isCompleted ? MVMTheme.success :
-                                    hasWorkout ? MVMTheme.accent.opacity(0.6) :
-                                    Color.clear
-                                )
-                                .frame(width: 5, height: 5)
+                            HStack(spacing: 3) {
+                                Circle()
+                                    .fill(
+                                        isCompleted ? MVMTheme.success :
+                                        hasWorkout ? MVMTheme.accent.opacity(0.6) :
+                                        Color.clear
+                                    )
+                                    .frame(width: 5, height: 5)
+                                if hasUnit {
+                                    Circle()
+                                        .fill(Color(hex: "#2563EB").opacity(0.8))
+                                        .frame(width: 5, height: 5)
+                                }
+                            }
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -877,6 +885,10 @@ struct HomeView: View {
                     } else {
                         weekWorkoutRow(day)
                     }
+
+                    ForEach(unitPTForDate(day.date), id: \.id) { unitDay in
+                        unitPTRow(unitDay)
+                    }
                 }
             }
         }
@@ -1067,6 +1079,70 @@ struct HomeView: View {
     }
 
 
+    private func unitPTRow(_ day: WorkoutDay) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: "person.3.fill")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color(hex: "#2563EB"))
+                .frame(width: 36, height: 36)
+                .background(Color(hex: "#2563EB").opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(day.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(day.isCompleted ? MVMTheme.secondaryText : MVMTheme.primaryText)
+                    .lineLimit(1)
+
+                HStack(spacing: 6) {
+                    Text("Unit PT")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color(hex: "#2563EB"))
+
+                    if let start = day.startTime {
+                        Text(start.formatted(date: .omitted, time: .shortened))
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            if day.isCompleted {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.body)
+                    .foregroundStyle(MVMTheme.success)
+            } else {
+                Menu {
+                    Button {
+                        vm.markUnitPTCompleted(id: day.id)
+                    } label: {
+                        Label("Mark Complete", systemImage: "checkmark.circle")
+                    }
+                    Button(role: .destructive) {
+                        vm.removeUnitPTFromCalendar(id: day.id)
+                    } label: {
+                        Label("Remove", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .frame(width: 32, height: 32)
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(Color(hex: "#2563EB").opacity(0.04))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color(hex: "#2563EB").opacity(0.15))
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
     // MARK: - Calendar Export Sheet
 
     private var calendarExportSheet: some View {
@@ -1168,6 +1244,14 @@ struct HomeView: View {
 
     private func workoutDay(for date: Date) -> WorkoutDay? {
         vm.currentPlan?.days.first { calendar.isDate($0.date, inSameDayAs: date) }
+    }
+
+    private func unitPTForDate(_ date: Date) -> [WorkoutDay] {
+        vm.scheduledUnitPT.filter { calendar.isDate($0.date, inSameDayAs: date) }
+    }
+
+    private func hasUnitPT(for date: Date) -> Bool {
+        !unitPTForDate(date).isEmpty
     }
 
     private var monthYearString: String {

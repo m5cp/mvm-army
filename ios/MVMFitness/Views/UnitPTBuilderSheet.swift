@@ -6,7 +6,22 @@ struct UnitPTBuilderSheet: View {
     @Environment(AppViewModel.self) private var vm
 
     @State private var plan: UnitPTPlan?
-    @State private var showQRSheet = false
+    @State private var showQRSheet: Bool = false
+    @State private var showDatePicker: Bool = false
+    @State private var scheduledDate: Date = Calendar.current.startOfDay(for: .now)
+    @State private var scheduledStartTime: Date = {
+        var comps = Calendar.current.dateComponents([.year, .month, .day], from: .now)
+        comps.hour = 6
+        comps.minute = 30
+        return Calendar.current.date(from: comps) ?? .now
+    }()
+    @State private var scheduledEndTime: Date = {
+        var comps = Calendar.current.dateComponents([.year, .month, .day], from: .now)
+        comps.hour = 7
+        comps.minute = 30
+        return Calendar.current.date(from: comps) ?? .now
+    }()
+    @State private var addedToCalendar: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -21,6 +36,12 @@ struct UnitPTBuilderSheet: View {
 
                         if let plan {
                             unitPlanCard(plan)
+
+                            if !addedToCalendar {
+                                addToCalendarCard(plan)
+                            } else {
+                                addedConfirmation
+                            }
                         }
                     }
                     .padding(20)
@@ -145,6 +166,7 @@ struct UnitPTBuilderSheet: View {
             }
 
             Button {
+                addedToCalendar = false
                 self.plan = vm.generateUnitPT()
             } label: {
                 Text("Regenerate")
@@ -158,6 +180,91 @@ struct UnitPTBuilderSheet: View {
             .buttonStyle(PressScaleButtonStyle())
         }
         .padding(18)
+        .premiumCard()
+    }
+
+    private func addToCalendarCard(_ unitPlan: UnitPTPlan) -> some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "calendar.badge.plus")
+                    .foregroundStyle(Color(hex: "#2563EB"))
+                Text("Add to Your Calendar")
+                    .font(.headline)
+                    .foregroundStyle(MVMTheme.primaryText)
+            }
+
+            Text("Schedule this Unit PT so it appears alongside your individual plan.")
+                .font(.caption)
+                .foregroundStyle(MVMTheme.secondaryText)
+                .multilineTextAlignment(.center)
+
+            VStack(spacing: 10) {
+                DatePicker("Date", selection: $scheduledDate, displayedComponents: .date)
+                    .datePickerStyle(.compact)
+                    .foregroundStyle(MVMTheme.primaryText)
+                    .tint(MVMTheme.accent)
+
+                DatePicker("Start", selection: $scheduledStartTime, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.compact)
+                    .foregroundStyle(MVMTheme.primaryText)
+                    .tint(MVMTheme.accent)
+
+                DatePicker("End", selection: $scheduledEndTime, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.compact)
+                    .foregroundStyle(MVMTheme.primaryText)
+                    .tint(MVMTheme.accent)
+            }
+            .padding(12)
+            .background(MVMTheme.cardSoft)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            Button {
+                vm.addUnitPTToCalendar(
+                    unitPlan,
+                    on: scheduledDate,
+                    startTime: scheduledStartTime,
+                    endTime: scheduledEndTime
+                )
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    addedToCalendar = true
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Add to Calendar")
+                }
+                .font(.headline.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(height: 52)
+                .frame(maxWidth: .infinity)
+                .background(Color(hex: "#2563EB"))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+        }
+        .padding(18)
+        .premiumCard()
+    }
+
+    private var addedConfirmation: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title3)
+                .foregroundStyle(MVMTheme.success)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Added to Calendar")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Text("This Unit PT will show on your home calendar.")
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.secondaryText)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(16)
         .premiumCard()
     }
 

@@ -1,11 +1,15 @@
 import SwiftUI
 
 struct RootView: View {
+    @AppStorage("onboardingComplete") private var onboardingComplete: Bool = false
+    @Environment(AppViewModel.self) private var vm
+
     var body: some View {
-        MainTabView()
-            .background(MVMTheme.background.ignoresSafeArea())
-            .onAppear {
-                UserDefaults.standard.set(true, forKey: "onboardingComplete")
-            }
+        if onboardingComplete {
+            MainTabView()
+                .background(MVMTheme.background.ignoresSafeArea())
+        } else {
+            OnboardingView()
+        }
     }
 }
