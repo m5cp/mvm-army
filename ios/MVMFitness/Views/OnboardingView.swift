@@ -266,84 +266,61 @@ struct OnboardingView: View {
     // MARK: - Step 3: Disclaimer
 
     private var disclaimerStep: some View {
-        VStack(spacing: 24) {
-            sectionHeader(icon: "doc.text.fill", title: "Terms of Use")
+        VStack(spacing: 32) {
+            sectionHeader(icon: "shield.checkered", title: "Before You Begin")
 
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Accountability Tool", systemImage: "checkmark.shield.fill")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(MVMTheme.accent)
+            Text("MVM Army is a planning and accountability tool only. All exercises, WODs, AFT grading, and training plans are based on publicly available U.S. Army regulations. This app does not provide medical, fitness, or health advice.")
+                .font(.subheadline)
+                .foregroundStyle(MVMTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+                .padding(.horizontal, 8)
 
-                    Text("MVM Army is a physical fitness accountability tracker, training planner, and Army Fitness Test calculator. All workouts, training plans (WODs), and scoring calculations are based on publicly available, open-source U.S. Army physical fitness regulations and doctrine.")
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.secondaryText)
-                        .lineSpacing(3)
+            VStack(spacing: 12) {
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        hasAgreed = true
+                    }
+                    withAnimation { step += 1 }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "checkmark.shield.fill")
+                            .font(.body.weight(.semibold))
+                        Text("I Acknowledge — Full Access")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(height: 54)
+                    .frame(maxWidth: .infinity)
+                    .background(MVMTheme.heroGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
+                .buttonStyle(PressScaleButtonStyle())
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Not Professional Advice", systemImage: "exclamationmark.triangle.fill")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(MVMTheme.warning)
-
-                    Text("This app does not provide medical, fitness, or health advice of any kind. It is not a substitute for professional guidance from a physician, certified trainer, or military medical provider. Always consult a qualified professional before starting or modifying any exercise program.")
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.secondaryText)
-                        .lineSpacing(3)
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        hasAgreed = false
+                    }
+                    withAnimation { step += 1 }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "function")
+                            .font(.body.weight(.semibold))
+                        Text("Skip — AFT Calculator Only")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(height: 54)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.white.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    )
                 }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Limitation of Liability", systemImage: "hand.raised.fill")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(MVMTheme.danger)
-
-                    Text("MVM Army and its developers assume no responsibility or liability for any injury, loss, or damage resulting from the use of this application. You use this app entirely at your own risk.")
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.secondaryText)
-                        .lineSpacing(3)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Limited Access", systemImage: "lock.fill")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-
-                    Text("If you do not agree, you may still browse the app and use the AFT Calculator. However, workout planning, logging, progress tracking, and all other features require acceptance of these terms.")
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                        .lineSpacing(3)
-                }
+                .buttonStyle(PressScaleButtonStyle())
             }
-            .padding(16)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-
-            Button {
-                withAnimation(.spring(response: 0.3)) {
-                    hasAgreed.toggle()
-                }
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: hasAgreed ? "checkmark.square.fill" : "square")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(hasAgreed ? MVMTheme.accent : MVMTheme.tertiaryText)
-                        .contentTransition(.symbolEffect(.replace))
-
-                    Text("I understand and agree to these terms")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(hasAgreed ? .white : MVMTheme.secondaryText)
-                        .multilineTextAlignment(.leading)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
-                .background(hasAgreed ? MVMTheme.accent.opacity(0.1) : Color.white.opacity(0.03))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(hasAgreed ? MVMTheme.accent.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
-                )
-            }
-            .buttonStyle(.plain)
         }
     }
 
@@ -410,33 +387,33 @@ struct OnboardingView: View {
 
     private var bottomButtons: some View {
         VStack(spacing: 8) {
-            Button {
-                handleNext()
-            } label: {
-                HStack(spacing: 8) {
-                    if isGenerating {
-                        ProgressView()
-                            .tint(step == 0 ? Color(hex: "#0A0A0F") : .white)
+            if step != 3 {
+                Button {
+                    handleNext()
+                } label: {
+                    HStack(spacing: 8) {
+                        if isGenerating {
+                            ProgressView()
+                                .tint(step == 0 ? Color(hex: "#0A0A0F") : .white)
+                        }
+                        Text(nextButtonTitle)
+                            .font(.headline.weight(.bold))
                     }
-                    Text(nextButtonTitle)
-                        .font(.headline.weight(.bold))
-                }
-                .foregroundStyle(step == 0 ? Color(hex: "#0A0A0F") : .white)
-                .frame(height: 54)
-                .frame(maxWidth: .infinity)
-                .background {
-                    if step == 0 {
-                        Color.white
-                    } else if step == totalSteps - 1 {
-                        MVMTheme.heroGradient
-                    } else {
-                        MVMTheme.heroGradient
+                    .foregroundStyle(step == 0 ? Color(hex: "#0A0A0F") : .white)
+                    .frame(height: 54)
+                    .frame(maxWidth: .infinity)
+                    .background {
+                        if step == 0 {
+                            Color.white
+                        } else {
+                            MVMTheme.heroGradient
+                        }
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .disabled(isGenerating)
+                .buttonStyle(PressScaleButtonStyle())
             }
-            .disabled(isGenerating)
-            .buttonStyle(PressScaleButtonStyle())
 
             if step > 0 {
                 Button {
@@ -456,7 +433,6 @@ struct OnboardingView: View {
     private var nextButtonTitle: String {
         switch step {
         case 0: return "Get Started"
-        case 3: return hasAgreed ? "I Agree — Continue" : "Skip — Calculator Only"
         case totalSteps - 1: return isGenerating ? "Building Your Plan..." : (hasAgreed ? "Build My Plan" : "Enter App")
         default: return "Continue"
         }
