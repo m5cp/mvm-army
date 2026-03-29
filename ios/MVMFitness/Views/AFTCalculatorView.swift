@@ -18,11 +18,9 @@ struct AFTCalculatorView: View {
     @State private var runSeconds: String = "00"
 
     @State private var didSave = false
-    @State private var showSavedResults = false
     @State private var showExportSheet = false
-    @State private var showFocusWorkout = false
-    @State private var focusWorkout: WorkoutDay?
-    @State private var didAddToPlan = false
+    @State private var shareItems: [Any] = []
+    @State private var showShareSheet = false
 
     private var sdcTotalSeconds: Int {
         (Int(sdcMinutes) ?? 0) * 60 + (Int(sdcSeconds) ?? 0)
@@ -62,7 +60,6 @@ struct AFTCalculatorView: View {
                     scorePreview
                     passFailCard
                     weakestCard
-                    focusNextCard
 
                     Button {
                         vm.saveAFTCalculatorResult(preview)
@@ -79,6 +76,43 @@ struct AFTCalculatorView: View {
                     }
                     .buttonStyle(PressScaleButtonStyle())
                     .sensoryFeedback(.success, trigger: didSave)
+
+                    Button {
+                        let scoreRecord = AFTScoreRecord(
+                            deadliftLbs: preview.deadliftLbs,
+                            pushUpReps: preview.pushUpReps,
+                            sdcSeconds: preview.sdcSeconds,
+                            plankSeconds: preview.plankSeconds,
+                            runSeconds: preview.runSeconds,
+                            deadliftPoints: preview.deadliftPoints,
+                            pushUpPoints: preview.pushUpPoints,
+                            sdcPoints: preview.sdcPoints,
+                            plankPoints: preview.plankPoints,
+                            runPoints: preview.runPoints,
+                            totalScore: preview.totalScore,
+                            weakestEvents: preview.weakestEvents
+                        )
+                        shareItems = ShareCardRenderer.shareItems(cardType: .aft(score: scoreRecord, previous: vm.previousAFTScore))
+                        showShareSheet = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Share AFT Score")
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(height: 50)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            LinearGradient(
+                                colors: [Color(hex: "#4F8CFF"), Color(hex: "#7C5CFF")],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ).opacity(0.85)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
 
                     Button {
                         showExportSheet = true
@@ -109,41 +143,13 @@ struct AFTCalculatorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showSavedResults = true
-                } label: {
-                    Image(systemName: "list.clipboard")
-                        .foregroundStyle(MVMTheme.accent)
-                }
-            }
-        }
-        .navigationDestination(isPresented: $showSavedResults) {
-            AFTSavedResultsView()
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(items: shareItems)
         }
         .sheet(isPresented: $showExportSheet) {
             DAForm705ExportView(result: preview)
         }
-        .sheet(isPresented: $showFocusWorkout) {
-            if let workout = focusWorkout {
-                StandaloneWorkoutSheet(workout: workout, sheetTitle: "Focus PT")
-            } else {
-                NavigationStack {
-                    UnavailableFallbackView(title: "Focus PT Unavailable", message: "Unable to generate a focus workout for your weak events.", action: "Dismiss") {
-                        showFocusWorkout = false
-                    }
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("Done") { showFocusWorkout = false }
-                                .foregroundStyle(MVMTheme.primaryText)
-                        }
-                    }
-                    .toolbarBackground(MVMTheme.background, for: .navigationBar)
-                    .toolbarColorScheme(.dark, for: .navigationBar)
-                }
-            }
-        }
+
     }
 
     private var infoCard: some View {
@@ -400,102 +406,6 @@ struct AFTCalculatorView: View {
         }
         .padding(18)
         .premiumCard()
-    }
-
-    private var focusNextCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .fill(MVMTheme.accent.opacity(0.15))
-                        .frame(width: 38, height: 38)
-
-                    Image(systemName: "target")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(MVMTheme.accent)
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Focus Next")
-                        .font(.headline)
-                        .foregroundStyle(MVMTheme.primaryText)
-
-                    Text(suggestedFocusText)
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.accent)
-                }
-
-                Spacer()
-            }
-
-            HStack(spacing: 10) {
-                ForEach(preview.weakestEvents.prefix(2), id: \.self) { event in
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(MVMTheme.warning)
-                            .frame(width: 6, height: 6)
-                        Text(event)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(MVMTheme.secondaryText)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(MVMTheme.cardSoft)
-                    .clipShape(Capsule())
-                }
-            }
-
-            VStack(spacing: 10) {
-                Button {
-                    focusWorkout = vm.generateFocusWorkout(weakEvents: preview.weakestEvents)
-                    if focusWorkout != nil {
-                        showFocusWorkout = true
-                    }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "bolt.fill")
-                        Text("Build Today's PT")
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(height: 48)
-                    .frame(maxWidth: .infinity)
-                    .background(MVMTheme.heroGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .buttonStyle(PressScaleButtonStyle())
-
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        didAddToPlan = vm.addFocusSessionToPlan(weakEvents: preview.weakestEvents)
-                    }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: didAddToPlan ? "checkmark.circle.fill" : "calendar.badge.plus")
-                        Text(didAddToPlan ? "Added to Plan" : "Add Focus Session to Plan")
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(didAddToPlan ? MVMTheme.success : MVMTheme.accent)
-                    .frame(height: 48)
-                    .frame(maxWidth: .infinity)
-                    .background(didAddToPlan ? MVMTheme.success.opacity(0.12) : MVMTheme.accent.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(didAddToPlan ? MVMTheme.success.opacity(0.3) : MVMTheme.accent.opacity(0.3))
-                    }
-                }
-                .buttonStyle(PressScaleButtonStyle())
-                .sensoryFeedback(.success, trigger: didAddToPlan)
-            }
-        }
-        .padding(18)
-        .premiumCard()
-    }
-
-    private var suggestedFocusText: String {
-        let focuses = preview.weakestEvents.prefix(2).map { ArmyGenerator.mapWeakEventToFocus($0) }.map { ArmyGenerator.focusLabel(for: $0) }
-        return "Suggested: " + focuses.joined(separator: " + ")
     }
 
     @ViewBuilder
