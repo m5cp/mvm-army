@@ -12,11 +12,14 @@ struct ActiveSessionView: View {
     @State private var showCompletion: Bool = false
     @State private var sessionStartDate: Date = .now
     @State private var completionScale: CGFloat = 0.8
+    @State private var completionCheckScale: CGFloat = 0.0
     @State private var workoutTimer: WorkoutTimer = WorkoutTimer()
     @State private var timerFinishedTrigger: Bool = false
     @State private var restFinishedTrigger: Bool = false
     @State private var timerStartTrigger: Bool = false
     @State private var restDuration: Int = 60
+    @State private var nextExerciseTrigger: Bool = false
+    @State private var markDoneTrigger: Bool = false
 
     private var workout: WorkoutDay? {
         if isStandalone { return nil }
@@ -33,6 +36,7 @@ struct ActiveSessionView: View {
 
             if showCompletion {
                 completionView
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
             } else if exercises.isEmpty {
                 emptyState
             } else if workoutTimer.showRestTimer {
@@ -60,6 +64,8 @@ struct ActiveSessionView: View {
         .sensoryFeedback(.impact(weight: .light), trigger: timerStartTrigger)
         .sensoryFeedback(.success, trigger: timerFinishedTrigger)
         .sensoryFeedback(.warning, trigger: restFinishedTrigger)
+        .sensoryFeedback(.selection, trigger: nextExerciseTrigger)
+        .sensoryFeedback(.impact(weight: .medium), trigger: markDoneTrigger)
         .onAppear {
             if let w = workout {
                 exercises = w.exercises
@@ -100,6 +106,7 @@ struct ActiveSessionView: View {
 
     private func advanceToNext() {
         guard currentIndex < exercises.count - 1 else { return }
+        nextExerciseTrigger.toggle()
         withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
             currentIndex += 1
         }
@@ -228,6 +235,7 @@ struct ActiveSessionView: View {
                 }
 
                 Button {
+                    markDoneTrigger.toggle()
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         exercises[currentIndex].isCompleted.toggle()
                         syncExercises()
@@ -245,7 +253,6 @@ struct ActiveSessionView: View {
                     .background(exercise.isCompleted ? .white.opacity(0.18) : .white)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
-                .sensoryFeedback(.impact(weight: .medium), trigger: exercise.isCompleted)
                 .buttonStyle(PressScaleButtonStyle())
             }
             .padding(24)
@@ -547,6 +554,7 @@ struct ActiveSessionView: View {
                 if currentIndex < exercises.count - 1 {
                     Button {
                         workoutTimer.pause()
+                        nextExerciseTrigger.toggle()
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
                             currentIndex += 1
                         }
@@ -563,7 +571,6 @@ struct ActiveSessionView: View {
                         .background(MVMTheme.accent)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
-                    .sensoryFeedback(.selection, trigger: currentIndex)
                     .buttonStyle(PressScaleButtonStyle())
                 } else {
                     Button {
@@ -573,7 +580,7 @@ struct ActiveSessionView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "flag.checkered")
                                 .font(.subheadline.weight(.bold))
-                            Text("Finish Workout")
+                            Text("Complete Workout")
                                 .font(.subheadline.weight(.bold))
                         }
                         .foregroundStyle(.white)
@@ -582,7 +589,6 @@ struct ActiveSessionView: View {
                         .background(MVMTheme.success)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
-                    .sensoryFeedback(.success, trigger: showCompletion)
                     .buttonStyle(PressScaleButtonStyle())
                 }
             }
@@ -667,35 +673,44 @@ struct ActiveSessionView: View {
     // MARK: - Completion View
 
     private var completionView: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 20) {
+            VStack(spacing: 28) {
                 ZStack {
                     Circle()
-                        .fill(MVMTheme.success.opacity(0.15))
-                        .frame(width: 100, height: 100)
+                        .fill(MVMTheme.success.opacity(0.1))
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(completionScale)
+
+                    Circle()
+                        .fill(MVMTheme.success.opacity(0.2))
+                        .frame(width: 90, height: 90)
+                        .scaleEffect(completionScale)
 
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 48))
+                        .font(.system(size: 52))
                         .foregroundStyle(MVMTheme.success)
+                        .scaleEffect(completionCheckScale)
                 }
-                .scaleEffect(completionScale)
 
-                Text("Workout Complete")
-                    .font(.title.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
+                VStack(spacing: 8) {
+                    Text("Workout Complete")
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
 
-                Text(workoutTitle)
-                    .font(.subheadline)
-                    .foregroundStyle(MVMTheme.secondaryText)
+                    Text(workoutTitle)
+                        .font(.subheadline)
+                        .foregroundStyle(MVMTheme.secondaryText)
+                }
 
                 let completed = exercises.filter(\.isCompleted).count
-                HStack(spacing: 20) {
-                    VStack(spacing: 4) {
+                HStack(spacing: 32) {
+                    VStack(spacing: 6) {
                         Text("\(completed)/\(exercises.count)")
-                            .font(.title2.weight(.bold).monospacedDigit())
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundStyle(MVMTheme.primaryText)
+                            .contentTransition(.numericText())
                         Text("Exercises")
                             .font(.caption.weight(.medium))
                             .foregroundStyle(MVMTheme.tertiaryText)
@@ -703,18 +718,24 @@ struct ActiveSessionView: View {
 
                     Rectangle()
                         .fill(MVMTheme.border)
-                        .frame(width: 1, height: 36)
+                        .frame(width: 1, height: 40)
 
-                    VStack(spacing: 4) {
+                    VStack(spacing: 6) {
                         Text(sessionDuration)
-                            .font(.title2.weight(.bold).monospacedDigit())
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundStyle(MVMTheme.primaryText)
                         Text("Duration")
                             .font(.caption.weight(.medium))
                             .foregroundStyle(MVMTheme.tertiaryText)
                     }
                 }
-                .padding(.top, 8)
+                .padding(20)
+                .background(MVMTheme.card)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(MVMTheme.border)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 20))
             }
 
             Spacer()
@@ -755,8 +776,11 @@ struct ActiveSessionView: View {
             .padding(.bottom, 20)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.65)) {
                 completionScale = 1.0
+            }
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.55).delay(0.15)) {
+                completionCheckScale = 1.0
             }
         }
     }
@@ -764,19 +788,26 @@ struct ActiveSessionView: View {
     // MARK: - Empty
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             Spacer()
+
             Image(systemName: "figure.cooldown")
                 .font(.system(size: 48))
                 .foregroundStyle(MVMTheme.tertiaryText)
-            Text("No exercises found")
-                .font(.headline)
-                .foregroundStyle(MVMTheme.secondaryText)
-            Text("This workout has no exercises to guide through.")
-                .font(.subheadline)
-                .foregroundStyle(MVMTheme.tertiaryText)
-                .multilineTextAlignment(.center)
+
+            VStack(spacing: 8) {
+                Text("No Exercises Found")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Text("This workout has no exercises to guide through.")
+                    .font(.subheadline)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+            }
+
             Spacer()
+
             Button {
                 dismiss()
             } label: {

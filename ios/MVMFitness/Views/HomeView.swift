@@ -22,17 +22,19 @@ struct HomeView: View {
     @State private var randomWorkout: WorkoutDay?
     @State private var recoverySession: WorkoutDay?
     @State private var homeMode: HomeMode = .individual
+    @State private var startWorkoutTrigger: Bool = false
+    @State private var completeWorkoutTrigger: Bool = false
+    @State private var toolTapTrigger: Bool = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 28) {
+            VStack(spacing: 24) {
                 headerSection
-                modeSelector
                 heroSection
                 metricsStrip
                 aftInsightBanner
-                toolsGrid
-                dailyMotto
+                modeSelector
+                toolsSection
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -117,6 +119,9 @@ struct HomeView: View {
         .navigationDestination(isPresented: $showAFTCalculator) {
             AFTCalculatorView()
         }
+        .sensoryFeedback(.impact(weight: .medium), trigger: startWorkoutTrigger)
+        .sensoryFeedback(.success, trigger: completeWorkoutTrigger)
+        .sensoryFeedback(.selection, trigger: toolTapTrigger)
         .onAppear {
             vm.pedometer.refreshTodaySteps()
             Task {
@@ -124,44 +129,12 @@ struct HomeView: View {
                 vm.syncTodaySteps()
             }
             vm.ensureTodayHasWorkout()
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.82)) {
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) {
                 animateHero = true
             }
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.25)) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2)) {
                 animateMetrics = true
             }
-        }
-    }
-
-    // MARK: - Mode Selector
-
-    private var modeSelector: some View {
-        HStack(spacing: 4) {
-            ForEach(HomeMode.allCases, id: \.rawValue) { mode in
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                        homeMode = mode
-                    }
-                } label: {
-                    Text(mode.rawValue)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(homeMode == mode ? .white : MVMTheme.tertiaryText)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background {
-                            if homeMode == mode {
-                                Capsule()
-                                    .fill(MVMTheme.accent.opacity(0.25))
-                                    .overlay {
-                                        Capsule()
-                                            .stroke(MVMTheme.accent.opacity(0.4), lineWidth: 1)
-                                    }
-                            }
-                        }
-                }
-                .buttonStyle(.plain)
-            }
-            Spacer()
         }
     }
 
@@ -225,12 +198,7 @@ struct HomeView: View {
 
     private var heroSection: some View {
         Group {
-            switch homeMode {
-            case .individual:
-                individualHeroContent
-            case .unit:
-                unitHeroContent
-            }
+            individualHeroContent
         }
         .scaleEffect(animateHero ? 1 : 0.96)
         .opacity(animateHero ? 1 : 0)
@@ -252,79 +220,6 @@ struct HomeView: View {
         }
     }
 
-    private var unitHeroContent: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(spacing: 8) {
-                Image(systemName: "person.3.fill")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.9))
-
-                Text("UNIT PT")
-                    .font(.caption2.weight(.heavy))
-                    .tracking(1.0)
-                    .foregroundStyle(.white.opacity(0.8))
-
-                Spacer()
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                if let latest = vm.unitPTPlans.first {
-                    Text(latest.title)
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-
-                    Text(latest.objective)
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .lineLimit(2)
-                } else {
-                    Text("No Unit PT Plans")
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(.white)
-
-                    Text("Build a unit session for your formation.")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                }
-            }
-
-            Button {
-                showUnitPTSheet = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.subheadline.weight(.bold))
-                    Text(vm.unitPTPlans.isEmpty ? "Build Unit PT" : "New Unit PT")
-                        .font(.headline.weight(.bold))
-                }
-                .foregroundStyle(Color(hex: "#1A1A2E"))
-                .frame(height: 52)
-                .frame(maxWidth: .infinity)
-                .background(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-            }
-            .buttonStyle(PressScaleButtonStyle())
-        }
-        .padding(24)
-        .background {
-            ZStack {
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(hex: "#2563EB"), Color(hex: "#1E40AF").opacity(0.95)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(MVMTheme.subtleGradient)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 28))
-        .shadow(color: Color(hex: "#2563EB").opacity(0.2), radius: 24, y: 16)
-    }
-
     private func activeHero(_ workout: WorkoutDay) -> some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 20) {
@@ -333,7 +228,7 @@ struct HomeView: View {
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.white.opacity(0.9))
 
-                    Text("READY TO EXECUTE")
+                    Text("TODAY'S PT")
                         .font(.caption2.weight(.heavy))
                         .tracking(1.0)
                         .foregroundStyle(.white.opacity(0.8))
@@ -370,43 +265,24 @@ struct HomeView: View {
 
                 exerciseGlance(workout)
 
-                HStack(spacing: 12) {
-                    Button {
-                        showActiveSession = true
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "play.fill")
-                                .font(.subheadline.weight(.bold))
-                            Text("Start Workout")
-                                .font(.headline.weight(.bold))
-                        }
-                        .foregroundStyle(Color(hex: "#1A1A2E"))
-                        .frame(height: 54)
-                        .frame(maxWidth: .infinity)
-                        .background(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: .white.opacity(0.15), radius: 12, y: 4)
+                Button {
+                    startWorkoutTrigger.toggle()
+                    showActiveSession = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "play.fill")
+                            .font(.subheadline.weight(.bold))
+                        Text("Start Workout")
+                            .font(.headline.weight(.bold))
                     }
-                    .sensoryFeedback(.impact(weight: .medium), trigger: showActiveSession)
-                    .buttonStyle(PressScaleButtonStyle())
-
-                    Button {
-                        showWorkoutDetail = true
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "pencil")
-                                .font(.subheadline.weight(.bold))
-                            Text("Log")
-                                .font(.headline.weight(.bold))
-                        }
-                        .foregroundStyle(.white)
-                        .frame(height: 54)
-                        .frame(width: 90)
-                        .background(.white.opacity(0.18))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
-                    .buttonStyle(PressScaleButtonStyle())
+                    .foregroundStyle(Color(hex: "#1A1A2E"))
+                    .frame(height: 54)
+                    .frame(maxWidth: .infinity)
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .white.opacity(0.15), radius: 12, y: 4)
                 }
+                .buttonStyle(PressScaleButtonStyle())
             }
             .padding(24)
             .background {
@@ -469,6 +345,24 @@ struct HomeView: View {
     private func activeSecondaryActions(_ workout: WorkoutDay) -> some View {
         HStack(spacing: 10) {
             Button {
+                showWorkoutDetail = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "pencil")
+                        .font(.caption.weight(.bold))
+                    Text("Log")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(MVMTheme.secondaryText)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(MVMTheme.cardSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            Button {
+                completeWorkoutTrigger.toggle()
                 vm.markDayCompleted(dayIndex: workout.dayIndex)
             } label: {
                 HStack(spacing: 6) {
@@ -481,24 +375,6 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
                 .background(MVMTheme.success.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .sensoryFeedback(.success, trigger: workout.isCompleted)
-            .buttonStyle(PressScaleButtonStyle())
-
-            Button {
-                showWorkoutDetail = true
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "pencil")
-                        .font(.caption.weight(.bold))
-                    Text("Edit")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(MVMTheme.secondaryText)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(MVMTheme.cardSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(PressScaleButtonStyle())
@@ -690,7 +566,7 @@ struct HomeView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Build Today's Session")
+                Text("Build Today's PT")
                     .font(.title.weight(.bold))
                     .foregroundStyle(.white)
 
@@ -706,7 +582,7 @@ struct HomeView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "calendar.badge.plus")
                             .font(.subheadline.weight(.bold))
-                        Text("Build Today's PT")
+                        Text("Build Plan")
                             .font(.headline.weight(.bold))
                     }
                     .foregroundStyle(Color(hex: "#1A1A2E"))
@@ -724,7 +600,7 @@ struct HomeView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "bolt.fill")
                             .font(.subheadline.weight(.bold))
-                        Text("Quick")
+                        Text("Quick WOD")
                             .font(.headline.weight(.semibold))
                     }
                     .foregroundStyle(.white)
@@ -875,7 +751,117 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Tools Grid
+    // MARK: - Mode Selector
+
+    private var modeSelector: some View {
+        HStack(spacing: 4) {
+            ForEach(HomeMode.allCases, id: \.rawValue) { mode in
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        homeMode = mode
+                    }
+                } label: {
+                    Text(mode.rawValue)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(homeMode == mode ? .white : MVMTheme.tertiaryText)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background {
+                            if homeMode == mode {
+                                Capsule()
+                                    .fill(MVMTheme.accent.opacity(0.25))
+                                    .overlay {
+                                        Capsule()
+                                            .stroke(MVMTheme.accent.opacity(0.4), lineWidth: 1)
+                                    }
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+    }
+
+    // MARK: - Tools Section
+
+    private var toolsSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if homeMode == .unit {
+                unitPTContent
+            } else {
+                toolsGrid
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: homeMode)
+    }
+
+    private var unitPTContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if let latest = vm.unitPTPlans.first {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "person.3.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(MVMTheme.accent)
+                        Text("Latest Unit PT")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
+
+                    Text(latest.title)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                        .lineLimit(2)
+
+                    Text(latest.objective)
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .lineLimit(2)
+                }
+                .padding(18)
+                .premiumCard()
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    toolTapTrigger.toggle()
+                    showUnitPTSheet = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.subheadline.weight(.bold))
+                        Text("Build Formation PT")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
+                    .background(MVMTheme.heroGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: MVMTheme.accent.opacity(0.2), radius: 12, y: 6)
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    toolTapTrigger.toggle()
+                    showScanSheet = true
+                } label: {
+                    Image(systemName: "qrcode.viewfinder")
+                        .font(.body.weight(.bold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+                        .frame(width: 52, height: 52)
+                        .background(MVMTheme.cardSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(MVMTheme.border)
+                        }
+                }
+                .buttonStyle(PressScaleButtonStyle())
+            }
+        }
+    }
 
     private var toolsGrid: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -939,6 +925,7 @@ struct HomeView: View {
 
     private func compactTool(title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
         Button {
+            toolTapTrigger.toggle()
             action()
         } label: {
             VStack(spacing: 10) {
@@ -964,34 +951,6 @@ struct HomeView: View {
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(PressScaleButtonStyle())
-    }
-
-    // MARK: - Motto
-
-    private let mottos = [
-        "You vs You.",
-        "Execute.",
-        "Train for the standard.",
-        "Consistency wins.",
-        "Show up. Do the work.",
-        "Simple plans get executed.",
-        "The only competition is yesterday."
-    ]
-
-    private var dailyMotto: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "shield.fill")
-                .font(.callout)
-                .foregroundStyle(MVMTheme.accent.opacity(0.5))
-
-            Text(mottos[Calendar.current.component(.day, from: .now) % mottos.count])
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(MVMTheme.tertiaryText)
-                .italic()
-
-            Spacer()
-        }
-        .padding(.horizontal, 4)
     }
 
     // MARK: - Helpers

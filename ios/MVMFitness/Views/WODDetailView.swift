@@ -8,6 +8,8 @@ struct WODDetailView: View {
     @State private var workout: WorkoutDay?
     @State private var didComplete: Bool = false
     @State private var isLoading: Bool = true
+    @State private var completeTrigger: Bool = false
+    @State private var generateTrigger: Bool = false
 
     let initialTemplate: WODTemplate?
 
@@ -284,6 +286,7 @@ struct WODDetailView: View {
         VStack(spacing: 10) {
             if !didComplete {
                 Button {
+                    completeTrigger.toggle()
                     vm.completeStandaloneWorkout(workout)
                     didComplete = true
                 } label: {
@@ -300,7 +303,7 @@ struct WODDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .shadow(color: MVMTheme.accent.opacity(0.28), radius: 14, y: 8)
                 }
-                .sensoryFeedback(.impact(weight: .medium), trigger: didComplete)
+                .sensoryFeedback(.success, trigger: completeTrigger)
                 .buttonStyle(PressScaleButtonStyle())
             } else {
                 HStack(spacing: 8) {
@@ -316,6 +319,7 @@ struct WODDetailView: View {
 
             HStack(spacing: 10) {
                 Button {
+                    generateTrigger.toggle()
                     generateAnother()
                 } label: {
                     HStack(spacing: 6) {

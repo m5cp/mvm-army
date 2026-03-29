@@ -15,6 +15,8 @@ struct PlanView: View {
     @State private var showCalendarSheet: Bool = false
     @State private var showExportAlert: Bool = false
     @State private var exportAlertMessage: String = ""
+    @State private var completeTrigger: Bool = false
+    @State private var startTrigger: Bool = false
 
     private let calendar = Calendar.current
 
@@ -386,13 +388,14 @@ struct PlanView: View {
                     .buttonStyle(PressScaleButtonStyle())
                 } else {
                     Button {
+                        startTrigger.toggle()
                         sessionDayIndex = day.dayIndex
                         navigateToSession = true
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "play.fill")
                                 .font(.caption.weight(.bold))
-                            Text("Start")
+                            Text("Start Workout")
                                 .font(.subheadline.weight(.bold))
                         }
                         .foregroundStyle(Color(hex: "#1A1A2E"))
@@ -401,7 +404,7 @@ struct PlanView: View {
                         .background(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .sensoryFeedback(.impact(weight: .medium), trigger: navigateToSession)
+                    .sensoryFeedback(.impact(weight: .medium), trigger: startTrigger)
                     .buttonStyle(PressScaleButtonStyle())
 
                     Button {
@@ -418,6 +421,7 @@ struct PlanView: View {
                     .buttonStyle(PressScaleButtonStyle())
 
                     Button {
+                        completeTrigger.toggle()
                         vm.markDayCompleted(dayIndex: day.dayIndex)
                     } label: {
                         Image(systemName: "checkmark")
@@ -427,7 +431,7 @@ struct PlanView: View {
                             .background(.white.opacity(0.18))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .sensoryFeedback(.success, trigger: day.isCompleted)
+                    .sensoryFeedback(.success, trigger: completeTrigger)
 
                     Menu {
                         Button {
@@ -726,7 +730,7 @@ struct PlanView: View {
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
-                Text("Build your week and stay ready.")
+                Text("Build your weekly plan to stay on track.")
                     .font(.subheadline)
                     .foregroundStyle(MVMTheme.secondaryText)
             }

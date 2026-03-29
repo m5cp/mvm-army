@@ -11,6 +11,8 @@ struct WorkoutDetailView: View {
     @State private var editingExerciseID: UUID?
     @State private var hasChanges = false
     @State private var didComplete = false
+    @State private var saveTrigger: Bool = false
+    @State private var completeTrigger: Bool = false
 
     private var workout: WorkoutDay? {
         if isStandalone { return nil }
@@ -533,36 +535,47 @@ struct WorkoutDetailView: View {
         VStack(spacing: 12) {
             if hasChanges {
                 Button {
+                    saveTrigger.toggle()
                     saveChanges()
                 } label: {
-                    Text("Save Changes")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(height: 52)
-                        .frame(maxWidth: .infinity)
-                        .background(MVMTheme.accent)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.arrow.down")
+                            .font(.subheadline.weight(.bold))
+                        Text("Save Changes")
+                            .font(.headline)
+                    }
+                    .foregroundStyle(.white)
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
+                    .background(MVMTheme.accent)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
+                .sensoryFeedback(.impact(weight: .light), trigger: saveTrigger)
                 .buttonStyle(PressScaleButtonStyle())
             }
 
             if workout?.isCompleted != true && !didComplete {
                 Button {
                     saveChanges()
+                    completeTrigger.toggle()
                     vm.markDayCompleted(dayIndex: dayIndex)
                     didComplete = true
                 } label: {
-                    Text("Complete Workout")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(height: 52)
-                        .frame(maxWidth: .infinity)
-                        .background(MVMTheme.heroGradient)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: MVMTheme.accent.opacity(0.28), radius: 14, y: 8)
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.subheadline.weight(.bold))
+                        Text("Complete Workout")
+                            .font(.headline)
+                    }
+                    .foregroundStyle(.white)
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
+                    .background(MVMTheme.heroGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: MVMTheme.accent.opacity(0.28), radius: 14, y: 8)
                 }
                 .buttonStyle(PressScaleButtonStyle())
-                .sensoryFeedback(.success, trigger: didComplete)
+                .sensoryFeedback(.success, trigger: completeTrigger)
             }
 
             if workout?.isCompleted == true || didComplete {

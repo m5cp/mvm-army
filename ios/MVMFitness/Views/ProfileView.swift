@@ -21,6 +21,7 @@ struct ProfileView: View {
     @State private var showResetPlanAlert = false
     @State private var resetPlanTrigger = false
     @State private var resetAllTrigger = false
+    @State private var saveTrigger = false
 
     var body: some View {
         ZStack {
@@ -191,7 +192,7 @@ struct ProfileView: View {
                             .font(.caption2.weight(.medium))
                             .foregroundStyle(MVMTheme.tertiaryText.opacity(0.6))
 
-                        Text("Version 3.0")
+                        Text("Version 3.1")
                             .font(.caption2)
                             .foregroundStyle(MVMTheme.tertiaryText.opacity(0.4))
                     }

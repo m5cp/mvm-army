@@ -88,7 +88,7 @@ struct ProgressViewScreen: View {
 
                 heroStat(
                     value: "\(vm.streak)",
-                    label: vm.streak == 1 ? "Day Streak" : "Day Streak",
+                    label: "Day Streak",
                     icon: "flame.fill",
                     color: MVMTheme.warning
                 )
@@ -167,20 +167,22 @@ struct ProgressViewScreen: View {
                     }
                 }
             } else {
-                HStack(spacing: 8) {
-                    ForEach(0..<7, id: \.self) { i in
-                        dayDot(
-                            label: weekdayAbbrev(offset: i),
-                            isToday: false,
-                            isCompleted: false,
-                            isRest: false
-                        )
+                VStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        ForEach(0..<7, id: \.self) { i in
+                            dayDot(
+                                label: weekdayAbbrev(offset: i),
+                                isToday: false,
+                                isCompleted: false,
+                                isRest: false
+                            )
+                        }
                     }
-                }
 
-                Text("Generate a plan to track your week.")
-                    .font(.caption)
-                    .foregroundStyle(MVMTheme.tertiaryText)
+                    Text("Build a plan to start tracking your week.")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
             }
         }
         .padding(18)
@@ -315,16 +317,31 @@ struct ProgressViewScreen: View {
                     }
                 }
             } else {
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     Image(systemName: "shield.lefthalf.filled")
-                        .font(.title2)
+                        .font(.system(size: 32))
                         .foregroundStyle(MVMTheme.tertiaryText)
-                    Text("No AFT scores yet")
-                        .font(.subheadline)
+
+                    Text("No AFT Scores Yet")
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(MVMTheme.secondaryText)
+
                     Text("Log your first score to track improvement.")
                         .font(.caption)
                         .foregroundStyle(MVMTheme.tertiaryText)
+
+                    Button {
+                        showAFTSheet = true
+                    } label: {
+                        Text("Log First Score")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(MVMTheme.accent)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(MVMTheme.accent.opacity(0.12))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -374,10 +391,15 @@ struct ProgressViewScreen: View {
             let weekData = last4WeeksData
 
             if weekData.allSatisfy({ $0.count == 0 }) {
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     Image(systemName: "chart.bar")
-                        .font(.title2)
+                        .font(.system(size: 32))
                         .foregroundStyle(MVMTheme.tertiaryText)
+
+                    Text("No Training Data Yet")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+
                     Text("Complete workouts to see your training frequency.")
                         .font(.caption)
                         .foregroundStyle(MVMTheme.tertiaryText)
@@ -462,36 +484,55 @@ struct ProgressViewScreen: View {
                     .foregroundStyle(MVMTheme.primaryText)
             }
 
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Today")
-                        .font(.caption.weight(.medium))
+            if vm.pedometer.todaySteps == 0 && vm.weeklyStepAverage == 0 {
+                VStack(spacing: 12) {
+                    Image(systemName: "figure.walk")
+                        .font(.system(size: 32))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+
+                    Text("No Steps Recorded")
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(MVMTheme.secondaryText)
-                    HStack(alignment: .firstTextBaseline, spacing: 2) {
-                        Text("\(vm.pedometer.todaySteps)")
-                            .font(.title2.weight(.bold).monospacedDigit())
-                            .foregroundStyle(MVMTheme.primaryText)
-                            .contentTransition(.numericText())
-                        Text("steps")
-                            .font(.caption)
-                            .foregroundStyle(MVMTheme.tertiaryText)
-                    }
+
+                    Text("Steps will appear here once your device starts tracking.")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .multilineTextAlignment(.center)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            } else {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Today")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                        HStack(alignment: .firstTextBaseline, spacing: 2) {
+                            Text("\(vm.pedometer.todaySteps)")
+                                .font(.title2.weight(.bold).monospacedDigit())
+                                .foregroundStyle(MVMTheme.primaryText)
+                                .contentTransition(.numericText())
+                            Text("steps")
+                                .font(.caption)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
+                    }
 
-                Spacer()
+                    Spacer()
 
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("7-Day Avg")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(MVMTheme.secondaryText)
-                    HStack(alignment: .firstTextBaseline, spacing: 2) {
-                        Text("\(vm.weeklyStepAverage)")
-                            .font(.title3.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(MVMTheme.primaryText)
-                            .contentTransition(.numericText())
-                        Text("avg")
-                            .font(.caption)
-                            .foregroundStyle(MVMTheme.tertiaryText)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("7-Day Avg")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                        HStack(alignment: .firstTextBaseline, spacing: 2) {
+                            Text("\(vm.weeklyStepAverage)")
+                                .font(.title3.weight(.semibold).monospacedDigit())
+                                .foregroundStyle(MVMTheme.primaryText)
+                                .contentTransition(.numericText())
+                            Text("avg")
+                                .font(.caption)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
                     }
                 }
             }
