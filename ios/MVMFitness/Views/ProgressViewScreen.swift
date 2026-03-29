@@ -9,7 +9,6 @@ struct ProgressViewScreen: View {
     @State private var appeared: Bool = false
     @State private var showAFTCalculator: Bool = false
     @State private var showCompletedWorkouts: Bool = false
-    @State private var showAFTShare: Bool = false
     @State private var selectedAFTScore: AFTScoreRecord?
     @State private var showDayWorkouts: Bool = false
     @State private var selectedDayRecord: CompletedWorkoutRecord?
@@ -50,10 +49,8 @@ struct ProgressViewScreen: View {
         .sheet(isPresented: $showAFTSheet) {
             AFTScoreSheet()
         }
-        .sheet(isPresented: $showAFTShare) {
-            if let score = selectedAFTScore {
-                AFTShareSheet(score: score, previous: vm.previousAFTScore)
-            }
+        .sheet(item: $selectedAFTScore) { score in
+            AFTShareSheet(score: score, previous: vm.previousAFTScore)
         }
         .navigationDestination(isPresented: $showAFTCalculator) {
             AFTCalculatorView()
@@ -492,7 +489,6 @@ struct ProgressViewScreen: View {
 
             Button {
                 selectedAFTScore = score
-                showAFTShare = true
             } label: {
                 Image(systemName: "square.and.arrow.up")
                     .font(.caption.weight(.bold))

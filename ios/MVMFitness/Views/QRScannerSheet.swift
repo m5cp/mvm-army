@@ -8,8 +8,6 @@ struct QRScannerSheet: View {
     @State private var scannedPlan: UnitPTPlan?
     @State private var scannedWorkout: WorkoutDay?
     @State private var errorMessage: String?
-    @State private var manualJSON = ""
-    @State private var showManualEntry = false
     @State private var savedConfirmation = false
 
     var body: some View {
@@ -21,7 +19,6 @@ struct QRScannerSheet: View {
                     VStack(spacing: 20) {
                         if scannedPlan == nil && scannedWorkout == nil {
                             cameraSection
-                            manualEntrySection
                         }
 
                         if let scannedPlan {
@@ -101,59 +98,6 @@ struct QRScannerSheet: View {
         .frame(maxWidth: .infinity)
         .frame(height: 300)
         .premiumCard()
-    }
-
-    private var manualEntrySection: some View {
-        VStack(spacing: 12) {
-            Button {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                    showManualEntry.toggle()
-                }
-            } label: {
-                HStack {
-                    Image(systemName: "text.justify.left")
-                    Text("Paste PT Plan Data")
-                    Spacer()
-                    Image(systemName: showManualEntry ? "chevron.up" : "chevron.down")
-                }
-                .font(.headline)
-                .foregroundStyle(MVMTheme.primaryText)
-                .padding(18)
-                .premiumCardStyle()
-            }
-            .buttonStyle(.plain)
-
-            if showManualEntry {
-                VStack(spacing: 12) {
-                    TextField("Paste JSON data here...", text: $manualJSON, axis: .vertical)
-                        .font(.caption.monospaced())
-                        .lineLimit(6...12)
-                        .padding(12)
-                        .background(MVMTheme.cardSoft)
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(MVMTheme.border)
-                        }
-
-                    Button {
-                        handleScannedCode(manualJSON)
-                    } label: {
-                        Text("Import Plan")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(height: 48)
-                            .frame(maxWidth: .infinity)
-                            .background(MVMTheme.accent)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                    }
-                    .buttonStyle(PressScaleButtonStyle())
-                }
-                .padding(18)
-                .premiumCard()
-            }
-        }
     }
 
     private func importedPlanCard(_ plan: UnitPTPlan) -> some View {
