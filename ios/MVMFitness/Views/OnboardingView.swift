@@ -12,44 +12,55 @@ struct OnboardingView: View {
     @AppStorage("reminderHour") private var reminderHour = 6
     @AppStorage("reminderMinute") private var reminderMinute = 0
 
-    @State private var step = 0
+    @State private var step: Int = 0
     @State private var reminderTime = Calendar.current.date(from: DateComponents(hour: 6, minute: 0)) ?? .now
-    @State private var direction: Int = 1
 
     private let totalSteps = 6
 
     var body: some View {
-        ZStack {
-            MVMTheme.background.ignoresSafeArea()
-            backgroundAmbience
+        GeometryReader { geo in
+            let isWide = geo.size.width > 600
+            let contentWidth = isWide ? min(geo.size.width * 0.55, 520.0) : geo.size.width - 48
 
-            VStack(spacing: 0) {
-                if step > 0 && step < totalSteps - 1 {
-                    progressIndicator
-                        .frame(maxWidth: 500)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 12)
-                        .frame(maxWidth: .infinity)
+            ZStack {
+                MVMTheme.background.ignoresSafeArea()
+                backgroundAmbience
+
+                VStack(spacing: 0) {
+                    if step > 0 && step < totalSteps - 1 {
+                        progressIndicator
+                            .frame(maxWidth: contentWidth)
+                            .padding(.top, 16)
+                            .padding(.bottom, 8)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Group {
+                        switch step {
+                        case 0: welcomeStep(contentWidth: contentWidth)
+                        case 1: ptModeStep(contentWidth: contentWidth)
+                        case 2: focusStep(contentWidth: contentWidth)
+                        case 3: scheduleStep(contentWidth: contentWidth)
+                        case 4: equipmentStep(contentWidth: contentWidth)
+                        case 5: disclaimerStep(contentWidth: contentWidth)
+                        default: EmptyView()
+                        }
+                    }
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
+
+                    Spacer(minLength: 0)
+
+                    bottomControls(contentWidth: contentWidth)
+                        .padding(.bottom, 16)
                 }
-
-                TabView(selection: $step) {
-                    welcomeStep.tag(0)
-                    ptModeStep.tag(1)
-                    focusStep.tag(2)
-                    scheduleStep.tag(3)
-                    equipmentStep.tag(4)
-                    disclaimerStep.tag(5)
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: step)
-
-                bottomControls
-                    .frame(maxWidth: 500)
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 16)
-                    .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .animation(.spring(response: 0.4, dampingFraction: 0.88), value: step)
     }
 
     // MARK: - Progress
@@ -60,74 +71,62 @@ struct OnboardingView: View {
                 Capsule()
                     .fill(i <= step ? MVMTheme.accent : MVMTheme.cardSoft)
                     .frame(height: 4)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: step)
             }
         }
     }
 
     // MARK: - Welcome
 
-    private var welcomeStep: some View {
-        VStack(spacing: 0) {
-            Spacer()
-
-            VStack(spacing: 24) {
-                ZStack {
-                    Circle()
-                        .fill(MVMTheme.accent.opacity(0.1))
-                        .frame(width: 120, height: 120)
-
-                    Circle()
-                        .fill(MVMTheme.accent.opacity(0.18))
-                        .frame(width: 88, height: 88)
-
-                    Image(systemName: "shield.fill")
-                        .font(.system(size: 40, weight: .bold))
-                        .foregroundStyle(MVMTheme.heroGradient)
-                }
-
-                VStack(spacing: 12) {
-                    Text("MVM ARMY")
-                        .font(.system(size: 36, weight: .heavy))
-                        .tracking(2.0)
-                        .foregroundStyle(MVMTheme.primaryText)
-
-                    Text("Me vs Me")
-                        .font(.title3.weight(.medium))
-                        .foregroundStyle(MVMTheme.accent)
-                }
-
-                Text("Build your PT. Track your progress.\nStay accountable.")
-                    .font(.body)
-                    .foregroundStyle(MVMTheme.secondaryText)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
+    private func welcomeStep(contentWidth: CGFloat) -> some View {
+        VStack(spacing: 28) {
+            ZStack {
+                Circle()
+                    .fill(MVMTheme.accent.opacity(0.08))
+                    .frame(width: 110, height: 110)
+                Circle()
+                    .fill(MVMTheme.accent.opacity(0.15))
+                    .frame(width: 80, height: 80)
+                Image(systemName: "shield.fill")
+                    .font(.system(size: 36, weight: .bold))
+                    .foregroundStyle(MVMTheme.heroGradient)
             }
-            .frame(maxWidth: 500)
 
-            Spacer()
-            Spacer()
+            VStack(spacing: 10) {
+                Text("MVM ARMY")
+                    .font(.system(size: 32, weight: .heavy))
+                    .tracking(2.0)
+                    .foregroundStyle(MVMTheme.primaryText)
+                Text("Me vs Me")
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(MVMTheme.accent)
+            }
+
+            Text("Build your PT. Track your progress.\nStay accountable.")
+                .font(.body)
+                .foregroundStyle(MVMTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
         }
-        .padding(.horizontal, 24)
+        .frame(maxWidth: contentWidth)
     }
 
     // MARK: - PT Mode
 
-    private var ptModeStep: some View {
-        onboardingPage(
-            icon: "figure.strengthtraining.traditional",
-            title: "How will you train?",
-            subtitle: "Choose your PT mode"
-        ) {
-            VStack(spacing: 12) {
-                ForEach(PTMode.allCases) { mode in
-                    onboardingOption(
-                        title: mode.rawValue,
-                        icon: modeIcon(mode),
-                        subtitle: modeSubtitle(mode),
-                        isSelected: ptModeRaw == mode.rawValue
-                    ) {
-                        ptModeRaw = mode.rawValue
+    private func ptModeStep(contentWidth: CGFloat) -> some View {
+        glassCard(contentWidth: contentWidth) {
+            VStack(spacing: 20) {
+                stepHeader(icon: "figure.strengthtraining.traditional", title: "How will you train?", subtitle: "Choose your PT mode")
+
+                VStack(spacing: 10) {
+                    ForEach(PTMode.allCases) { mode in
+                        onboardingOption(
+                            title: mode.rawValue,
+                            icon: modeIcon(mode),
+                            subtitle: modeSubtitle(mode),
+                            isSelected: ptModeRaw == mode.rawValue
+                        ) {
+                            ptModeRaw = mode.rawValue
+                        }
                     }
                 }
             }
@@ -152,20 +151,20 @@ struct OnboardingView: View {
 
     // MARK: - Focus
 
-    private var focusStep: some View {
-        onboardingPage(
-            icon: "target",
-            title: "What's your focus?",
-            subtitle: "We'll build your plan around this"
-        ) {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                ForEach(TrainingFocus.allCases) { focus in
-                    onboardingChip(
-                        title: focus.rawValue,
-                        icon: focus.icon,
-                        isSelected: trainingFocusRaw == focus.rawValue
-                    ) {
-                        trainingFocusRaw = focus.rawValue
+    private func focusStep(contentWidth: CGFloat) -> some View {
+        glassCard(contentWidth: contentWidth) {
+            VStack(spacing: 20) {
+                stepHeader(icon: "target", title: "What's your focus?", subtitle: "We'll build your plan around this")
+
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                    ForEach(TrainingFocus.allCases) { focus in
+                        onboardingChip(
+                            title: focus.rawValue,
+                            icon: focus.icon,
+                            isSelected: trainingFocusRaw == focus.rawValue
+                        ) {
+                            trainingFocusRaw = focus.rawValue
+                        }
                     }
                 }
             }
@@ -174,14 +173,12 @@ struct OnboardingView: View {
 
     // MARK: - Schedule
 
-    private var scheduleStep: some View {
-        onboardingPage(
-            icon: "calendar",
-            title: "Set your schedule",
-            subtitle: "Days per week and session length"
-        ) {
-            VStack(spacing: 28) {
-                VStack(spacing: 14) {
+    private func scheduleStep(contentWidth: CGFloat) -> some View {
+        glassCard(contentWidth: contentWidth) {
+            VStack(spacing: 24) {
+                stepHeader(icon: "calendar", title: "Set your schedule", subtitle: "Days per week and session length")
+
+                VStack(spacing: 12) {
                     HStack {
                         Text("Days per week")
                             .font(.subheadline.weight(.semibold))
@@ -204,22 +201,16 @@ struct OnboardingView: View {
                                     .font(.headline.weight(.bold))
                                     .foregroundStyle(daysPerWeek == d ? .white : MVMTheme.secondaryText)
                                     .frame(maxWidth: .infinity)
-                                    .frame(height: 52)
-                                    .background(daysPerWeek == d ? MVMTheme.accent : MVMTheme.cardSoft)
-                                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                                    .overlay {
-                                        if daysPerWeek == d {
-                                            RoundedRectangle(cornerRadius: 14)
-                                                .stroke(MVMTheme.accent.opacity(0.5), lineWidth: 1.5)
-                                        }
-                                    }
+                                    .frame(height: 48)
+                                    .background(daysPerWeek == d ? MVMTheme.accent : Color.white.opacity(0.06))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                             .buttonStyle(.plain)
                         }
                     }
                 }
 
-                VStack(spacing: 14) {
+                VStack(spacing: 12) {
                     HStack {
                         Text("Session length")
                             .font(.subheadline.weight(.semibold))
@@ -242,15 +233,9 @@ struct OnboardingView: View {
                                     .font(.headline.weight(.bold))
                                     .foregroundStyle(minutesPerWorkout == m ? .white : MVMTheme.secondaryText)
                                     .frame(maxWidth: .infinity)
-                                    .frame(height: 52)
-                                    .background(minutesPerWorkout == m ? MVMTheme.accent : MVMTheme.cardSoft)
-                                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                                    .overlay {
-                                        if minutesPerWorkout == m {
-                                            RoundedRectangle(cornerRadius: 14)
-                                                .stroke(MVMTheme.accent.opacity(0.5), lineWidth: 1.5)
-                                        }
-                                    }
+                                    .frame(height: 48)
+                                    .background(minutesPerWorkout == m ? MVMTheme.accent : Color.white.opacity(0.06))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                             .buttonStyle(.plain)
                         }
@@ -262,63 +247,51 @@ struct OnboardingView: View {
 
     // MARK: - Equipment
 
-    private var equipmentStep: some View {
-        onboardingPage(
-            icon: "dumbbell.fill",
-            title: "Available equipment?",
-            subtitle: "Pick what you have access to"
-        ) {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                ForEach(EquipmentOption.allCases) { equip in
-                    onboardingChip(
-                        title: equip.rawValue,
-                        icon: equip.icon,
-                        isSelected: equipmentRaw == equip.rawValue
-                    ) {
-                        equipmentRaw = equip.rawValue
+    private func equipmentStep(contentWidth: CGFloat) -> some View {
+        glassCard(contentWidth: contentWidth) {
+            VStack(spacing: 20) {
+                stepHeader(icon: "dumbbell.fill", title: "Available equipment?", subtitle: "Pick what you have access to")
+
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                    ForEach(EquipmentOption.allCases) { equip in
+                        onboardingChip(
+                            title: equip.rawValue,
+                            icon: equip.icon,
+                            isSelected: equipmentRaw == equip.rawValue
+                        ) {
+                            equipmentRaw = equip.rawValue
+                        }
                     }
                 }
             }
         }
     }
 
-    private func equipSubtitle(_ equip: EquipmentOption) -> String {
-        switch equip {
-        case .bodyweight: return "No equipment needed"
-        case .minimal: return "Bands, kettlebells, pull-up bar"
-        case .gym: return "Full gym access"
-        case .running: return "Track or road running"
-        case .field: return "Outdoor / tactical environment"
-        }
-    }
-
     // MARK: - Disclaimer
 
-    private var disclaimerStep: some View {
-        VStack(spacing: 0) {
-            Spacer()
-
-            VStack(spacing: 24) {
+    private func disclaimerStep(contentWidth: CGFloat) -> some View {
+        glassCard(contentWidth: contentWidth) {
+            VStack(spacing: 20) {
                 ZStack {
                     Circle()
                         .fill(MVMTheme.warning.opacity(0.1))
-                        .frame(width: 80, height: 80)
-
+                        .frame(width: 72, height: 72)
                     Image(systemName: "exclamationmark.shield.fill")
-                        .font(.system(size: 32))
+                        .font(.system(size: 28))
                         .foregroundStyle(MVMTheme.warning)
                 }
 
-                VStack(spacing: 10) {
+                VStack(spacing: 8) {
                     Text("Before you begin")
-                        .font(.title2.weight(.bold))
+                        .font(.title3.weight(.bold))
                         .foregroundStyle(MVMTheme.primaryText)
 
                     Text("MVM Army provides example workout structures for planning, organization, and accountability. It does not provide medical advice or prescribe exercise.")
                         .font(.subheadline)
                         .foregroundStyle(MVMTheme.secondaryText)
                         .multilineTextAlignment(.center)
-                        .lineSpacing(3)
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -326,41 +299,35 @@ struct OnboardingView: View {
                     disclaimerBullet(icon: "shield.lefthalf.filled", text: "Workouts are based on Army fitness structures and templates")
                     disclaimerBullet(icon: "person.fill.questionmark", text: "You are responsible for your own fitness decisions")
                 }
-                .padding(18)
-                .background(MVMTheme.card)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18).stroke(MVMTheme.border)
-                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.white.opacity(0.04))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
             }
-            .frame(maxWidth: 500)
-            .padding(.horizontal, 24)
-
-            Spacer()
-            Spacer()
         }
     }
 
     private func disclaimerBullet(icon: String, text: String) -> some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(MVMTheme.warning)
-                .frame(width: 24)
+                .frame(width: 22)
             Text(text)
                 .font(.subheadline)
                 .foregroundStyle(MVMTheme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
     // MARK: - Bottom Controls
 
-    private var bottomControls: some View {
-        VStack(spacing: 12) {
+    private func bottomControls(contentWidth: CGFloat) -> some View {
+        VStack(spacing: 10) {
             Button {
                 Task {
                     if step < totalSteps - 1 {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.88)) {
                             step += 1
                         }
                     } else {
@@ -381,8 +348,8 @@ struct OnboardingView: View {
             } label: {
                 Text(primaryButtonTitle)
                     .font(.headline.weight(.bold))
-                    .foregroundStyle(step == 0 ? Color(hex: "#1A1A2E") : .white)
-                    .frame(height: 56)
+                    .foregroundStyle(step == 0 ? Color(hex: "#0A0A0F") : .white)
+                    .frame(height: 54)
                     .frame(maxWidth: .infinity)
                     .background {
                         if step == 0 {
@@ -391,14 +358,14 @@ struct OnboardingView: View {
                             MVMTheme.heroGradient
                         }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                    .shadow(color: (step == 0 ? Color.white : MVMTheme.accent).opacity(0.2), radius: 16, y: 8)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: (step == 0 ? Color.white : MVMTheme.accent).opacity(0.15), radius: 12, y: 6)
             }
             .buttonStyle(PressScaleButtonStyle())
 
             if step > 0 {
                 Button {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.88)) {
                         step -= 1
                     }
                 } label: {
@@ -411,6 +378,7 @@ struct OnboardingView: View {
                 .buttonStyle(.plain)
             }
         }
+        .frame(maxWidth: contentWidth)
     }
 
     private var primaryButtonTitle: String {
@@ -421,40 +389,58 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Reusable Components
+    // MARK: - Glass Card Container
 
-    private func onboardingPage<Content: View>(
-        icon: String,
-        title: String,
-        subtitle: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 10) {
-                        Image(systemName: icon)
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(MVMTheme.accent)
-                        Text(title)
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(MVMTheme.primaryText)
-                    }
-
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(MVMTheme.secondaryText)
-                }
-
-                content()
-            }
-            .frame(maxWidth: 500)
-            .padding(.horizontal, 24)
-            .padding(.top, 24)
-            .padding(.bottom, 80)
-            .frame(maxWidth: .infinity)
+    private func glassCard<Content: View>(contentWidth: CGFloat, @ViewBuilder content: () -> Content) -> some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            content()
+                .padding(20)
         }
+        .frame(maxWidth: contentWidth)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white.opacity(0.05))
+                .background(
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(.ultraThinMaterial.opacity(0.3))
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.15), Color.white.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 24))
     }
+
+    // MARK: - Step Header
+
+    private func stepHeader(icon: String, title: String, subtitle: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(MVMTheme.accent)
+
+            Text(title)
+                .font(.title2.weight(.bold))
+                .foregroundStyle(MVMTheme.primaryText)
+                .multilineTextAlignment(.center)
+
+            Text(subtitle)
+                .font(.subheadline)
+                .foregroundStyle(MVMTheme.secondaryText)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Reusable Components
 
     private func onboardingOption(
         title: String,
@@ -468,37 +454,37 @@ struct OnboardingView: View {
                 action()
             }
         } label: {
-            HStack(spacing: 16) {
+            HStack(spacing: 14) {
                 Image(systemName: icon)
-                    .font(.title3.weight(.semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(isSelected ? .white : MVMTheme.accent)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
                     .background(isSelected ? MVMTheme.accent : MVMTheme.accent.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.headline)
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(MVMTheme.primaryText)
                     Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(MVMTheme.secondaryText)
                 }
 
-                Spacer()
+                Spacer(minLength: 0)
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.title3)
+                        .font(.body)
                         .foregroundStyle(MVMTheme.accent)
                 }
             }
-            .padding(16)
-            .background(isSelected ? MVMTheme.accent.opacity(0.08) : MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .padding(14)
+            .background(isSelected ? MVMTheme.accent.opacity(0.08) : Color.white.opacity(0.03))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay {
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(isSelected ? MVMTheme.accent.opacity(0.4) : MVMTheme.border, lineWidth: isSelected ? 1.5 : 1)
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(isSelected ? MVMTheme.accent.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
             }
         }
         .buttonStyle(.plain)
@@ -515,11 +501,11 @@ struct OnboardingView: View {
                 action()
             }
         } label: {
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.title3.weight(.semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(isSelected ? .white : MVMTheme.accent)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
                     .background(isSelected ? MVMTheme.accent : MVMTheme.accent.opacity(0.12))
                     .clipShape(Circle())
 
@@ -527,17 +513,17 @@ struct OnboardingView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(MVMTheme.primaryText)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.75)
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .padding(.horizontal, 8)
-            .background(isSelected ? MVMTheme.accent.opacity(0.08) : MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .padding(.vertical, 14)
+            .padding(.horizontal, 6)
+            .background(isSelected ? MVMTheme.accent.opacity(0.08) : Color.white.opacity(0.03))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay {
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(isSelected ? MVMTheme.accent.opacity(0.4) : MVMTheme.border, lineWidth: isSelected ? 1.5 : 1)
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(isSelected ? MVMTheme.accent.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
             }
         }
         .buttonStyle(.plain)
