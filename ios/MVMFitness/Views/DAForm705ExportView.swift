@@ -223,7 +223,7 @@ struct DAForm705ExportView: View {
             sectionLabel("BODY COMPOSITION (Optional)")
 
             HStack(spacing: 12) {
-                fieldRow(label: "Height", text: $exportData.height, placeholder: "e.g. 5'10\"")
+                fieldRow(label: "Height", text: $exportData.height, placeholder: "e.g. 70\"")
                 fieldRow(label: "Weight", text: $exportData.weight, placeholder: "e.g. 175 lbs")
             }
 
