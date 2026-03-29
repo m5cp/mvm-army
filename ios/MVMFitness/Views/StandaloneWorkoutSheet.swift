@@ -10,6 +10,9 @@ struct StandaloneWorkoutSheet: View {
     @State private var exercises: [WorkoutExercise] = []
     @State private var expandedID: UUID?
     @State private var didComplete = false
+    @State private var showQRSheet = false
+    @State private var shareItems: [Any] = []
+    @State private var showShareSheet = false
 
     var body: some View {
         NavigationStack {
@@ -43,6 +46,14 @@ struct StandaloneWorkoutSheet: View {
             }
             .toolbarBackground(MVMTheme.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .sheet(isPresented: $showQRSheet) {
+                WorkoutQRSheet(workout: workout, workoutType: sheetTitle)
+            }
+            .sheet(isPresented: $showShareSheet) {
+                if !shareItems.isEmpty {
+                    ShareSheet(items: shareItems)
+                }
+            }
         }
         .onAppear {
             exercises = workout.exercises
@@ -337,7 +348,7 @@ struct StandaloneWorkoutSheet: View {
     }
 
     private var completeButton: some View {
-        Group {
+        VStack(spacing: 12) {
             if !didComplete {
                 Button {
                     vm.completeStandaloneWorkout(workout)
@@ -364,6 +375,51 @@ struct StandaloneWorkoutSheet: View {
                 }
                 .frame(height: 52)
                 .frame(maxWidth: .infinity)
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    showQRSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "qrcode")
+                            .font(.caption.weight(.bold))
+                        Text("QR")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+                    }
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    shareItems = ShareCardRenderer.shareItems(
+                        cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
+                    )
+                    showShareSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.caption.weight(.bold))
+                        Text("Share")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+                    }
+                }
+                .buttonStyle(PressScaleButtonStyle())
             }
         }
     }

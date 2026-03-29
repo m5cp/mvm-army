@@ -13,6 +13,9 @@ struct WorkoutDetailView: View {
     @State private var didComplete = false
     @State private var saveTrigger: Bool = false
     @State private var completeTrigger: Bool = false
+    @State private var showQRSheet = false
+    @State private var shareItems: [Any] = []
+    @State private var showShareSheet = false
 
     private var workout: WorkoutDay? {
         if isStandalone { return nil }
@@ -45,14 +48,48 @@ struct WorkoutDetailView: View {
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
-            if hasChanges {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") {
-                        saveChanges()
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 12) {
+                    if hasChanges {
+                        Button("Save") {
+                            saveChanges()
+                        }
+                        .foregroundStyle(MVMTheme.accent)
+                        .fontWeight(.semibold)
                     }
-                    .foregroundStyle(MVMTheme.accent)
-                    .fontWeight(.semibold)
+
+                    Menu {
+                        Button {
+                            showQRSheet = true
+                        } label: {
+                            Label("Share QR", systemImage: "qrcode")
+                        }
+                        Button {
+                            if let w = workout {
+                                shareItems = ShareCardRenderer.shareItems(
+                                    cardType: .workout(title: w.title, exercises: w.exercises, tags: w.tags)
+                                )
+                                showShareSheet = true
+                            }
+                        } label: {
+                            Label("Share Card", systemImage: "square.and.arrow.up")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
                 }
+            }
+        }
+        .sheet(isPresented: $showQRSheet) {
+            if let w = workout {
+                WorkoutQRSheet(workout: w, workoutType: "Individual PT")
+            }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            if !shareItems.isEmpty {
+                ShareSheet(items: shareItems)
             }
         }
         .onAppear {

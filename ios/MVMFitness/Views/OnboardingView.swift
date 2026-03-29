@@ -16,7 +16,7 @@ struct OnboardingView: View {
     @State private var reminderTime = Calendar.current.date(from: DateComponents(hour: 6, minute: 0)) ?? .now
     @State private var direction: Int = 1
 
-    private let totalSteps = 7
+    private let totalSteps = 6
 
     var body: some View {
         ZStack {
@@ -38,8 +38,7 @@ struct OnboardingView: View {
                     focusStep.tag(2)
                     scheduleStep.tag(3)
                     equipmentStep.tag(4)
-                    reminderStep.tag(5)
-                    disclaimerStep.tag(6)
+                    disclaimerStep.tag(5)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: step)
@@ -269,12 +268,11 @@ struct OnboardingView: View {
             title: "Available equipment?",
             subtitle: "Pick what you have access to"
         ) {
-            VStack(spacing: 12) {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                 ForEach(EquipmentOption.allCases) { equip in
-                    onboardingOption(
+                    onboardingChip(
                         title: equip.rawValue,
                         icon: equip.icon,
-                        subtitle: equipSubtitle(equip),
                         isSelected: equipmentRaw == equip.rawValue
                     ) {
                         equipmentRaw = equip.rawValue
@@ -291,47 +289,6 @@ struct OnboardingView: View {
         case .gym: return "Full gym access"
         case .running: return "Track or road running"
         case .field: return "Outdoor / tactical environment"
-        }
-    }
-
-    // MARK: - Reminder
-
-    private var reminderStep: some View {
-        onboardingPage(
-            icon: "bell.badge",
-            title: "Daily reminder?",
-            subtitle: "Stay on track with a daily nudge"
-        ) {
-            VStack(spacing: 20) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Daily Reminder")
-                            .font(.headline)
-                            .foregroundStyle(MVMTheme.primaryText)
-                        Text("One notification per day")
-                            .font(.subheadline)
-                            .foregroundStyle(MVMTheme.secondaryText)
-                    }
-                    Spacer()
-                    Toggle("", isOn: $dailyReminderEnabled)
-                        .tint(MVMTheme.accent)
-                        .labelsHidden()
-                }
-                .padding(18)
-                .background(MVMTheme.card)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18).stroke(MVMTheme.border)
-                }
-
-                if dailyReminderEnabled {
-                    DatePicker("Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
-                        .datePickerStyle(.wheel)
-                        .colorScheme(.dark)
-                        .frame(height: 120)
-                        .clipShape(RoundedRectangle(cornerRadius: 18))
-                }
-            }
         }
     }
 

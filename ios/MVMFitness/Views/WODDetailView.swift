@@ -12,6 +12,7 @@ struct WODDetailView: View {
     @State private var generateTrigger: Bool = false
     @State private var shareItems: [Any] = []
     @State private var showShareSheet: Bool = false
+    @State private var showQRSheet: Bool = false
 
     let initialTemplate: WODTemplate?
 
@@ -45,6 +46,11 @@ struct WODDetailView: View {
             .sheet(isPresented: $showShareSheet) {
                 if !shareItems.isEmpty {
                     ShareSheet(items: shareItems)
+                }
+            }
+            .sheet(isPresented: $showQRSheet) {
+                if let workout {
+                    WorkoutQRSheet(workout: workout, workoutType: "WOD")
                 }
             }
         }
@@ -367,6 +373,22 @@ struct WODDetailView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(MVMTheme.border)
                     }
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    showQRSheet = true
+                } label: {
+                    Image(systemName: "qrcode")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+                        .frame(width: 44, height: 44)
+                        .background(MVMTheme.cardSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(MVMTheme.border)
+                        }
                 }
                 .buttonStyle(PressScaleButtonStyle())
 

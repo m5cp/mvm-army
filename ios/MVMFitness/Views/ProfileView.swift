@@ -388,7 +388,7 @@ struct ProfileView: View {
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(MVMTheme.tertiaryText.opacity(0.6))
 
-            Text("Version 3.2")
+            Text("Version 4.0")
                 .font(.caption2)
                 .foregroundStyle(MVMTheme.tertiaryText.opacity(0.4))
         }

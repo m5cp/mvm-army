@@ -6,6 +6,7 @@ struct QRScannerSheet: View {
     @Environment(AppViewModel.self) private var vm
 
     @State private var scannedPlan: UnitPTPlan?
+    @State private var scannedWorkout: WorkoutDay?
     @State private var errorMessage: String?
     @State private var manualJSON = ""
     @State private var showManualEntry = false
@@ -18,13 +19,17 @@ struct QRScannerSheet: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
-                        if scannedPlan == nil {
+                        if scannedPlan == nil && scannedWorkout == nil {
                             cameraSection
                             manualEntrySection
                         }
 
                         if let scannedPlan {
                             importedPlanCard(scannedPlan)
+                        }
+
+                        if let scannedWorkout {
+                            importedWorkoutCard(scannedWorkout)
                         }
 
                         if let errorMessage {
@@ -37,7 +42,7 @@ struct QRScannerSheet: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
-            .navigationTitle("Scan PT Plan")
+            .navigationTitle("Scan Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -225,6 +230,82 @@ struct QRScannerSheet: View {
 
             Button {
                 scannedPlan = nil
+                scannedWorkout = nil
+                errorMessage = nil
+            } label: {
+                Text("Scan Another")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(height: 44)
+                    .frame(maxWidth: .infinity)
+                    .background(MVMTheme.accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+        }
+        .padding(18)
+        .premiumCard()
+    }
+
+    private func importedWorkoutCard(_ workout: WorkoutDay) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(MVMTheme.success)
+                Text("Imported Workout")
+                    .font(.headline)
+                    .foregroundStyle(MVMTheme.success)
+            }
+
+            Text(workout.title)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(MVMTheme.primaryText)
+
+            Text("\(workout.exercises.count) exercises")
+                .font(.subheadline)
+                .foregroundStyle(MVMTheme.accent)
+
+            if !workout.exercises.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(workout.exercises.prefix(5).enumerated()), id: \.element.id) { index, exercise in
+                        Text("\(index + 1). \(exercise.name) — \(exercise.displayDetail)")
+                            .font(.caption)
+                            .foregroundStyle(MVMTheme.secondaryText)
+                            .lineLimit(2)
+                    }
+                    if workout.exercises.count > 5 {
+                        Text("+ \(workout.exercises.count - 5) more...")
+                            .font(.caption)
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(MVMTheme.cardSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+
+            Button {
+                vm.saveImportedWorkout(workout)
+                savedConfirmation.toggle()
+                dismiss()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.and.arrow.down.on.square")
+                    Text("Save Workout")
+                }
+                .font(.headline)
+                .foregroundStyle(.white)
+                .frame(height: 52)
+                .frame(maxWidth: .infinity)
+                .background(MVMTheme.heroGradient)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            Button {
+                scannedPlan = nil
+                scannedWorkout = nil
                 errorMessage = nil
             } label: {
                 Text("Scan Another")
@@ -261,6 +342,7 @@ struct QRScannerSheet: View {
     private func handleScannedCode(_ code: String) {
         errorMessage = nil
         scannedPlan = nil
+        scannedWorkout = nil
 
         guard let data = code.data(using: .utf8) else {
             errorMessage = "Invalid text data."
@@ -268,6 +350,11 @@ struct QRScannerSheet: View {
         }
 
         let decoder = JSONDecoder()
+
+        if let workoutPayload = try? decoder.decode(WorkoutQRPayload.self, from: data), workoutPayload.v == 1 {
+            scannedWorkout = workoutPayload.toWorkoutDay()
+            return
+        }
 
         if let payload = try? decoder.decode(UnitPTQRCodePayload.self, from: data) {
             scannedPlan = payload.toUnitPTPlan()
@@ -280,7 +367,7 @@ struct QRScannerSheet: View {
             return
         }
 
-        errorMessage = "Could not decode PT plan. Make sure the data is valid."
+        errorMessage = "Could not decode workout. Make sure the QR code is from MVM Army."
     }
 }
 
