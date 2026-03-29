@@ -355,29 +355,6 @@ struct WODDetailView: View {
                 .buttonStyle(PressScaleButtonStyle())
 
                 Button {
-                    if let w = self.workout {
-                        vm.saveImportedWorkout(w)
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.caption.weight(.bold))
-                        Text("Save")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .foregroundStyle(MVMTheme.secondaryText)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(MVMTheme.cardSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(MVMTheme.border)
-                    }
-                }
-                .buttonStyle(PressScaleButtonStyle())
-
-                Button {
                     showQRSheet = true
                 } label: {
                     Image(systemName: "qrcode")
