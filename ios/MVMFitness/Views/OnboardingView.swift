@@ -26,8 +26,10 @@ struct OnboardingView: View {
             VStack(spacing: 0) {
                 if step > 0 && step < totalSteps - 1 {
                     progressIndicator
+                        .frame(maxWidth: 500)
                         .padding(.horizontal, 24)
                         .padding(.top, 12)
+                        .frame(maxWidth: .infinity)
                 }
 
                 TabView(selection: $step) {
@@ -43,8 +45,10 @@ struct OnboardingView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: step)
 
                 bottomControls
+                    .frame(maxWidth: 500)
                     .padding(.horizontal, 24)
                     .padding(.bottom, 16)
+                    .frame(maxWidth: .infinity)
             }
         }
     }
@@ -100,6 +104,7 @@ struct OnboardingView: View {
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
             }
+            .frame(maxWidth: 500)
 
             Spacer()
             Spacer()
@@ -371,6 +376,7 @@ struct OnboardingView: View {
                     RoundedRectangle(cornerRadius: 18).stroke(MVMTheme.border)
                 }
             }
+            .frame(maxWidth: 500)
             .padding(.horizontal, 24)
 
             Spacer()
@@ -485,9 +491,11 @@ struct OnboardingView: View {
 
                 content()
             }
+            .frame(maxWidth: 500)
             .padding(.horizontal, 24)
             .padding(.top, 24)
             .padding(.bottom, 80)
+            .frame(maxWidth: .infinity)
         }
     }
 
