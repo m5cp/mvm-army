@@ -6,6 +6,7 @@ enum ShareCardType {
     case aft(score: AFTScoreRecord, previous: AFTScoreRecord?)
     case unitPT(plan: UnitPTPlan)
     case completion(title: String, exerciseCount: Int, duration: String)
+    case completedWorkout(record: CompletedWorkoutRecord)
 }
 
 struct ShareCardView: View {
@@ -27,6 +28,8 @@ struct ShareCardView: View {
                 unitPTCard(plan: plan)
             case .completion(let title, let exerciseCount, let duration):
                 completionCard(title: title, exerciseCount: exerciseCount, duration: duration)
+            case .completedWorkout(let record):
+                completedWorkoutCard(record: record)
             }
 
             cardFooter
@@ -337,6 +340,124 @@ struct ShareCardView: View {
         .padding(.vertical, 14)
     }
 
+    // MARK: - Completed Workout Card
+
+    private func completedWorkoutCard(record: CompletedWorkoutRecord) -> some View {
+        VStack(spacing: 18) {
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color(hex: "#22C55E").opacity(0.2), Color(hex: "#22C55E").opacity(0.02)],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 45
+                        )
+                    )
+                    .frame(width: 90, height: 90)
+
+                Circle()
+                    .stroke(Color(hex: "#22C55E").opacity(0.3), lineWidth: 2.5)
+                    .frame(width: 60, height: 60)
+
+                Image(systemName: record.source == .wod ? "bolt.fill" : "checkmark.seal.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(Color(hex: "#22C55E"))
+            }
+
+            VStack(spacing: 6) {
+                Text("MISSION COMPLETE")
+                    .font(.caption.weight(.heavy))
+                    .tracking(2.0)
+                    .foregroundStyle(Color(hex: "#22C55E"))
+
+                if record.source == .wod {
+                    Text("WOD")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color(hex: "#F59E0B"))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 3)
+                        .background(Color(hex: "#F59E0B").opacity(0.15))
+                        .clipShape(Capsule())
+                }
+
+                Text(record.title)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            }
+
+            HStack(spacing: 0) {
+                shareStatColumn(value: "\(record.exerciseCount)", label: "Exercises", icon: "list.bullet", color: Color(hex: "#4F8CFF"))
+                shareDivider
+                shareStatColumn(value: sourceLabel(record.source), label: "Type", icon: sourceIconName(record.source), color: Color(hex: "#7C5CFF"))
+            }
+            .padding(.vertical, 14)
+            .background(Color.white.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+
+            if !record.exercises.isEmpty {
+                Divider().overlay(Color.white.opacity(0.08))
+
+                VStack(spacing: 7) {
+                    ForEach(record.exercises.prefix(6)) { exercise in
+                        HStack(spacing: 10) {
+                            Image(systemName: exercise.isCompleted ? "checkmark.circle.fill" : "circle")
+                                .font(.caption2)
+                                .foregroundStyle(exercise.isCompleted ? Color(hex: "#22C55E") : .white.opacity(0.3))
+                            Text(exercise.name)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.white.opacity(0.8))
+                                .lineLimit(1)
+                            Spacer()
+                            Text(exercise.displayDetail)
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.white.opacity(0.4))
+                                .lineLimit(1)
+                        }
+                    }
+
+                    if record.exercises.count > 6 {
+                        Text("+\(record.exercises.count - 6) more")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.3))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+
+            HStack {
+                Spacer()
+                Text("#MVMArmy")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color(hex: "#4F8CFF").opacity(0.5))
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+    }
+
+    private func sourceLabel(_ source: WorkoutSource) -> String {
+        switch source {
+        case .wod: return "WOD"
+        case .unit: return "Unit PT"
+        case .individual: return "Individual"
+        case .random: return "Random"
+        case .imported: return "Imported"
+        }
+    }
+
+    private func sourceIconName(_ source: WorkoutSource) -> String {
+        switch source {
+        case .wod: return "bolt.fill"
+        case .unit: return "person.3.fill"
+        case .individual: return "figure.strengthtraining.traditional"
+        case .random: return "shuffle"
+        case .imported: return "square.and.arrow.down"
+        }
+    }
+
     // MARK: - Shared Components
 
     private func shareStatColumn(value: String, label: String, icon: String, color: Color) -> some View {
@@ -400,6 +521,9 @@ enum ShareCardRenderer {
             return "MVM Army — \(plan.title)\n\(plan.objective)\n#MVMArmy"
         case .completion(let title, let count, let duration):
             return "MVM Army — Completed: \(title)\n\(count) exercises · \(duration)\n#MVMArmy"
+        case .completedWorkout(let record):
+            let prefix = record.source == .wod ? "WOD: " : ""
+            return "MVM Army — \(prefix)\(record.title)\n\(record.exerciseCount) exercises\n#MVMArmy"
         }
     }
 }

@@ -10,6 +10,8 @@ struct CompletedWorkoutDetailView: View {
     @State private var editingExerciseID: UUID?
     @State private var hasChanges: Bool = false
     @State private var saveTrigger: Bool = false
+    @State private var shareItems: [Any] = []
+    @State private var showShareSheet: Bool = false
 
     var body: some View {
         ZStack {
@@ -58,13 +60,39 @@ struct CompletedWorkoutDetailView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                if hasChanges {
-                    Button("Save") {
-                        saveChanges()
+                HStack(spacing: 12) {
+                    Button {
+                        let currentRecord = CompletedWorkoutRecord(
+                            date: record.date,
+                            title: record.title,
+                            exerciseCount: exercises.count,
+                            exercises: exercises,
+                            source: record.source
+                        )
+                        shareItems = ShareCardRenderer.shareItems(
+                            cardType: .completedWorkout(record: currentRecord),
+                            date: record.date
+                        )
+                        showShareSheet = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(MVMTheme.accent)
                     }
-                    .foregroundStyle(MVMTheme.accent)
-                    .fontWeight(.semibold)
+
+                    if hasChanges {
+                        Button("Save") {
+                            saveChanges()
+                        }
+                        .foregroundStyle(MVMTheme.accent)
+                        .fontWeight(.semibold)
+                    }
                 }
+            }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            if !shareItems.isEmpty {
+                ShareSheet(items: shareItems)
             }
         }
         .onAppear {

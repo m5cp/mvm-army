@@ -5,6 +5,8 @@ struct CompletedWorkoutsListView: View {
 
     @State private var selectedRecord: CompletedWorkoutRecord?
     @State private var showDetail: Bool = false
+    @State private var shareItems: [Any] = []
+    @State private var showShareSheet: Bool = false
 
     private var groupedRecords: [(String, [CompletedWorkoutRecord])] {
         let formatter = DateFormatter()
@@ -75,6 +77,11 @@ struct CompletedWorkoutsListView: View {
                 CompletedWorkoutDetailView(record: record)
             }
         }
+        .sheet(isPresented: $showShareSheet) {
+            if !shareItems.isEmpty {
+                ShareSheet(items: shareItems)
+            }
+        }
     }
 
     private func recordRow(_ record: CompletedWorkoutRecord) -> some View {
@@ -101,6 +108,21 @@ struct CompletedWorkoutsListView: View {
             }
 
             Spacer(minLength: 0)
+
+            Button {
+                shareItems = ShareCardRenderer.shareItems(
+                    cardType: .completedWorkout(record: record),
+                    date: record.date
+                )
+                showShareSheet = true
+            } label: {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 36, height: 36)
+                    .background(MVMTheme.accent.opacity(0.12))
+                    .clipShape(Circle())
+            }
 
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.bold))
