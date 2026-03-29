@@ -22,6 +22,7 @@ struct ActiveSessionView: View {
     @State private var markDoneTrigger: Bool = false
     @State private var shareItems: [Any] = []
     @State private var showShareSheet: Bool = false
+    @State private var showCompletionShareSheet: Bool = false
 
     private var workout: WorkoutDay? {
         if isStandalone { return nil }
@@ -72,6 +73,12 @@ struct ActiveSessionView: View {
             if !shareItems.isEmpty {
                 ShareSheet(items: shareItems)
             }
+        }
+        .sheet(isPresented: $showCompletionShareSheet) {
+            WorkoutCompletionShareSheet(
+                title: workoutTitle,
+                exerciseCount: exercises.count
+            )
         }
         .onAppear {
             if let w = workout {
@@ -769,19 +776,12 @@ struct ActiveSessionView: View {
                 .buttonStyle(PressScaleButtonStyle())
 
                 Button {
-                    shareItems = ShareCardRenderer.shareItems(
-                        cardType: .completion(
-                            title: workoutTitle,
-                            exerciseCount: exercises.count,
-                            duration: sessionDuration
-                        )
-                    )
-                    showShareSheet = true
+                    showCompletionShareSheet = true
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "square.and.arrow.up")
                             .font(.subheadline.weight(.semibold))
-                        Text("Share")
+                        Text("Share Workout")
                             .font(.subheadline.weight(.semibold))
                     }
                     .foregroundStyle(MVMTheme.accent)

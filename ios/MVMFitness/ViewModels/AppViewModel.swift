@@ -296,6 +296,23 @@ final class AppViewModel {
 
     func saveAFTCalculatorResult(_ result: AFTCalculatorResult) {
         aftCalculatorResults.insert(result, at: 0)
+
+        let scoreRecord = AFTScoreRecord(
+            date: result.date,
+            deadliftLbs: result.deadliftLbs,
+            pushUpReps: result.pushUpReps,
+            sdcSeconds: result.sdcSeconds,
+            plankSeconds: result.plankSeconds,
+            runSeconds: result.runSeconds,
+            deadliftPoints: result.deadliftPoints,
+            pushUpPoints: result.pushUpPoints,
+            sdcPoints: result.sdcPoints,
+            plankPoints: result.plankPoints,
+            runPoints: result.runPoints,
+            totalScore: result.totalScore,
+            weakestEvents: result.weakestEvents
+        )
+        aftScores.insert(scoreRecord, at: 0)
         persistAll()
     }
 

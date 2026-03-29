@@ -20,6 +20,9 @@ struct ProgressViewScreen: View {
                     weekStrip
                     weeklyFrequencyChart
                     aftCard
+                    if !vm.aftScores.isEmpty {
+                        aftHistoryCard
+                    }
                     activityCard
                 }
                 .padding(.horizontal, 20)
@@ -342,6 +345,23 @@ struct ProgressViewScreen: View {
                             .foregroundStyle(MVMTheme.warning)
                     }
                 }
+
+                Button {
+                    showAFTCalculator = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.caption.weight(.bold))
+                        Text("New AFT Score")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 38)
+                    .background(MVMTheme.accent.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(PressScaleButtonStyle())
             } else {
                 VStack(spacing: 12) {
                     Image(systemName: "shield.lefthalf.filled")
@@ -399,6 +419,106 @@ struct ProgressViewScreen: View {
         if value >= 60 { return MVMTheme.accent }
         if value >= 40 { return MVMTheme.warning }
         return MVMTheme.danger
+    }
+
+    // MARK: - AFT History Card
+
+    private var aftHistoryCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "list.bullet.rectangle.portrait")
+                    .foregroundStyle(MVMTheme.accent)
+                    .font(.subheadline.weight(.semibold))
+                Text("AFT History")
+                    .font(.headline)
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Spacer()
+
+                Text("\(vm.aftScores.count) records")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+
+            ForEach(vm.aftScores.prefix(5)) { score in
+                aftHistoryRow(score)
+            }
+
+            if vm.aftScores.count > 5 {
+                Text("\(vm.aftScores.count - 5) more scores")
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(18)
+        .premiumCard()
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
+    }
+
+    private func aftHistoryRow(_ score: AFTScoreRecord) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(score.totalScore)")
+                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .foregroundStyle(aftHistoryScoreColor(score.totalScore))
+
+                Text(aftHistoryDateString(score.date))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+
+            Spacer()
+
+            HStack(spacing: 4) {
+                aftMiniPill(score.deadliftPoints)
+                aftMiniPill(score.pushUpPoints)
+                aftMiniPill(score.sdcPoints)
+                aftMiniPill(score.plankPoints)
+                aftMiniPill(score.runPoints)
+            }
+
+            Button {
+                shareItems = ShareCardRenderer.shareItems(
+                    cardType: .aft(score: score, previous: nil)
+                )
+                showShareSheet = true
+            } label: {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .frame(width: 28, height: 28)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(12)
+        .background(MVMTheme.cardSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func aftMiniPill(_ value: Int) -> some View {
+        Text("\(value)")
+            .font(.system(size: 10, weight: .bold, design: .monospaced))
+            .foregroundStyle(aftPillColor(value))
+            .frame(width: 26, height: 20)
+            .background(aftPillColor(value).opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+    }
+
+    private func aftHistoryScoreColor(_ total: Int) -> Color {
+        if total >= 400 { return MVMTheme.success }
+        if total >= 300 { return MVMTheme.accent }
+        if total >= 200 { return MVMTheme.warning }
+        return MVMTheme.danger
+    }
+
+    private func aftHistoryDateString(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d, yyyy"
+        return f.string(from: date)
     }
 
     // MARK: - Weekly Frequency Chart

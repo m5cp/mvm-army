@@ -33,6 +33,9 @@ struct HomeView: View {
     @State private var navigateToUnitPTDetail: Bool = false
     @State private var selectedUnitPTDay: WorkoutDay?
     @State private var calendarService = CalendarExportService()
+    @State private var showCompletionShare: Bool = false
+    @State private var completedWorkoutTitle: String = ""
+    @State private var completedExerciseCount: Int = 0
 
     private let calendar = Calendar.current
 
@@ -212,6 +215,12 @@ struct HomeView: View {
             if !shareItems.isEmpty {
                 ShareSheet(items: shareItems)
             }
+        }
+        .sheet(isPresented: $showCompletionShare) {
+            WorkoutCompletionShareSheet(
+                title: completedWorkoutTitle,
+                exerciseCount: completedExerciseCount
+            )
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
@@ -506,6 +515,29 @@ struct HomeView: View {
                     }
                     .padding(.top, 2)
                 }
+
+                HStack(spacing: 8) {
+                    Spacer()
+                    Button {
+                        shareItems = ShareCardRenderer.shareItems(
+                            cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
+                        )
+                        showShareSheet = true
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.caption2.weight(.bold))
+                            Text("Share")
+                                .font(.caption2.weight(.semibold))
+                        }
+                        .foregroundStyle(.white.opacity(0.7))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(.white.opacity(0.12))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(18)
             .background {
@@ -533,7 +565,10 @@ struct HomeView: View {
 
             Button {
                 completeWorkoutTrigger.toggle()
+                completedWorkoutTitle = workout.title
+                completedExerciseCount = workout.exercises.count
                 vm.markDayCompleted(dayIndex: workout.dayIndex)
+                showCompletionShare = true
             } label: {
                 Label("Mark Complete", systemImage: "checkmark.circle")
             }

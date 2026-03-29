@@ -282,27 +282,56 @@ struct ShareCardView: View {
     // MARK: - Completion Card
 
     private func completionCard(title: String, exerciseCount: Int, duration: String) -> some View {
-        VStack(spacing: 18) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(Color(hex: "#22C55E"))
+        VStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color(hex: "#22C55E").opacity(0.2), Color(hex: "#22C55E").opacity(0.02)],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 50
+                        )
+                    )
+                    .frame(width: 100, height: 100)
 
-            Text("Workout Complete")
-                .font(.title2.weight(.bold))
-                .foregroundStyle(.white)
+                Circle()
+                    .stroke(Color(hex: "#22C55E").opacity(0.3), lineWidth: 2.5)
+                    .frame(width: 68, height: 68)
 
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.6))
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 38))
+                    .foregroundStyle(Color(hex: "#22C55E"))
+            }
+
+            VStack(spacing: 6) {
+                Text("MISSION COMPLETE")
+                    .font(.caption.weight(.heavy))
+                    .tracking(2.0)
+                    .foregroundStyle(Color(hex: "#22C55E"))
+
+                Text(title)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            }
 
             HStack(spacing: 0) {
                 shareStatColumn(value: "\(exerciseCount)", label: "Exercises", icon: "list.bullet", color: Color(hex: "#4F8CFF"))
                 shareDivider
-                shareStatColumn(value: duration, label: "Duration", icon: "clock", color: Color(hex: "#F59E0B"))
+                shareStatColumn(value: duration.isEmpty ? "Done" : duration, label: duration.isEmpty ? "Status" : "Duration", icon: duration.isEmpty ? "flame.fill" : "clock", color: Color(hex: "#F59E0B"))
             }
             .padding(.vertical, 14)
             .background(Color.white.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 16))
+
+            HStack {
+                Spacer()
+                Text("#MVMArmy")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color(hex: "#4F8CFF").opacity(0.5))
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
