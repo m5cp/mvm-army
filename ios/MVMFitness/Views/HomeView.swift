@@ -516,28 +516,7 @@ struct HomeView: View {
                     .padding(.top, 2)
                 }
 
-                HStack(spacing: 8) {
-                    Spacer()
-                    Button {
-                        shareItems = ShareCardRenderer.shareItems(
-                            cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
-                        )
-                        showShareSheet = true
-                    } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.caption2.weight(.bold))
-                            Text("Share")
-                                .font(.caption2.weight(.semibold))
-                        }
-                        .foregroundStyle(.white.opacity(0.7))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(.white.opacity(0.12))
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
+
             }
             .padding(18)
             .background {
@@ -586,14 +565,6 @@ struct HomeView: View {
                 Label("Regenerate", systemImage: "arrow.clockwise")
             }
 
-            Button {
-                shareItems = ShareCardRenderer.shareItems(
-                    cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
-                )
-                showShareSheet = true
-            } label: {
-                Label("Share", systemImage: "square.and.arrow.up")
-            }
         }
     }
 

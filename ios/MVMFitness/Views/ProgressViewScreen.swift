@@ -7,8 +7,7 @@ struct ProgressViewScreen: View {
     @State private var showAFTSheet: Bool = false
     @State private var appeared: Bool = false
     @State private var showAFTCalculator: Bool = false
-    @State private var shareItems: [Any] = []
-    @State private var showShareSheet: Bool = false
+    @State private var showCompletedWorkouts: Bool = false
 
     var body: some View {
         ZStack {
@@ -35,35 +34,15 @@ struct ProgressViewScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    shareItems = ShareCardRenderer.shareItems(
-                        cardType: .progress(
-                            completed: vm.weeklyCompletedCount,
-                            planned: vm.weeklyTotalDays,
-                            streak: vm.streak,
-                            steps: vm.pedometer.todaySteps
-                        )
-                    )
-                    showShareSheet = true
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.secondaryText)
-                }
-            }
-        }
+    
         .sheet(isPresented: $showAFTSheet) {
             AFTScoreSheet()
         }
         .navigationDestination(isPresented: $showAFTCalculator) {
             AFTCalculatorView()
         }
-        .sheet(isPresented: $showShareSheet) {
-            if !shareItems.isEmpty {
-                ShareSheet(items: shareItems)
-            }
+        .navigationDestination(isPresented: $showCompletedWorkouts) {
+            CompletedWorkoutsListView()
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
@@ -479,20 +458,7 @@ struct ProgressViewScreen: View {
                 aftMiniPill(score.runPoints)
             }
 
-            Button {
-                shareItems = ShareCardRenderer.shareItems(
-                    cardType: .aft(score: score, previous: nil)
-                )
-                showShareSheet = true
-            } label: {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(MVMTheme.tertiaryText)
-                    .frame(width: 28, height: 28)
-                    .background(MVMTheme.cardSoft)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
+
         }
         .padding(12)
         .background(MVMTheme.cardSoft)
@@ -535,6 +501,7 @@ struct ProgressViewScreen: View {
             }
 
             let weekData = last4WeeksData
+            let totalCompleted = weekData.reduce(0) { $0 + $1.count }
 
             if weekData.allSatisfy({ $0.count == 0 }) {
                 VStack(spacing: 12) {
@@ -579,6 +546,25 @@ struct ProgressViewScreen: View {
                     }
                 }
                 .frame(height: 140)
+
+                if totalCompleted > 0 {
+                    Button {
+                        showCompletedWorkouts = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("View Completed Workouts")
+                                .font(.caption.weight(.semibold))
+                            Image(systemName: "chevron.right")
+                                .font(.caption2.weight(.bold))
+                        }
+                        .foregroundStyle(MVMTheme.accent)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
+                        .background(MVMTheme.accent.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
+                }
             }
         }
         .padding(18)
