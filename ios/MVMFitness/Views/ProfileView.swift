@@ -273,7 +273,7 @@ struct ProfileView: View {
                 icon: "calendar",
                 title: "Days per Week",
                 currentValue: "\(daysPerWeek)",
-                values: (2...7).map { "\($0)" },
+                values: (1...7).map { "\($0)" },
                 intSelection: $daysPerWeek
             )
             sectionDivider

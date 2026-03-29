@@ -30,6 +30,8 @@ struct HomeView: View {
     @State private var planDetailDayIndex: Int = 0
     @State private var navigateToPlanSession: Bool = false
     @State private var planSessionDayIndex: Int = 0
+    @State private var navigateToUnitPTDetail: Bool = false
+    @State private var selectedUnitPTDay: WorkoutDay?
     @State private var calendarService = CalendarExportService()
 
     private let calendar = Calendar.current
@@ -41,10 +43,10 @@ struct HomeView: View {
 
                 VStack(spacing: 24) {
                     greetingHeader
-                    workoutLaunchers
+                    selectedDayWorkoutsSection
+                    quickActions
                     metricsStrip
                     aftCalculatorButton
-                    weekPlanSection
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
@@ -136,6 +138,15 @@ struct HomeView: View {
         }
         .navigationDestination(isPresented: $showAFTCalculator) {
             AFTCalculatorView()
+        }
+        .navigationDestination(isPresented: $navigateToUnitPTDetail) {
+            if let unitDay = selectedUnitPTDay {
+                StandaloneWorkoutDetailView(workout: unitDay)
+            } else {
+                UnavailableFallbackView(title: "Unit PT Unavailable", message: "Could not load unit PT details.", action: "Go Back") {
+                    navigateToUnitPTDetail = false
+                }
+            }
         }
         .sheet(isPresented: $showWODSheet) {
             WODDetailView()
@@ -357,7 +368,7 @@ struct HomeView: View {
                 .font(.title2.weight(.bold))
                 .foregroundStyle(MVMTheme.primaryText)
 
-            Text("What's the move?")
+            Text(selectedDaySubtitle)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(MVMTheme.tertiaryText)
         }
@@ -366,59 +377,46 @@ struct HomeView: View {
         .offset(y: animateHero ? 0 : 8)
     }
 
+    private var selectedDaySubtitle: String {
+        let allWorkouts = allWorkoutsForSelectedDate
+        if allWorkouts.isEmpty { return "No workouts scheduled" }
+        let count = allWorkouts.count
+        return "\(count) workout\(count == 1 ? "" : "s") scheduled"
+    }
+
     private var selectedDayWorkout: WorkoutDay? {
         guard let plan = vm.currentPlan else { return nil }
         return plan.days.first { calendar.isDate($0.date, inSameDayAs: selectedDate) }
     }
 
-    // MARK: - Workout Launchers
+    private var allWorkoutsForSelectedDate: [WorkoutDay] {
+        vm.allWorkoutsForDate(selectedDate)
+    }
 
-    private var workoutLaunchers: some View {
+    // MARK: - Selected Day Workouts Section
+
+    @ViewBuilder
+    private var selectedDayWorkoutsSection: some View {
+        let workouts = allWorkoutsForSelectedDate
+
         VStack(spacing: 12) {
-            todayPlanLauncher
-
-            HStack(spacing: 10) {
-                launcherCard(
-                    title: "WOD",
-                    subtitle: "Workout of the Day",
-                    icon: "bolt.fill",
-                    gradient: [Color(hex: "#F59E0B"), Color(hex: "#D97706")]
-                ) {
-                    toolTapTrigger.toggle()
-                    showWODSheet = true
+            if workouts.isEmpty {
+                if vm.currentPlan == nil {
+                    buildPlanCard
+                } else {
+                    emptyDayCard
                 }
-
-                launcherCard(
-                    title: "Random",
-                    subtitle: "Surprise me",
-                    icon: "shuffle",
-                    gradient: [Color(hex: "#6366F1"), Color(hex: "#4F46E5")]
-                ) {
-                    toolTapTrigger.toggle()
-                    randomWorkout = vm.generateRandomWorkout()
-                    showRandomSheet = true
-                }
-            }
-
-            HStack(spacing: 10) {
-                launcherCard(
-                    title: "Unit PT",
-                    subtitle: "Build for your team",
-                    icon: "person.3.fill",
-                    gradient: [Color(hex: "#2563EB"), Color(hex: "#1D4ED8")]
-                ) {
-                    toolTapTrigger.toggle()
-                    showUnitPTSheet = true
-                }
-
-                launcherCard(
-                    title: "Scan QR",
-                    subtitle: "Load shared PT",
-                    icon: "qrcode.viewfinder",
-                    gradient: [Color(hex: "#7C3AED"), Color(hex: "#6D28D9")]
-                ) {
-                    toolTapTrigger.toggle()
-                    showScanSheet = true
+            } else {
+                ForEach(workouts, id: \.id) { workout in
+                    if workout.source == .unit {
+                        unitPTCard(workout)
+                    } else if workout.isRestDay {
+                        recoveryDayCard(workout)
+                    } else if workout.isCompleted {
+                        completedWorkoutCard(workout)
+                    } else {
+                        activeWorkoutCard(workout)
+                    }
                 }
             }
         }
@@ -426,22 +424,7 @@ struct HomeView: View {
         .opacity(animateHero ? 1 : 0)
     }
 
-    @ViewBuilder
-    private var todayPlanLauncher: some View {
-        if let selectedDay = selectedDayWorkout {
-            if selectedDay.isCompleted {
-                completedPlanCard(selectedDay)
-            } else if selectedDay.isRestDay {
-                recoveryPlanCard(selectedDay)
-            } else {
-                activePlanCard(selectedDay)
-            }
-        } else {
-            buildPlanCard
-        }
-    }
-
-    private func activePlanCard(_ workout: WorkoutDay) -> some View {
+    private func activeWorkoutCard(_ workout: WorkoutDay) -> some View {
         Button {
             startWorkoutTrigger.toggle()
             if calendar.isDateInToday(workout.date) {
@@ -451,50 +434,78 @@ struct HomeView: View {
                 navigateToPlanSession = true
             }
         } label: {
-            HStack(spacing: 16) {
-                VStack(spacing: 6) {
-                    Image(systemName: "figure.run")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.white)
-                    Image(systemName: "play.fill")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white.opacity(0.7))
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 14) {
+                    VStack(spacing: 6) {
+                        Image(systemName: "figure.run")
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(.white)
+                        Image(systemName: "play.fill")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                    .frame(width: 52, height: 52)
+                    .background(.white.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(heroLabel(for: workout).uppercased())
+                            .font(.caption2.weight(.heavy))
+                            .tracking(0.8)
+                            .foregroundStyle(.white.opacity(0.7))
+
+                        Text(workout.title)
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+
+                        HStack(spacing: 10) {
+                            Label("\(workout.exercises.count)", systemImage: "list.bullet")
+                            Label(estimatedDuration(workout), systemImage: "clock")
+                            if let tag = workout.tags.first {
+                                Text(tag)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(.white.opacity(0.12))
+                                    .clipShape(Capsule())
+                            }
+                        }
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.5))
                 }
-                .frame(width: 52, height: 52)
-                .background(.white.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(heroLabel(for: workout).uppercased())
-                        .font(.caption2.weight(.heavy))
-                        .tracking(0.8)
-                        .foregroundStyle(.white.opacity(0.7))
-
-                    Text(workout.title)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-
-                    HStack(spacing: 10) {
-                        Label("\(workout.exercises.count)", systemImage: "list.bullet")
-                        Label(estimatedDuration(workout), systemImage: "clock")
-                        if let tag = workout.tags.first {
-                            Text(tag)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(.white.opacity(0.12))
-                                .clipShape(Capsule())
+                if !workout.exercises.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(workout.exercises.prefix(3), id: \.id) { exercise in
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(.white.opacity(0.3))
+                                    .frame(width: 4, height: 4)
+                                Text(exercise.name)
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(.white.opacity(0.5))
+                                Spacer()
+                                Text(exercise.displayDetail)
+                                    .font(.caption2)
+                                    .foregroundStyle(.white.opacity(0.35))
+                            }
+                        }
+                        if workout.exercises.count > 3 {
+                            Text("+\(workout.exercises.count - 3) more")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.white.opacity(0.35))
+                                .padding(.leading, 10)
                         }
                     }
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .padding(.top, 2)
                 }
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.5))
             }
             .padding(18)
             .background {
@@ -528,6 +539,19 @@ struct HomeView: View {
             }
 
             Button {
+                selectedDayIndex = workout.dayIndex
+                showEditSheet = true
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+
+            Button {
+                vm.regenerateSingleDay(dayIndex: workout.dayIndex)
+            } label: {
+                Label("Regenerate", systemImage: "arrow.clockwise")
+            }
+
+            Button {
                 shareItems = ShareCardRenderer.shareItems(
                     cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
                 )
@@ -538,7 +562,7 @@ struct HomeView: View {
         }
     }
 
-    private func completedPlanCard(_ workout: WorkoutDay) -> some View {
+    private func completedWorkoutCard(_ workout: WorkoutDay) -> some View {
         Button {
             if calendar.isDateInToday(workout.date) {
                 showWorkoutDetail = true
@@ -592,9 +616,16 @@ struct HomeView: View {
             .shadow(color: Color(hex: "#059669").opacity(0.15), radius: 16, y: 10)
         }
         .buttonStyle(PressScaleButtonStyle())
+        .contextMenu {
+            Button {
+                vm.markDayIncomplete(dayIndex: workout.dayIndex)
+            } label: {
+                Label("Mark Incomplete", systemImage: "arrow.uturn.backward")
+            }
+        }
     }
 
-    private func recoveryPlanCard(_ day: WorkoutDay) -> some View {
+    private func recoveryDayCard(_ day: WorkoutDay) -> some View {
         HStack(spacing: 16) {
             Image(systemName: "leaf.fill")
                 .font(.title2.weight(.bold))
@@ -660,6 +691,141 @@ struct HomeView: View {
         .shadow(color: Color(hex: "#1E3A5F").opacity(0.15), radius: 16, y: 10)
     }
 
+    private func unitPTCard(_ day: WorkoutDay) -> some View {
+        Button {
+            selectedUnitPTDay = day
+            navigateToUnitPTDetail = true
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 14) {
+                    Image(systemName: "person.3.fill")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 52, height: 52)
+                        .background(.white.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("UNIT PT")
+                            .font(.caption2.weight(.heavy))
+                            .tracking(0.8)
+                            .foregroundStyle(.white.opacity(0.7))
+
+                        Text(day.title)
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+
+                        HStack(spacing: 8) {
+                            Label("\(day.exercises.count) blocks", systemImage: "list.bullet")
+                            if let start = day.startTime {
+                                Label(start.formatted(date: .omitted, time: .shortened), systemImage: "clock")
+                            }
+                            if let end = day.endTime {
+                                Label(end.formatted(date: .omitted, time: .shortened), systemImage: "clock.badge.checkmark")
+                            }
+                        }
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if day.isCompleted {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(.white.opacity(0.8))
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+
+                if !day.exercises.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(day.exercises.prefix(4), id: \.id) { exercise in
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(.white.opacity(0.3))
+                                    .frame(width: 4, height: 4)
+                                Text(exercise.name)
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(.white.opacity(0.55))
+                                Spacer()
+                                if !exercise.notes.isEmpty {
+                                    Text(String(exercise.notes.prefix(30)))
+                                        .font(.caption2)
+                                        .foregroundStyle(.white.opacity(0.35))
+                                        .lineLimit(1)
+                                }
+                            }
+                        }
+                        if day.exercises.count > 4 {
+                            Text("+\(day.exercises.count - 4) more")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.white.opacity(0.35))
+                                .padding(.leading, 10)
+                        }
+                    }
+                    .padding(.top, 2)
+                }
+            }
+            .padding(18)
+            .background {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "#2563EB"), Color(hex: "#1D4ED8").opacity(0.95)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 22))
+            .shadow(color: Color(hex: "#2563EB").opacity(0.15), radius: 16, y: 10)
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .contextMenu {
+            if !day.isCompleted {
+                Button {
+                    vm.markUnitPTCompleted(id: day.id)
+                } label: {
+                    Label("Mark Complete", systemImage: "checkmark.circle")
+                }
+            }
+            Button(role: .destructive) {
+                vm.removeUnitPTFromCalendar(id: day.id)
+            } label: {
+                Label("Remove", systemImage: "trash")
+            }
+        }
+    }
+
+    private var emptyDayCard: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "moon.zzz.fill")
+                .font(.title2)
+                .foregroundStyle(MVMTheme.tertiaryText)
+
+            Text("No workouts for this day")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(MVMTheme.secondaryText)
+
+            Text("Select a different day or add a workout")
+                .font(.caption)
+                .foregroundStyle(MVMTheme.tertiaryText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 32)
+        .background(MVMTheme.card)
+        .overlay {
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(MVMTheme.border)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
     private var buildPlanCard: some View {
         Button {
             vm.generateWeeklyPlan()
@@ -705,6 +871,57 @@ struct HomeView: View {
             .shadow(color: MVMTheme.accent.opacity(0.2), radius: 20, y: 12)
         }
         .buttonStyle(PressScaleButtonStyle())
+    }
+
+    // MARK: - Quick Actions
+
+    private var quickActions: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                launcherCard(
+                    title: "WOD",
+                    subtitle: "Workout of the Day",
+                    icon: "bolt.fill",
+                    gradient: [Color(hex: "#F59E0B"), Color(hex: "#D97706")]
+                ) {
+                    toolTapTrigger.toggle()
+                    showWODSheet = true
+                }
+
+                launcherCard(
+                    title: "Random",
+                    subtitle: "Surprise me",
+                    icon: "shuffle",
+                    gradient: [Color(hex: "#6366F1"), Color(hex: "#4F46E5")]
+                ) {
+                    toolTapTrigger.toggle()
+                    randomWorkout = vm.generateRandomWorkout()
+                    showRandomSheet = true
+                }
+            }
+
+            HStack(spacing: 10) {
+                launcherCard(
+                    title: "Unit PT",
+                    subtitle: "Build for your team",
+                    icon: "person.3.fill",
+                    gradient: [Color(hex: "#2563EB"), Color(hex: "#1D4ED8")]
+                ) {
+                    toolTapTrigger.toggle()
+                    showUnitPTSheet = true
+                }
+
+                launcherCard(
+                    title: "Scan QR",
+                    subtitle: "Load shared PT",
+                    icon: "qrcode.viewfinder",
+                    gradient: [Color(hex: "#7C3AED"), Color(hex: "#6D28D9")]
+                ) {
+                    toolTapTrigger.toggle()
+                    showScanSheet = true
+                }
+            }
+        }
     }
 
     private func launcherCard(title: String, subtitle: String, icon: String, gradient: [Color], action: @escaping () -> Void) -> some View {
@@ -818,8 +1035,6 @@ struct HomeView: View {
         .frame(maxWidth: .infinity)
     }
 
-
-
     // MARK: - AFT Calculator Button
 
     private var aftCalculatorButton: some View {
@@ -859,288 +1074,6 @@ struct HomeView: View {
             .clipShape(RoundedRectangle(cornerRadius: 20))
         }
         .buttonStyle(PressScaleButtonStyle())
-    }
-
-    // MARK: - Week Plan Section
-
-    @ViewBuilder
-    private var weekPlanSection: some View {
-        if let plan = vm.currentPlan {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    Text("THIS WEEK")
-                        .font(.caption.weight(.bold))
-                        .tracking(1.0)
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                        .padding(.leading, 4)
-
-                    Spacer()
-
-                    weekProgressPill(plan)
-                }
-
-                ForEach(Array(plan.days.enumerated()), id: \.element.id) { offset, day in
-                    if day.isRestDay {
-                        weekRecoveryRow(day)
-                    } else {
-                        weekWorkoutRow(day)
-                    }
-
-                    ForEach(unitPTForDate(day.date), id: \.id) { unitDay in
-                        unitPTRow(unitDay)
-                    }
-                }
-            }
-        }
-    }
-
-    private func weekProgressPill(_ plan: WeeklyPlan) -> some View {
-        let total = plan.totalWorkoutDays
-        let completed = plan.completedCount
-        let progress: Int = total > 0 ? Int(Double(completed) / Double(total) * 100) : 0
-
-        return Text("\(completed)/\(total) · \(progress)%")
-            .font(.caption2.weight(.bold))
-            .foregroundStyle(MVMTheme.accent)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(MVMTheme.accent.opacity(0.1))
-            .clipShape(Capsule())
-    }
-
-    private func weekWorkoutRow(_ day: WorkoutDay) -> some View {
-        let isSelected = calendar.isDate(day.date, inSameDayAs: selectedDate)
-
-        return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                selectedDate = calendar.startOfDay(for: day.date)
-            }
-        } label: {
-            HStack(spacing: 14) {
-                VStack(spacing: 2) {
-                    Text(shortDayName(day.date))
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-
-                    Text(dayNumber(day.date))
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(
-                            day.isCompleted ? MVMTheme.success :
-                            calendar.isDateInToday(day.date) ? MVMTheme.accent :
-                            MVMTheme.secondaryText
-                        )
-                }
-                .frame(width: 36)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(day.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(day.isCompleted ? MVMTheme.secondaryText : MVMTheme.primaryText)
-                        .lineLimit(1)
-
-                    HStack(spacing: 8) {
-                        if let tag = day.tags.first {
-                            Text(tag)
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(MVMTheme.accent)
-                        }
-                        Text(estimatedDuration(day))
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(MVMTheme.tertiaryText)
-                    }
-                }
-
-                Spacer(minLength: 0)
-
-                if day.isCompleted {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.body)
-                        .foregroundStyle(MVMTheme.success)
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(
-                isSelected ? MVMTheme.accent.opacity(0.08) :
-                MVMTheme.card.opacity(day.isCompleted ? 0.5 : 1)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(
-                        isSelected ? MVMTheme.accent.opacity(0.2) :
-                        day.isCompleted ? MVMTheme.success.opacity(0.1) :
-                        MVMTheme.border
-                    )
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-        }
-        .buttonStyle(PressScaleButtonStyle())
-        .contextMenu {
-            if !day.isCompleted {
-                Button {
-                    vm.markDayCompleted(dayIndex: day.dayIndex)
-                } label: {
-                    Label("Mark Complete", systemImage: "checkmark.circle")
-                }
-            } else {
-                Button {
-                    vm.markDayIncomplete(dayIndex: day.dayIndex)
-                } label: {
-                    Label("Mark Incomplete", systemImage: "arrow.uturn.backward")
-                }
-            }
-
-            Button {
-                selectedDayIndex = day.dayIndex
-                showEditSheet = true
-            } label: {
-                Label("Edit", systemImage: "pencil")
-            }
-
-            Button {
-                vm.regenerateSingleDay(dayIndex: day.dayIndex)
-            } label: {
-                Label("Regenerate", systemImage: "arrow.clockwise")
-            }
-
-            if !day.isCompleted {
-                Button {
-                    vm.convertDayToRecovery(dayIndex: day.dayIndex)
-                } label: {
-                    Label("Make Recovery Day", systemImage: "leaf")
-                }
-            }
-
-            Button {
-                Task {
-                    let result = await calendarService.exportWorkout(day)
-                    handleExportResult(result)
-                }
-            } label: {
-                Label("Add to Calendar", systemImage: "calendar.badge.plus")
-            }
-        }
-    }
-
-    private func weekRecoveryRow(_ day: WorkoutDay) -> some View {
-        let isSelected = calendar.isDate(day.date, inSameDayAs: selectedDate)
-
-        return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                selectedDate = calendar.startOfDay(for: day.date)
-            }
-        } label: {
-            HStack(spacing: 14) {
-                VStack(spacing: 2) {
-                    Text(shortDayName(day.date))
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-
-                    Text(dayNumber(day.date))
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                }
-                .frame(width: 36)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Recovery & Mobility")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(MVMTheme.secondaryText)
-
-                    Text("Active rest · Light movement")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                }
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "leaf.fill")
-                    .font(.caption)
-                    .foregroundStyle(Color(hex: "#1E3A5F").opacity(0.5))
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(
-                isSelected ? MVMTheme.accent.opacity(0.05) : MVMTheme.card.opacity(0.4)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(
-                        isSelected ? MVMTheme.accent.opacity(0.15) : MVMTheme.border.opacity(0.5)
-                    )
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-        }
-        .buttonStyle(PressScaleButtonStyle())
-    }
-
-
-    private func unitPTRow(_ day: WorkoutDay) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: "person.3.fill")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color(hex: "#2563EB"))
-                .frame(width: 36, height: 36)
-                .background(Color(hex: "#2563EB").opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(day.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(day.isCompleted ? MVMTheme.secondaryText : MVMTheme.primaryText)
-                    .lineLimit(1)
-
-                HStack(spacing: 6) {
-                    Text("Unit PT")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color(hex: "#2563EB"))
-
-                    if let start = day.startTime {
-                        Text(start.formatted(date: .omitted, time: .shortened))
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(MVMTheme.tertiaryText)
-                    }
-                }
-            }
-
-            Spacer(minLength: 0)
-
-            if day.isCompleted {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.body)
-                    .foregroundStyle(MVMTheme.success)
-            } else {
-                Menu {
-                    Button {
-                        vm.markUnitPTCompleted(id: day.id)
-                    } label: {
-                        Label("Mark Complete", systemImage: "checkmark.circle")
-                    }
-                    Button(role: .destructive) {
-                        vm.removeUnitPTFromCalendar(id: day.id)
-                    } label: {
-                        Label("Remove", systemImage: "trash")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                        .frame(width: 32, height: 32)
-                }
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(Color(hex: "#2563EB").opacity(0.04))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color(hex: "#2563EB").opacity(0.15))
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     // MARK: - Calendar Export Sheet

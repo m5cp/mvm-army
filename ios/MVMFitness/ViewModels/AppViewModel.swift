@@ -169,20 +169,70 @@ final class AppViewModel {
     }
 
     func addUnitPTToCalendar(_ unitPlan: UnitPTPlan, on date: Date, startTime: Date? = nil, endTime: Date? = nil) {
-        let exercises = unitPlan.mainEffort.enumerated().map { index, block in
-            WorkoutExercise(
-                name: "Block \(index + 1)",
+        var exercises: [WorkoutExercise] = []
+
+        if !unitPlan.objective.isEmpty {
+            exercises.append(WorkoutExercise(
+                name: "Objective",
+                sets: 1,
+                notes: unitPlan.objective,
+                category: .timed
+            ))
+        }
+
+        if !unitPlan.formationNotes.isEmpty {
+            exercises.append(WorkoutExercise(
+                name: "Formation",
+                sets: 1,
+                notes: unitPlan.formationNotes,
+                category: .timed
+            ))
+        }
+
+        exercises.append(WorkoutExercise(
+            name: "Warm-Up",
+            sets: 1,
+            durationSeconds: 600,
+            notes: unitPlan.warmup,
+            category: .timed
+        ))
+
+        for (index, block) in unitPlan.mainEffort.enumerated() {
+            exercises.append(WorkoutExercise(
+                name: "Main Effort \(index + 1)",
                 sets: 1,
                 notes: block.description,
                 category: .timed
-            )
+            ))
         }
+
+        exercises.append(WorkoutExercise(
+            name: "Cool-Down",
+            sets: 1,
+            durationSeconds: 300,
+            notes: unitPlan.cooldown,
+            category: .timed
+        ))
+
+        if !unitPlan.leaderNotes.isEmpty {
+            exercises.append(WorkoutExercise(
+                name: "Leader Notes",
+                sets: 1,
+                notes: unitPlan.leaderNotes,
+                category: .timed
+            ))
+        }
+
+        var tags = ["Unit PT"]
+        if !unitPlan.objective.isEmpty { tags.append(unitPlan.objective) }
 
         let unitDay = WorkoutDay(
             dayIndex: 100 + scheduledUnitPT.count,
             date: Calendar.current.startOfDay(for: date),
             title: unitPlan.title,
             exercises: exercises,
+            templateTag: "unit_pt",
+            tags: tags,
             source: .unit,
             startTime: startTime,
             endTime: endTime

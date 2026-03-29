@@ -185,7 +185,7 @@ struct OnboardingView: View {
                     }
 
                     HStack(spacing: 6) {
-                        ForEach([2, 3, 4, 5, 6], id: \.self) { d in
+                        ForEach([2, 3, 4, 5, 6, 7], id: \.self) { d in
                             Button {
                                 withAnimation(.spring(response: 0.25)) { daysPerWeek = d }
                             } label: {
