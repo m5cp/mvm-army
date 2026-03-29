@@ -10,6 +10,8 @@ struct WODDetailView: View {
     @State private var isLoading: Bool = true
     @State private var completeTrigger: Bool = false
     @State private var generateTrigger: Bool = false
+    @State private var shareItems: [Any] = []
+    @State private var showShareSheet: Bool = false
 
     let initialTemplate: WODTemplate?
 
@@ -40,6 +42,11 @@ struct WODDetailView: View {
             }
             .toolbarBackground(MVMTheme.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .sheet(isPresented: $showShareSheet) {
+                if !shareItems.isEmpty {
+                    ShareSheet(items: shareItems)
+                }
+            }
         }
         .onAppear {
             loadWOD()
@@ -325,7 +332,7 @@ struct WODDetailView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.clockwise")
                             .font(.caption.weight(.bold))
-                        Text("Generate Another")
+                        Text("New WOD")
                             .font(.subheadline.weight(.semibold))
                     }
                     .foregroundStyle(MVMTheme.secondaryText)
@@ -348,7 +355,7 @@ struct WODDetailView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "calendar.badge.plus")
                             .font(.caption.weight(.bold))
-                        Text("Save to Plan")
+                        Text("Save")
                             .font(.subheadline.weight(.semibold))
                     }
                     .foregroundStyle(MVMTheme.secondaryText)
@@ -360,6 +367,25 @@ struct WODDetailView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(MVMTheme.border)
                     }
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    shareItems = ShareCardRenderer.shareItems(
+                        cardType: .workout(title: workout.title, exercises: workout.exercises, tags: [])
+                    )
+                    showShareSheet = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+                        .frame(width: 44, height: 44)
+                        .background(MVMTheme.cardSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(MVMTheme.border)
+                        }
                 }
                 .buttonStyle(PressScaleButtonStyle())
             }

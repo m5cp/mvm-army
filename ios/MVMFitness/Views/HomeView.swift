@@ -25,6 +25,8 @@ struct HomeView: View {
     @State private var startWorkoutTrigger: Bool = false
     @State private var completeWorkoutTrigger: Bool = false
     @State private var toolTapTrigger: Bool = false
+    @State private var shareItems: [Any] = []
+    @State private var showShareSheet: Bool = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -122,6 +124,11 @@ struct HomeView: View {
         .sensoryFeedback(.impact(weight: .medium), trigger: startWorkoutTrigger)
         .sensoryFeedback(.success, trigger: completeWorkoutTrigger)
         .sensoryFeedback(.selection, trigger: toolTapTrigger)
+        .sheet(isPresented: $showShareSheet) {
+            if !shareItems.isEmpty {
+                ShareSheet(items: shareItems)
+            }
+        }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
             Task {
@@ -380,19 +387,17 @@ struct HomeView: View {
             .buttonStyle(PressScaleButtonStyle())
 
             Button {
-                vm.generateWeeklyPlan()
+                shareItems = ShareCardRenderer.shareItems(
+                    cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
+                )
+                showShareSheet = true
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.caption.weight(.bold))
-                    Text("New")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(MVMTheme.secondaryText)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(MVMTheme.cardSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                Image(systemName: "square.and.arrow.up")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(width: 44, height: 44)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(PressScaleButtonStyle())
         }

@@ -7,6 +7,8 @@ struct ProgressViewScreen: View {
     @State private var showAFTSheet: Bool = false
     @State private var appeared: Bool = false
     @State private var showAFTCalculator: Bool = false
+    @State private var shareItems: [Any] = []
+    @State private var showShareSheet: Bool = false
 
     var body: some View {
         ZStack {
@@ -30,11 +32,35 @@ struct ProgressViewScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    shareItems = ShareCardRenderer.shareItems(
+                        cardType: .progress(
+                            completed: vm.weeklyCompletedCount,
+                            planned: vm.weeklyTotalDays,
+                            streak: vm.streak,
+                            steps: vm.pedometer.todaySteps
+                        )
+                    )
+                    showShareSheet = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+                }
+            }
+        }
         .sheet(isPresented: $showAFTSheet) {
             AFTScoreSheet()
         }
         .navigationDestination(isPresented: $showAFTCalculator) {
             AFTCalculatorView()
+        }
+        .sheet(isPresented: $showShareSheet) {
+            if !shareItems.isEmpty {
+                ShareSheet(items: shareItems)
+            }
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()

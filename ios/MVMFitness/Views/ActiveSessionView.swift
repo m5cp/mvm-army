@@ -20,6 +20,8 @@ struct ActiveSessionView: View {
     @State private var restDuration: Int = 60
     @State private var nextExerciseTrigger: Bool = false
     @State private var markDoneTrigger: Bool = false
+    @State private var shareItems: [Any] = []
+    @State private var showShareSheet: Bool = false
 
     private var workout: WorkoutDay? {
         if isStandalone { return nil }
@@ -66,6 +68,11 @@ struct ActiveSessionView: View {
         .sensoryFeedback(.warning, trigger: restFinishedTrigger)
         .sensoryFeedback(.selection, trigger: nextExerciseTrigger)
         .sensoryFeedback(.impact(weight: .medium), trigger: markDoneTrigger)
+        .sheet(isPresented: $showShareSheet) {
+            if !shareItems.isEmpty {
+                ShareSheet(items: shareItems)
+            }
+        }
         .onAppear {
             if let w = workout {
                 exercises = w.exercises
@@ -759,6 +766,30 @@ struct ActiveSessionView: View {
                     .shadow(color: MVMTheme.accent.opacity(0.28), radius: 14, y: 8)
                 }
                 .sensoryFeedback(.success, trigger: showCompletion)
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    shareItems = ShareCardRenderer.shareItems(
+                        cardType: .completion(
+                            title: workoutTitle,
+                            exerciseCount: exercises.count,
+                            duration: sessionDuration
+                        )
+                    )
+                    showShareSheet = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.subheadline.weight(.semibold))
+                        Text("Share")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(height: 48)
+                    .frame(maxWidth: .infinity)
+                    .background(MVMTheme.accent.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
                 .buttonStyle(PressScaleButtonStyle())
 
                 Button {
