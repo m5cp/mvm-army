@@ -1,16 +1,11 @@
 import SwiftUI
 
 struct RootView: View {
-    @AppStorage("onboardingComplete") private var onboardingComplete = false
-
     var body: some View {
-        Group {
-            if onboardingComplete {
-                MainTabView()
-            } else {
-                OnboardingView()
+        MainTabView()
+            .background(MVMTheme.background.ignoresSafeArea())
+            .onAppear {
+                UserDefaults.standard.set(true, forKey: "onboardingComplete")
             }
-        }
-        .background(MVMTheme.background.ignoresSafeArea())
     }
 }
