@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum ShareCardType {
     case workout(title: String, exercises: [WorkoutExercise], tags: [String])
@@ -35,7 +36,7 @@ struct ShareCardView: View {
             cardFooter
         }
         .frame(width: 360)
-        .background(Color(hex: "#0D0D12"))
+        .background(Color(red: 13/255, green: 13/255, blue: 18/255))
         .clipShape(RoundedRectangle(cornerRadius: 24))
         .overlay {
             RoundedRectangle(cornerRadius: 24)
@@ -48,7 +49,7 @@ struct ShareCardView: View {
             Image(systemName: "shield.fill")
                 .font(.caption.weight(.bold))
                 .foregroundStyle(
-                    LinearGradient(colors: [Color(hex: "#4F8CFF"), Color(hex: "#7C5CFF")],
+                    LinearGradient(colors: [Color(red: 79/255, green: 140/255, blue: 255/255), Color(red: 124/255, green: 92/255, blue: 255/255)],
                                    startPoint: .topLeading, endPoint: .bottomTrailing)
                 )
 
@@ -89,8 +90,6 @@ struct ShareCardView: View {
         return f.string(from: date)
     }
 
-    // MARK: - Workout Card
-
     private func workoutCard(title: String, exercises: [WorkoutExercise], tags: [String]) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             if !tags.isEmpty {
@@ -101,7 +100,7 @@ struct ShareCardView: View {
                             .foregroundStyle(.white.opacity(0.8))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(Color(hex: "#4F8CFF").opacity(0.2))
+                            .background(Color(red: 79/255, green: 140/255, blue: 255/255).opacity(0.2))
                             .clipShape(Capsule())
                     }
                 }
@@ -116,13 +115,13 @@ struct ShareCardView: View {
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.5))
 
-            Divider().overlay(Color.white.opacity(0.08))
+            Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1)
 
             VStack(spacing: 8) {
                 ForEach(exercises.prefix(5)) { exercise in
                     HStack(spacing: 10) {
                         Circle()
-                            .fill(Color(hex: "#4F8CFF").opacity(0.4))
+                            .fill(Color(red: 79/255, green: 140/255, blue: 255/255).opacity(0.4))
                             .frame(width: 6, height: 6)
                         Text(exercise.name)
                             .font(.subheadline.weight(.medium))
@@ -148,8 +147,6 @@ struct ShareCardView: View {
         .padding(.vertical, 14)
     }
 
-    // MARK: - Progress Card
-
     private func progressCard(completed: Int, planned: Int, streak: Int, steps: Int) -> some View {
         VStack(spacing: 18) {
             Text("Weekly Progress")
@@ -158,11 +155,11 @@ struct ShareCardView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 0) {
-                shareStatColumn(value: "\(completed)/\(planned)", label: "PT Done", icon: "checkmark.circle.fill", color: Color(hex: "#22C55E"))
+                shareStatColumn(value: "\(completed)/\(planned)", label: "PT Done", icon: "checkmark.circle.fill", color: Color(red: 34/255, green: 197/255, blue: 94/255))
                 shareDivider
-                shareStatColumn(value: "\(streak)", label: "Day Streak", icon: "flame.fill", color: Color(hex: "#F59E0B"))
+                shareStatColumn(value: "\(streak)", label: "Day Streak", icon: "flame.fill", color: Color(red: 245/255, green: 158/255, blue: 11/255))
                 shareDivider
-                shareStatColumn(value: formatSteps(steps), label: "Steps", icon: "figure.walk", color: Color(hex: "#4F8CFF"))
+                shareStatColumn(value: formatSteps(steps), label: "Steps", icon: "figure.walk", color: Color(red: 79/255, green: 140/255, blue: 255/255))
             }
             .padding(.vertical, 16)
             .background(Color.white.opacity(0.04))
@@ -171,8 +168,6 @@ struct ShareCardView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
     }
-
-    // MARK: - AFT Card
 
     private func aftCard(score: AFTScoreRecord, previous: AFTScoreRecord?) -> some View {
         VStack(spacing: 18) {
@@ -200,7 +195,7 @@ struct ShareCardView: View {
                             Text(diff >= 0 ? "+\(diff)" : "\(diff)")
                                 .font(.title3.weight(.bold))
                         }
-                        .foregroundStyle(diff >= 0 ? Color(hex: "#22C55E") : Color(hex: "#EF4444"))
+                        .foregroundStyle(diff >= 0 ? Color(red: 34/255, green: 197/255, blue: 94/255) : Color(red: 239/255, green: 68/255, blue: 68/255))
                     }
                 }
             }
@@ -233,22 +228,20 @@ struct ShareCardView: View {
     }
 
     private func aftColor(_ value: Int) -> Color {
-        if value >= 80 { return Color(hex: "#22C55E") }
-        if value >= 60 { return Color(hex: "#4F8CFF") }
-        if value >= 40 { return Color(hex: "#F59E0B") }
-        return Color(hex: "#EF4444")
+        if value >= 80 { return Color(red: 34/255, green: 197/255, blue: 94/255) }
+        if value >= 60 { return Color(red: 79/255, green: 140/255, blue: 255/255) }
+        if value >= 40 { return Color(red: 245/255, green: 158/255, blue: 11/255) }
+        return Color(red: 239/255, green: 68/255, blue: 68/255)
     }
-
-    // MARK: - Unit PT Card
 
     private func unitPTCard(plan: UnitPTPlan) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Formation PT")
                 .font(.caption.weight(.bold))
-                .foregroundStyle(Color(hex: "#4F8CFF").opacity(0.8))
+                .foregroundStyle(Color(red: 79/255, green: 140/255, blue: 255/255).opacity(0.8))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color(hex: "#4F8CFF").opacity(0.12))
+                .background(Color(red: 79/255, green: 140/255, blue: 255/255).opacity(0.12))
                 .clipShape(Capsule())
 
             Text(plan.title)
@@ -262,12 +255,12 @@ struct ShareCardView: View {
                 .lineLimit(3)
 
             if !plan.mainEffort.isEmpty {
-                Divider().overlay(Color.white.opacity(0.08))
+                Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1)
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(plan.mainEffort.prefix(4)) { block in
                         HStack(spacing: 8) {
                             Circle()
-                                .fill(Color(hex: "#4F8CFF").opacity(0.4))
+                                .fill(Color(red: 79/255, green: 140/255, blue: 255/255).opacity(0.4))
                                 .frame(width: 6, height: 6)
                             Text(block.description)
                                 .font(.caption.weight(.medium))
@@ -282,15 +275,13 @@ struct ShareCardView: View {
         .padding(.vertical, 14)
     }
 
-    // MARK: - Completion Card
-
     private func completionCard(title: String, exerciseCount: Int, duration: String) -> some View {
         VStack(spacing: 20) {
             ZStack {
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color(hex: "#22C55E").opacity(0.2), Color(hex: "#22C55E").opacity(0.02)],
+                            colors: [Color(red: 34/255, green: 197/255, blue: 94/255).opacity(0.2), Color(red: 34/255, green: 197/255, blue: 94/255).opacity(0.02)],
                             center: .center,
                             startRadius: 0,
                             endRadius: 50
@@ -299,19 +290,19 @@ struct ShareCardView: View {
                     .frame(width: 100, height: 100)
 
                 Circle()
-                    .stroke(Color(hex: "#22C55E").opacity(0.3), lineWidth: 2.5)
+                    .stroke(Color(red: 34/255, green: 197/255, blue: 94/255).opacity(0.3), lineWidth: 2.5)
                     .frame(width: 68, height: 68)
 
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 38))
-                    .foregroundStyle(Color(hex: "#22C55E"))
+                    .foregroundStyle(Color(red: 34/255, green: 197/255, blue: 94/255))
             }
 
             VStack(spacing: 6) {
                 Text("MISSION COMPLETE")
                     .font(.caption.weight(.heavy))
                     .tracking(2.0)
-                    .foregroundStyle(Color(hex: "#22C55E"))
+                    .foregroundStyle(Color(red: 34/255, green: 197/255, blue: 94/255))
 
                 Text(title)
                     .font(.title2.weight(.bold))
@@ -321,9 +312,9 @@ struct ShareCardView: View {
             }
 
             HStack(spacing: 0) {
-                shareStatColumn(value: "\(exerciseCount)", label: "Exercises", icon: "list.bullet", color: Color(hex: "#4F8CFF"))
+                shareStatColumn(value: "\(exerciseCount)", label: "Exercises", icon: "list.bullet", color: Color(red: 79/255, green: 140/255, blue: 255/255))
                 shareDivider
-                shareStatColumn(value: duration.isEmpty ? "Done" : duration, label: duration.isEmpty ? "Status" : "Duration", icon: duration.isEmpty ? "flame.fill" : "clock", color: Color(hex: "#F59E0B"))
+                shareStatColumn(value: duration.isEmpty ? "Done" : duration, label: duration.isEmpty ? "Status" : "Duration", icon: duration.isEmpty ? "flame.fill" : "clock", color: Color(red: 245/255, green: 158/255, blue: 11/255))
             }
             .padding(.vertical, 14)
             .background(Color.white.opacity(0.04))
@@ -333,14 +324,12 @@ struct ShareCardView: View {
                 Spacer()
                 Text("#MVMArmy")
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color(hex: "#4F8CFF").opacity(0.5))
+                    .foregroundStyle(Color(red: 79/255, green: 140/255, blue: 255/255).opacity(0.5))
             }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
     }
-
-    // MARK: - Completed Workout Card
 
     private func completedWorkoutCard(record: CompletedWorkoutRecord) -> some View {
         VStack(spacing: 18) {
@@ -348,7 +337,7 @@ struct ShareCardView: View {
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color(hex: "#22C55E").opacity(0.2), Color(hex: "#22C55E").opacity(0.02)],
+                            colors: [Color(red: 34/255, green: 197/255, blue: 94/255).opacity(0.2), Color(red: 34/255, green: 197/255, blue: 94/255).opacity(0.02)],
                             center: .center,
                             startRadius: 0,
                             endRadius: 45
@@ -357,27 +346,27 @@ struct ShareCardView: View {
                     .frame(width: 90, height: 90)
 
                 Circle()
-                    .stroke(Color(hex: "#22C55E").opacity(0.3), lineWidth: 2.5)
+                    .stroke(Color(red: 34/255, green: 197/255, blue: 94/255).opacity(0.3), lineWidth: 2.5)
                     .frame(width: 60, height: 60)
 
                 Image(systemName: record.source == .wod ? "bolt.fill" : "checkmark.seal.fill")
                     .font(.system(size: 32))
-                    .foregroundStyle(Color(hex: "#22C55E"))
+                    .foregroundStyle(Color(red: 34/255, green: 197/255, blue: 94/255))
             }
 
             VStack(spacing: 6) {
                 Text("MISSION COMPLETE")
                     .font(.caption.weight(.heavy))
                     .tracking(2.0)
-                    .foregroundStyle(Color(hex: "#22C55E"))
+                    .foregroundStyle(Color(red: 34/255, green: 197/255, blue: 94/255))
 
                 if record.source == .wod {
                     Text("WOD")
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color(hex: "#F59E0B"))
+                        .foregroundStyle(Color(red: 245/255, green: 158/255, blue: 11/255))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 3)
-                        .background(Color(hex: "#F59E0B").opacity(0.15))
+                        .background(Color(red: 245/255, green: 158/255, blue: 11/255).opacity(0.15))
                         .clipShape(Capsule())
                 }
 
@@ -389,23 +378,23 @@ struct ShareCardView: View {
             }
 
             HStack(spacing: 0) {
-                shareStatColumn(value: "\(record.exerciseCount)", label: "Exercises", icon: "list.bullet", color: Color(hex: "#4F8CFF"))
+                shareStatColumn(value: "\(record.exerciseCount)", label: "Exercises", icon: "list.bullet", color: Color(red: 79/255, green: 140/255, blue: 255/255))
                 shareDivider
-                shareStatColumn(value: sourceLabel(record.source), label: "Type", icon: sourceIconName(record.source), color: Color(hex: "#7C5CFF"))
+                shareStatColumn(value: sourceLabel(record.source), label: "Type", icon: sourceIconName(record.source), color: Color(red: 124/255, green: 92/255, blue: 255/255))
             }
             .padding(.vertical, 14)
             .background(Color.white.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 16))
 
             if !record.exercises.isEmpty {
-                Divider().overlay(Color.white.opacity(0.08))
+                Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1)
 
                 VStack(spacing: 7) {
                     ForEach(record.exercises.prefix(6)) { exercise in
                         HStack(spacing: 10) {
                             Image(systemName: exercise.isCompleted ? "checkmark.circle.fill" : "circle")
                                 .font(.caption2)
-                                .foregroundStyle(exercise.isCompleted ? Color(hex: "#22C55E") : .white.opacity(0.3))
+                                .foregroundStyle(exercise.isCompleted ? Color(red: 34/255, green: 197/255, blue: 94/255) : .white.opacity(0.3))
                             Text(exercise.name)
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(.white.opacity(0.8))
@@ -431,7 +420,7 @@ struct ShareCardView: View {
                 Spacer()
                 Text("#MVMArmy")
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color(hex: "#4F8CFF").opacity(0.5))
+                    .foregroundStyle(Color(red: 79/255, green: 140/255, blue: 255/255).opacity(0.5))
             }
         }
         .padding(.horizontal, 20)
@@ -457,8 +446,6 @@ struct ShareCardView: View {
         case .imported: return "square.and.arrow.down"
         }
     }
-
-    // MARK: - Shared Components
 
     private func shareStatColumn(value: String, label: String, icon: String, color: Color) -> some View {
         VStack(spacing: 6) {
@@ -494,12 +481,46 @@ enum ShareCardRenderer {
         let cardView = ShareCardView(cardType: cardType, date: date)
             .environment(\.colorScheme, .dark)
 
-        let renderer = ImageRenderer(content: cardView)
-        renderer.scale = 3.0
-        renderer.proposedSize = .init(width: 360, height: nil)
+        let controller = UIHostingController(rootView: cardView)
+        controller.view.backgroundColor = .clear
 
-        guard let cgImage = renderer.cgImage else { return nil }
-        return UIImage(cgImage: cgImage)
+        let targetSize = controller.view.intrinsicContentSize
+        let size = CGSize(
+            width: max(targetSize.width, 360),
+            height: max(targetSize.height, 100)
+        )
+        controller.view.bounds = CGRect(origin: .zero, size: size)
+        controller.view.frame = CGRect(origin: .zero, size: size)
+
+        controller.view.setNeedsLayout()
+        controller.view.layoutIfNeeded()
+
+        let finalSize = controller.view.systemLayoutSizeFitting(
+            CGSize(width: 360, height: UIView.layoutFittingCompressedSize.height),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        )
+
+        let renderSize = CGSize(
+            width: max(finalSize.width, 360),
+            height: max(finalSize.height, 200)
+        )
+        controller.view.bounds = CGRect(origin: .zero, size: renderSize)
+        controller.view.frame = CGRect(origin: .zero, size: renderSize)
+        controller.view.setNeedsLayout()
+        controller.view.layoutIfNeeded()
+
+        let scale: CGFloat = 3.0
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = scale
+        format.opaque = false
+
+        let renderer = UIGraphicsImageRenderer(size: renderSize, format: format)
+        let image = renderer.image { context in
+            controller.view.drawHierarchy(in: CGRect(origin: .zero, size: renderSize), afterScreenUpdates: true)
+        }
+
+        return image
     }
 
     static func shareItems(cardType: ShareCardType, date: Date = .now) -> [Any] {
@@ -507,6 +528,27 @@ enum ShareCardRenderer {
             return [image, fallbackText(cardType: cardType)]
         }
         return [fallbackText(cardType: cardType)]
+    }
+
+    static func presentShareSheet(cardType: ShareCardType, date: Date = .now) {
+        let items = shareItems(cardType: cardType, date: date)
+        let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
+
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootVC = windowScene.windows.first?.rootViewController else { return }
+
+        var presenter = rootVC
+        while let presented = presenter.presentedViewController {
+            presenter = presented
+        }
+
+        if let popover = activityVC.popoverPresentationController {
+            popover.sourceView = presenter.view
+            popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+
+        presenter.present(activityVC, animated: true)
     }
 
     static func fallbackText(cardType: ShareCardType) -> String {

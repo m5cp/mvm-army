@@ -20,8 +20,6 @@ struct ActiveSessionView: View {
     @State private var restDuration: Int = 60
     @State private var nextExerciseTrigger: Bool = false
     @State private var markDoneTrigger: Bool = false
-    @State private var shareItems: [Any] = []
-    @State private var showShareSheet: Bool = false
     @State private var showCompletionShareSheet: Bool = false
 
     private var workout: WorkoutDay? {
@@ -69,11 +67,6 @@ struct ActiveSessionView: View {
         .sensoryFeedback(.warning, trigger: restFinishedTrigger)
         .sensoryFeedback(.selection, trigger: nextExerciseTrigger)
         .sensoryFeedback(.impact(weight: .medium), trigger: markDoneTrigger)
-        .sheet(isPresented: $showShareSheet) {
-            if !shareItems.isEmpty {
-                ShareSheet(items: shareItems)
-            }
-        }
         .sheet(isPresented: $showCompletionShareSheet) {
             WorkoutCompletionShareSheet(
                 title: workoutTitle,

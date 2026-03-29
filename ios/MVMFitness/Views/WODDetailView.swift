@@ -10,8 +10,6 @@ struct WODDetailView: View {
     @State private var isLoading: Bool = true
     @State private var completeTrigger: Bool = false
     @State private var generateTrigger: Bool = false
-    @State private var shareItems: [Any] = []
-    @State private var showShareSheet: Bool = false
     @State private var showQRSheet: Bool = false
 
     let initialTemplate: WODTemplate?
@@ -43,11 +41,6 @@ struct WODDetailView: View {
             }
             .toolbarBackground(MVMTheme.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .sheet(isPresented: $showShareSheet) {
-                if !shareItems.isEmpty {
-                    ShareSheet(items: shareItems)
-                }
-            }
             .sheet(isPresented: $showQRSheet) {
                 if let workout {
                     WorkoutQRSheet(workout: workout, workoutType: "WOD")
@@ -395,10 +388,9 @@ struct WODDetailView: View {
                 .buttonStyle(PressScaleButtonStyle())
 
                 Button {
-                    shareItems = ShareCardRenderer.shareItems(
+                    ShareCardRenderer.presentShareSheet(
                         cardType: .workout(title: workout.title, exercises: workout.exercises, tags: [])
                     )
-                    showShareSheet = true
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                         .font(.caption.weight(.bold))

@@ -11,8 +11,7 @@ struct StandaloneWorkoutSheet: View {
     @State private var expandedID: UUID?
     @State private var didComplete = false
     @State private var showQRSheet = false
-    @State private var shareItems: [Any] = []
-    @State private var showShareSheet = false
+
 
     var body: some View {
         NavigationStack {
@@ -49,11 +48,7 @@ struct StandaloneWorkoutSheet: View {
             .sheet(isPresented: $showQRSheet) {
                 WorkoutQRSheet(workout: workout, workoutType: sheetTitle)
             }
-            .sheet(isPresented: $showShareSheet) {
-                if !shareItems.isEmpty {
-                    ShareSheet(items: shareItems)
-                }
-            }
+
         }
         .onAppear {
             exercises = workout.exercises
@@ -399,10 +394,9 @@ struct StandaloneWorkoutSheet: View {
                 .buttonStyle(PressScaleButtonStyle())
 
                 Button {
-                    shareItems = ShareCardRenderer.shareItems(
+                    ShareCardRenderer.presentShareSheet(
                         cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
                     )
-                    showShareSheet = true
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "square.and.arrow.up")

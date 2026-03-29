@@ -10,8 +10,7 @@ struct CompletedWorkoutDetailView: View {
     @State private var editingExerciseID: UUID?
     @State private var hasChanges: Bool = false
     @State private var saveTrigger: Bool = false
-    @State private var shareItems: [Any] = []
-    @State private var showShareSheet: Bool = false
+
 
     var body: some View {
         ZStack {
@@ -69,11 +68,10 @@ struct CompletedWorkoutDetailView: View {
                             exercises: exercises,
                             source: record.source
                         )
-                        shareItems = ShareCardRenderer.shareItems(
+                        ShareCardRenderer.presentShareSheet(
                             cardType: .completedWorkout(record: currentRecord),
                             date: record.date
                         )
-                        showShareSheet = true
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .font(.body.weight(.semibold))
@@ -88,11 +86,6 @@ struct CompletedWorkoutDetailView: View {
                         .fontWeight(.semibold)
                     }
                 }
-            }
-        }
-        .sheet(isPresented: $showShareSheet) {
-            if !shareItems.isEmpty {
-                ShareSheet(items: shareItems)
             }
         }
         .onAppear {

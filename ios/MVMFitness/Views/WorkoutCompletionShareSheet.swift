@@ -6,8 +6,6 @@ struct WorkoutCompletionShareSheet: View {
     let title: String
     let exerciseCount: Int
 
-    @State private var shareItems: [Any] = []
-    @State private var showShareSheet: Bool = false
     @State private var checkScale: CGFloat = 0
     @State private var ringScale: CGFloat = 0.6
     @State private var contentOpacity: Double = 0
@@ -27,15 +25,13 @@ struct WorkoutCompletionShareSheet: View {
 
                     VStack(spacing: 12) {
                         Button {
-                            let items = ShareCardRenderer.shareItems(
+                            ShareCardRenderer.presentShareSheet(
                                 cardType: .completion(
                                     title: title,
                                     exerciseCount: exerciseCount,
                                     duration: ""
                                 )
                             )
-                            shareItems = items
-                            showShareSheet = true
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "square.and.arrow.up")
@@ -79,11 +75,6 @@ struct WorkoutCompletionShareSheet: View {
                     Button("Done") { dismiss() }
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(MVMTheme.accent)
-                }
-            }
-            .sheet(isPresented: $showShareSheet) {
-                if !shareItems.isEmpty {
-                    ShareSheet(items: shareItems)
                 }
             }
             .onAppear {

@@ -9,8 +9,7 @@ struct WorkoutQRSheet: View {
 
     @State private var qrImage: UIImage?
     @State private var showSavedAlert = false
-    @State private var shareItems: [Any] = []
-    @State private var showShareSheet = false
+
 
     var body: some View {
         NavigationStack {
@@ -44,11 +43,7 @@ struct WorkoutQRSheet: View {
             } message: {
                 Text("QR code saved to your photo library.")
             }
-            .sheet(isPresented: $showShareSheet) {
-                if !shareItems.isEmpty {
-                    ShareSheet(items: shareItems)
-                }
-            }
+
         }
         .onAppear {
             generateQR()
@@ -141,11 +136,9 @@ struct WorkoutQRSheet: View {
             }
 
             Button {
-                let card = ShareCardRenderer.shareItems(
+                ShareCardRenderer.presentShareSheet(
                     cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
                 )
-                shareItems = card
-                showShareSheet = true
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "photo")

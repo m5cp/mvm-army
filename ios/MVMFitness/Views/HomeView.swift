@@ -22,8 +22,7 @@ struct HomeView: View {
     @State private var startWorkoutTrigger: Bool = false
     @State private var completeWorkoutTrigger: Bool = false
     @State private var toolTapTrigger: Bool = false
-    @State private var shareItems: [Any] = []
-    @State private var showShareSheet: Bool = false
+
     @State private var selectedDate: Date = Calendar.current.startOfDay(for: .now)
     @State private var selectedDayIndex: Int?
     @State private var navigateToPlanDetail: Bool = false
@@ -211,11 +210,6 @@ struct HomeView: View {
         .sensoryFeedback(.impact(weight: .medium), trigger: startWorkoutTrigger)
         .sensoryFeedback(.success, trigger: completeWorkoutTrigger)
         .sensoryFeedback(.selection, trigger: toolTapTrigger)
-        .sheet(isPresented: $showShareSheet) {
-            if !shareItems.isEmpty {
-                ShareSheet(items: shareItems)
-            }
-        }
         .sheet(isPresented: $showCompletionShare) {
             WorkoutCompletionShareSheet(
                 title: completedWorkoutTitle,

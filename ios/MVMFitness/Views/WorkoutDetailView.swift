@@ -14,8 +14,7 @@ struct WorkoutDetailView: View {
     @State private var saveTrigger: Bool = false
     @State private var completeTrigger: Bool = false
     @State private var showQRSheet = false
-    @State private var shareItems: [Any] = []
-    @State private var showShareSheet = false
+
 
     private var workout: WorkoutDay? {
         if isStandalone { return nil }
@@ -66,10 +65,9 @@ struct WorkoutDetailView: View {
                         }
                         Button {
                             if let w = workout {
-                                shareItems = ShareCardRenderer.shareItems(
+                                ShareCardRenderer.presentShareSheet(
                                     cardType: .workout(title: w.title, exercises: w.exercises, tags: w.tags)
                                 )
-                                showShareSheet = true
                             }
                         } label: {
                             Label("Share Card", systemImage: "square.and.arrow.up")
@@ -85,11 +83,6 @@ struct WorkoutDetailView: View {
         .sheet(isPresented: $showQRSheet) {
             if let w = workout {
                 WorkoutQRSheet(workout: w, workoutType: "Individual PT")
-            }
-        }
-        .sheet(isPresented: $showShareSheet) {
-            if !shareItems.isEmpty {
-                ShareSheet(items: shareItems)
             }
         }
         .onAppear {

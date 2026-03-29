@@ -6,7 +6,6 @@ struct AFTShareSheet: View {
     let previous: AFTScoreRecord?
     @Environment(\.dismiss) private var dismiss
     @State private var renderedImage: UIImage?
-    @State private var showActivitySheet: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -29,7 +28,22 @@ struct AFTShareSheet: View {
                         }
 
                         Button {
-                            showActivitySheet = true
+                            if let image = renderedImage {
+                                let text = "MVM Army — AFT Score: \(score.totalScore)/500\n#MVMArmy #ArmyFitness"
+                                let activityVC = UIActivityViewController(activityItems: [image, text], applicationActivities: nil)
+                                guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                      let rootVC = windowScene.windows.first?.rootViewController else { return }
+                                var presenter = rootVC
+                                while let presented = presenter.presentedViewController {
+                                    presenter = presented
+                                }
+                                if let popover = activityVC.popoverPresentationController {
+                                    popover.sourceView = presenter.view
+                                    popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+                                    popover.permittedArrowDirections = []
+                                }
+                                presenter.present(activityVC, animated: true)
+                            }
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "square.and.arrow.up")
@@ -58,11 +72,6 @@ struct AFTShareSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                         .foregroundStyle(MVMTheme.accent)
-                }
-            }
-            .sheet(isPresented: $showActivitySheet) {
-                if let image = renderedImage {
-                    ShareSheet(items: [image, "MVM Army — AFT Score: \(score.totalScore)/500\n#MVMArmy #ArmyFitness"])
                 }
             }
             .task {
