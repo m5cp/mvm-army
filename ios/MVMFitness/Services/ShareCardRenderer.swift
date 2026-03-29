@@ -372,10 +372,29 @@ enum ShareCardRenderer {
     static func renderImage(cardType: ShareCardType, date: Date = .now) -> UIImage? {
         let view = ShareCardView(cardType: cardType, date: date)
             .environment(\.colorScheme, .dark)
-        let renderer = ImageRenderer(content: view)
-        renderer.scale = UIScreen.main.scale
-        renderer.proposedSize = .init(width: 360, height: nil)
-        return renderer.uiImage
+
+        let controller = UIHostingController(rootView: view)
+        controller.view.backgroundColor = .clear
+
+        let targetSize = controller.view.intrinsicContentSize
+        let size = CGSize(
+            width: targetSize.width > 0 ? targetSize.width : 360,
+            height: targetSize.height > 0 ? targetSize.height : 600
+        )
+        controller.view.bounds = CGRect(origin: .zero, size: size)
+        controller.view.frame = CGRect(origin: .zero, size: size)
+
+        controller.view.layoutIfNeeded()
+
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        format.opaque = false
+
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+        let image = renderer.image { context in
+            controller.view.drawHierarchy(in: CGRect(origin: .zero, size: size), afterScreenUpdates: true)
+        }
+        return image
     }
 
     static func shareItems(cardType: ShareCardType, date: Date = .now) -> [Any] {

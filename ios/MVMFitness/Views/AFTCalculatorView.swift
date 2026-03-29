@@ -21,6 +21,7 @@ struct AFTCalculatorView: View {
     @State private var showExportSheet = false
     @State private var shareItems: [Any] = []
     @State private var showShareSheet = false
+    @FocusState private var isAnyFieldFocused: Bool
 
     private var sdcTotalSeconds: Int {
         (Int(sdcMinutes) ?? 0) * 60 + (Int(sdcSeconds) ?? 0)
@@ -143,6 +144,15 @@ struct AFTCalculatorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    isAnyFieldFocused = false
+                }
+                .fontWeight(.semibold)
+            }
+        }
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(items: shareItems)
         }
@@ -449,6 +459,7 @@ struct AFTCalculatorView: View {
     private func numericInput(text: Binding<String>, placeholder: String) -> some View {
         TextField(placeholder, text: text)
             .keyboardType(.numberPad)
+            .focused($isAnyFieldFocused)
             .font(.title3.weight(.bold))
             .foregroundStyle(MVMTheme.primaryText)
             .padding(.horizontal, 12)
