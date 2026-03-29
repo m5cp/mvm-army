@@ -86,6 +86,9 @@ struct ProfileView: View {
 
     // MARK: - Profile Header
 
+    @State private var isEditingName: Bool = false
+    @FocusState private var nameFieldFocused: Bool
+
     private var profileHeader: some View {
         VStack(spacing: 16) {
             Button {
@@ -136,14 +139,41 @@ struct ProfileView: View {
             .buttonStyle(.plain)
 
             VStack(spacing: 6) {
-                if profileDisplayName.isEmpty {
-                    Text("Soldier")
+                if isEditingName {
+                    TextField("Soldier", text: $profileDisplayName)
                         .font(.title3.weight(.bold))
                         .foregroundStyle(MVMTheme.primaryText)
+                        .multilineTextAlignment(.center)
+                        .focused($nameFieldFocused)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            isEditingName = false
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(MVMTheme.cardSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(MVMTheme.accent.opacity(0.3))
+                        }
+                        .frame(maxWidth: 220)
                 } else {
-                    Text(profileDisplayName)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(MVMTheme.primaryText)
+                    Button {
+                        isEditingName = true
+                        nameFieldFocused = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(profileDisplayName.isEmpty ? "Soldier" : profileDisplayName)
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(MVMTheme.primaryText)
+
+                            Image(systemName: "pencil")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 Text(profileSubtitle)
@@ -289,23 +319,6 @@ struct ProfileView: View {
                 }
             }
             .tint(MVMTheme.primaryText)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Display Name")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(MVMTheme.primaryText)
-
-                TextField("Soldier", text: $profileDisplayName)
-                    .font(.subheadline)
-                    .padding(.horizontal, 14)
-                    .frame(height: 48)
-                    .background(MVMTheme.cardSoft)
-                    .foregroundStyle(MVMTheme.primaryText)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
-                    }
-            }
         }
     }
 
@@ -444,24 +457,31 @@ struct ProfileView: View {
                                 GridItem(.flexible(), spacing: 12),
                                 GridItem(.flexible(), spacing: 12)
                             ], spacing: 12) {
-                                ForEach(Array(ProfileImageManager.avatarSymbols.enumerated()), id: \.offset) { index, symbol in
+                                ForEach(Array(ProfileImageManager.avatarOptions.enumerated()), id: \.offset) { index, avatar in
                                     let isSelected = imageManager.selectedAvatarIndex == index && imageManager.profileImage == nil
                                     Button {
                                         imageManager.selectAvatar(index)
                                         showAvatarPicker = false
                                     } label: {
-                                        Circle()
-                                            .fill(isSelected ? MVMTheme.accent.opacity(0.2) : MVMTheme.cardSoft)
-                                            .frame(width: 64, height: 64)
-                                            .overlay {
-                                                Image(systemName: symbol)
-                                                    .font(.title3.weight(.bold))
-                                                    .foregroundStyle(isSelected ? MVMTheme.accent : MVMTheme.secondaryText)
-                                            }
-                                            .overlay {
-                                                Circle()
-                                                    .stroke(isSelected ? MVMTheme.accent : MVMTheme.border, lineWidth: isSelected ? 2 : 1)
-                                            }
+                                        VStack(spacing: 6) {
+                                            Circle()
+                                                .fill(isSelected ? MVMTheme.accent.opacity(0.2) : MVMTheme.cardSoft)
+                                                .frame(width: 56, height: 56)
+                                                .overlay {
+                                                    Image(systemName: avatar.symbol)
+                                                        .font(.title3.weight(.bold))
+                                                        .foregroundStyle(isSelected ? MVMTheme.accent : MVMTheme.secondaryText)
+                                                }
+                                                .overlay {
+                                                    Circle()
+                                                        .stroke(isSelected ? MVMTheme.accent : MVMTheme.border, lineWidth: isSelected ? 2 : 1)
+                                                }
+
+                                            Text(avatar.label)
+                                                .font(.caption2.weight(.medium))
+                                                .foregroundStyle(isSelected ? MVMTheme.accent : MVMTheme.tertiaryText)
+                                                .lineLimit(1)
+                                        }
                                     }
                                     .buttonStyle(.plain)
                                 }

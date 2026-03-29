@@ -7,16 +7,27 @@ final class ProfileImageManager {
     var profileImage: UIImage?
     var selectedAvatarIndex: Int?
 
-    static let avatarSymbols = [
-        "shield.fill",
-        "star.fill",
-        "bolt.fill",
-        "flame.fill",
-        "figure.strengthtraining.traditional",
-        "figure.run",
-        "medal.fill",
-        "trophy.fill"
+    struct AvatarOption: Sendable {
+        let symbol: String
+        let label: String
+    }
+
+    static let avatarOptions: [AvatarOption] = [
+        AvatarOption(symbol: "shield.fill", label: "Shield"),
+        AvatarOption(symbol: "shield.checkered", label: "Tactical"),
+        AvatarOption(symbol: "star.fill", label: "Star"),
+        AvatarOption(symbol: "medal.fill", label: "Medal"),
+        AvatarOption(symbol: "trophy.fill", label: "Trophy"),
+        AvatarOption(symbol: "figure.strengthtraining.traditional", label: "Strength"),
+        AvatarOption(symbol: "figure.run", label: "Runner"),
+        AvatarOption(symbol: "figure.cooldown", label: "Recovery"),
+        AvatarOption(symbol: "bolt.fill", label: "Bolt"),
+        AvatarOption(symbol: "flame.fill", label: "Flame"),
+        AvatarOption(symbol: "flag.fill", label: "Flag"),
+        AvatarOption(symbol: "target", label: "Target")
     ]
+
+    static let avatarSymbols: [String] = avatarOptions.map(\.symbol)
 
     init() {
         loadSavedImage()
