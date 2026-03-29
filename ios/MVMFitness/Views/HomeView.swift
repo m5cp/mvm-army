@@ -47,9 +47,9 @@ struct HomeView: View {
                 VStack(spacing: 24) {
                     greetingHeader
                     selectedDayWorkoutsSection
+                    aftCalculatorButton
                     quickActions
                     metricsStrip
-                    aftCalculatorButton
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
