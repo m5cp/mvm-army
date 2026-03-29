@@ -375,6 +375,14 @@ struct ProfileView: View {
             } label: {
                 settingsRow(icon: "arrow.counterclockwise", title: "Re-run Onboarding", color: MVMTheme.secondaryText)
             }
+
+            sectionDivider
+
+            NavigationLink {
+                ResourcesView()
+            } label: {
+                settingsRow(icon: "book.fill", title: "Resources", color: MVMTheme.accent, showChevron: true)
+            }
         }
     }
 
