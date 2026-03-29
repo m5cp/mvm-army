@@ -8,6 +8,11 @@ struct ProgressViewScreen: View {
     @State private var appeared: Bool = false
     @State private var showAFTCalculator: Bool = false
     @State private var showCompletedWorkouts: Bool = false
+    @State private var showAFTShare: Bool = false
+    @State private var selectedAFTScore: AFTScoreRecord?
+    @State private var showDayWorkouts: Bool = false
+    @State private var selectedDayRecord: CompletedWorkoutRecord?
+    @State private var showDayDetail: Bool = false
 
     var body: some View {
         ZStack {
@@ -38,11 +43,21 @@ struct ProgressViewScreen: View {
         .sheet(isPresented: $showAFTSheet) {
             AFTScoreSheet()
         }
+        .sheet(isPresented: $showAFTShare) {
+            if let score = selectedAFTScore {
+                AFTShareSheet(score: score, previous: vm.previousAFTScore)
+            }
+        }
         .navigationDestination(isPresented: $showAFTCalculator) {
             AFTCalculatorView()
         }
         .navigationDestination(isPresented: $showCompletedWorkouts) {
             CompletedWorkoutsListView()
+        }
+        .navigationDestination(isPresented: $showDayDetail) {
+            if let record = selectedDayRecord {
+                CompletedWorkoutDetailView(record: record)
+            }
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
@@ -166,12 +181,22 @@ struct ProgressViewScreen: View {
             if let plan = vm.currentPlan {
                 HStack(spacing: 8) {
                     ForEach(plan.days, id: \.dayIndex) { day in
-                        dayDot(
-                            label: dayAbbrev(day.date),
-                            isToday: Calendar.current.isDateInToday(day.date),
-                            isCompleted: day.isCompleted,
-                            isRest: day.isRestDay
-                        )
+                        Button {
+                            let records = vm.completedRecordsForDate(day.date)
+                            if let record = records.first {
+                                selectedDayRecord = record
+                                showDayDetail = true
+                            }
+                        } label: {
+                            dayDot(
+                                label: dayAbbrev(day.date),
+                                isToday: Calendar.current.isDateInToday(day.date),
+                                isCompleted: day.isCompleted,
+                                isRest: day.isRestDay
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!day.isCompleted)
                     }
                 }
             } else {
@@ -458,7 +483,18 @@ struct ProgressViewScreen: View {
                 aftMiniPill(score.runPoints)
             }
 
-
+            Button {
+                selectedAFTScore = score
+                showAFTShare = true
+            } label: {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 30, height: 30)
+                    .background(MVMTheme.accent.opacity(0.12))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(PressScaleButtonStyle())
         }
         .padding(12)
         .background(MVMTheme.cardSoft)

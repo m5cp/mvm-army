@@ -252,11 +252,25 @@ nonisolated struct CompletedWorkoutRecord: Codable, Identifiable, Hashable, Send
     var date: Date
     var title: String
     var exerciseCount: Int
+    var exercises: [WorkoutExercise]
+    var source: WorkoutSource
 
-    init(date: Date = .now, title: String, exerciseCount: Int) {
+    init(date: Date = .now, title: String, exerciseCount: Int, exercises: [WorkoutExercise] = [], source: WorkoutSource = .individual) {
         self.id = UUID()
         self.date = date
         self.title = title
         self.exerciseCount = exerciseCount
+        self.exercises = exercises
+        self.source = source
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        date = try container.decode(Date.self, forKey: .date)
+        title = try container.decode(String.self, forKey: .title)
+        exerciseCount = try container.decode(Int.self, forKey: .exerciseCount)
+        exercises = try container.decodeIfPresent([WorkoutExercise].self, forKey: .exercises) ?? []
+        source = try container.decodeIfPresent(WorkoutSource.self, forKey: .source) ?? .individual
     }
 }

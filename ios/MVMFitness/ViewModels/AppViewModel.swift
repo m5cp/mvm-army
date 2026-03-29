@@ -276,7 +276,9 @@ final class AppViewModel {
         completedRecords.insert(
             CompletedWorkoutRecord(
                 title: scheduledUnitPT[idx].title,
-                exerciseCount: scheduledUnitPT[idx].exercises.count
+                exerciseCount: scheduledUnitPT[idx].exercises.count,
+                exercises: scheduledUnitPT[idx].exercises,
+                source: .unit
             ), at: 0
         )
         persistAll()
@@ -397,7 +399,9 @@ final class AppViewModel {
             completedRecords.insert(
                 CompletedWorkoutRecord(
                     title: plan.days[idx].title,
-                    exerciseCount: plan.days[idx].exercises.count
+                    exerciseCount: plan.days[idx].exercises.count,
+                    exercises: plan.days[idx].exercises,
+                    source: plan.days[idx].source
                 ), at: 0
             )
         }
@@ -417,7 +421,9 @@ final class AppViewModel {
         completedRecords.insert(
             CompletedWorkoutRecord(
                 title: workout.title,
-                exerciseCount: workout.exercises.count
+                exerciseCount: workout.exercises.count,
+                exercises: workout.exercises,
+                source: workout.source
             ), at: 0
         )
         persistAll()
@@ -429,6 +435,18 @@ final class AppViewModel {
         plan.days[idx].exercises = exercises
         currentPlan = plan
         persistAll()
+    }
+
+    func updateCompletedRecord(id: UUID, exercises: [WorkoutExercise]) {
+        guard let idx = completedRecords.firstIndex(where: { $0.id == id }) else { return }
+        completedRecords[idx].exercises = exercises
+        completedRecords[idx].exerciseCount = exercises.count
+        persistAll()
+    }
+
+    func completedRecordsForDate(_ date: Date) -> [CompletedWorkoutRecord] {
+        let calendar = Calendar.current
+        return completedRecords.filter { calendar.isDate($0.date, inSameDayAs: date) }
     }
 
     func replaceRestDayWithWorkout(dayIndex: Int) {

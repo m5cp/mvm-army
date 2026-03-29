@@ -300,7 +300,9 @@ struct WODDetailView: View {
             if !didComplete {
                 Button {
                     completeTrigger.toggle()
-                    vm.completeStandaloneWorkout(workout)
+                    var wodWorkout = workout
+                    wodWorkout.source = .wod
+                    vm.completeStandaloneWorkout(wodWorkout)
                     didComplete = true
                 } label: {
                     HStack(spacing: 8) {
@@ -322,7 +324,7 @@ struct WODDetailView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(MVMTheme.success)
-                    Text("Workout Complete")
+                    Text("Workout Logged & Tracked")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(MVMTheme.success)
                 }

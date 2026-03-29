@@ -3,6 +3,9 @@ import SwiftUI
 struct CompletedWorkoutsListView: View {
     @Environment(AppViewModel.self) private var vm
 
+    @State private var selectedRecord: CompletedWorkoutRecord?
+    @State private var showDetail: Bool = false
+
     private var groupedRecords: [(String, [CompletedWorkoutRecord])] {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
@@ -46,7 +49,13 @@ struct CompletedWorkoutsListView: View {
                                     .padding(.horizontal, 4)
 
                                 ForEach(section.1) { record in
-                                    recordRow(record)
+                                    Button {
+                                        selectedRecord = record
+                                        showDetail = true
+                                    } label: {
+                                        recordRow(record)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }
@@ -61,6 +70,11 @@ struct CompletedWorkoutsListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationDestination(isPresented: $showDetail) {
+            if let record = selectedRecord {
+                CompletedWorkoutDetailView(record: record)
+            }
+        }
     }
 
     private func recordRow(_ record: CompletedWorkoutRecord) -> some View {
@@ -87,6 +101,10 @@ struct CompletedWorkoutsListView: View {
             }
 
             Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(MVMTheme.tertiaryText)
         }
         .padding(14)
         .background(MVMTheme.card)

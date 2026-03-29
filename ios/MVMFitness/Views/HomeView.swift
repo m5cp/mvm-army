@@ -434,16 +434,16 @@ struct HomeView: View {
     }
 
     private func activeWorkoutCard(_ workout: WorkoutDay) -> some View {
-        Button {
-            startWorkoutTrigger.toggle()
-            if calendar.isDateInToday(workout.date) {
-                showActiveSession = true
-            } else {
-                planSessionDayIndex = workout.dayIndex
-                navigateToPlanSession = true
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
+            Button {
+                startWorkoutTrigger.toggle()
+                if calendar.isDateInToday(workout.date) {
+                    showActiveSession = true
+                } else {
+                    planSessionDayIndex = workout.dayIndex
+                    navigateToPlanSession = true
+                }
+            } label: {
                 HStack(spacing: 14) {
                     VStack(spacing: 6) {
                         Image(systemName: "figure.run")
@@ -489,47 +489,90 @@ struct HomeView: View {
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(.white.opacity(0.5))
                 }
+            }
+            .buttonStyle(.plain)
 
-                if !workout.exercises.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(workout.exercises.prefix(3), id: \.id) { exercise in
-                            HStack(spacing: 6) {
-                                Circle()
-                                    .fill(.white.opacity(0.3))
-                                    .frame(width: 4, height: 4)
-                                Text(exercise.name)
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(.white.opacity(0.5))
-                                Spacer()
-                                Text(exercise.displayDetail)
-                                    .font(.caption2)
-                                    .foregroundStyle(.white.opacity(0.35))
-                            }
-                        }
-                        if workout.exercises.count > 3 {
-                            Text("+\(workout.exercises.count - 3) more")
+            if !workout.exercises.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(workout.exercises.prefix(3), id: \.id) { exercise in
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(.white.opacity(0.3))
+                                .frame(width: 4, height: 4)
+                            Text(exercise.name)
                                 .font(.caption2.weight(.medium))
+                                .foregroundStyle(.white.opacity(0.5))
+                            Spacer()
+                            Text(exercise.displayDetail)
+                                .font(.caption2)
                                 .foregroundStyle(.white.opacity(0.35))
-                                .padding(.leading, 10)
                         }
                     }
-                    .padding(.top, 2)
-                }
-
-
-            }
-            .padding(18)
-            .background {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 22)
-                        .fill(heroCardGradient)
-                    heroShimmerOverlay
+                    if workout.exercises.count > 3 {
+                        Text("+\(workout.exercises.count - 3) more")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.35))
+                            .padding(.leading, 10)
+                    }
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 22))
-            .shadow(color: MVMTheme.accent.opacity(0.2), radius: 20, y: 12)
+
+            HStack(spacing: 10) {
+                Button {
+                    completeWorkoutTrigger.toggle()
+                    completedWorkoutTitle = workout.title
+                    completedExerciseCount = workout.exercises.count
+                    vm.markDayCompleted(dayIndex: workout.dayIndex)
+                    showCompletionShare = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption.weight(.bold))
+                        Text("Complete & Log")
+                            .font(.caption.weight(.bold))
+                    }
+                    .foregroundStyle(Color(hex: "#1A1A2E"))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    startWorkoutTrigger.toggle()
+                    if calendar.isDateInToday(workout.date) {
+                        showActiveSession = true
+                    } else {
+                        planSessionDayIndex = workout.dayIndex
+                        navigateToPlanSession = true
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "play.fill")
+                            .font(.caption.weight(.bold))
+                        Text("Start")
+                            .font(.caption.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(.white.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+            }
         }
-        .buttonStyle(PressScaleButtonStyle())
+        .padding(18)
+        .background {
+            ZStack {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(heroCardGradient)
+                heroShimmerOverlay
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .shadow(color: MVMTheme.accent.opacity(0.2), radius: 20, y: 12)
         .contextMenu {
             Button {
                 if calendar.isDateInToday(workout.date) {
