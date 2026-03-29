@@ -376,24 +376,31 @@ enum ShareCardRenderer {
         let controller = UIHostingController(rootView: view)
         controller.view.backgroundColor = .clear
 
-        let targetSize = controller.view.intrinsicContentSize
+        let fittingSize = controller.sizeThatFits(in: CGSize(width: 360, height: UIView.layoutFittingExpandedSize.height))
         let size = CGSize(
-            width: targetSize.width > 0 ? targetSize.width : 360,
-            height: targetSize.height > 0 ? targetSize.height : 600
+            width: max(fittingSize.width, 360),
+            height: max(fittingSize.height, 200)
         )
         controller.view.bounds = CGRect(origin: .zero, size: size)
         controller.view.frame = CGRect(origin: .zero, size: size)
 
-        controller.view.layoutIfNeeded()
+        let window = UIWindow(frame: CGRect(origin: .zero, size: size))
+        window.rootViewController = controller
+        window.isHidden = false
+        window.layoutIfNeeded()
 
         let format = UIGraphicsImageRendererFormat()
-        format.scale = UIScreen.main.scale
+        format.scale = 3.0
         format.opaque = false
 
         let renderer = UIGraphicsImageRenderer(size: size, format: format)
-        let image = renderer.image { context in
+        let image = renderer.image { _ in
             controller.view.drawHierarchy(in: CGRect(origin: .zero, size: size), afterScreenUpdates: true)
         }
+
+        window.isHidden = true
+        window.rootViewController = nil
+
         return image
     }
 
