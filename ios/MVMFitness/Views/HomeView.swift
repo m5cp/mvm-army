@@ -40,9 +40,9 @@ struct HomeView: View {
                 weekCalendarStrip
 
                 VStack(spacing: 24) {
-                    heroSection
+                    greetingHeader
+                    workoutLaunchers
                     metricsStrip
-                    toolsGrid
                     aftCalculatorButton
                     weekPlanSection
                 }
@@ -341,24 +341,21 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Hero Section
+    // MARK: - Greeting Header
 
-    private var heroSection: some View {
-        Group {
-            if let selectedDay = selectedDayWorkout {
-                if selectedDay.isRestDay {
-                    recoveryHero(selectedDay)
-                } else if selectedDay.isCompleted {
-                    completedHero(selectedDay)
-                } else {
-                    activeHero(selectedDay)
-                }
-            } else {
-                emptyHero
-            }
+    private var greetingHeader: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(greetingText)
+                .font(.title2.weight(.bold))
+                .foregroundStyle(MVMTheme.primaryText)
+
+            Text("What's the move?")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(MVMTheme.tertiaryText)
         }
-        .scaleEffect(animateHero ? 1 : 0.96)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .opacity(animateHero ? 1 : 0)
+        .offset(y: animateHero ? 0 : 8)
     }
 
     private var selectedDayWorkout: WorkoutDay? {
@@ -366,90 +363,379 @@ struct HomeView: View {
         return plan.days.first { calendar.isDate($0.date, inSameDayAs: selectedDate) }
     }
 
-    private func activeHero(_ workout: WorkoutDay) -> some View {
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 20) {
-                HStack(spacing: 8) {
-                    Image(systemName: "bolt.heart.fill")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.white.opacity(0.9))
+    // MARK: - Workout Launchers
 
+    private var workoutLaunchers: some View {
+        VStack(spacing: 12) {
+            todayPlanLauncher
+
+            HStack(spacing: 10) {
+                launcherCard(
+                    title: "WOD",
+                    subtitle: "Workout of the Day",
+                    icon: "bolt.fill",
+                    gradient: [Color(hex: "#F59E0B"), Color(hex: "#D97706")]
+                ) {
+                    toolTapTrigger.toggle()
+                    showWODSheet = true
+                }
+
+                launcherCard(
+                    title: "Random",
+                    subtitle: "Surprise me",
+                    icon: "shuffle",
+                    gradient: [Color(hex: "#6366F1"), Color(hex: "#4F46E5")]
+                ) {
+                    toolTapTrigger.toggle()
+                    randomWorkout = vm.generateRandomWorkout()
+                    showRandomSheet = true
+                }
+            }
+
+            HStack(spacing: 10) {
+                launcherCard(
+                    title: "Unit PT",
+                    subtitle: "Build for your team",
+                    icon: "person.3.fill",
+                    gradient: [Color(hex: "#2563EB"), Color(hex: "#1D4ED8")]
+                ) {
+                    toolTapTrigger.toggle()
+                    showUnitPTSheet = true
+                }
+
+                launcherCard(
+                    title: "Scan QR",
+                    subtitle: "Load shared PT",
+                    icon: "qrcode.viewfinder",
+                    gradient: [Color(hex: "#7C3AED"), Color(hex: "#6D28D9")]
+                ) {
+                    toolTapTrigger.toggle()
+                    showScanSheet = true
+                }
+            }
+        }
+        .scaleEffect(animateHero ? 1 : 0.96)
+        .opacity(animateHero ? 1 : 0)
+    }
+
+    @ViewBuilder
+    private var todayPlanLauncher: some View {
+        if let selectedDay = selectedDayWorkout {
+            if selectedDay.isCompleted {
+                completedPlanCard(selectedDay)
+            } else if selectedDay.isRestDay {
+                recoveryPlanCard(selectedDay)
+            } else {
+                activePlanCard(selectedDay)
+            }
+        } else {
+            buildPlanCard
+        }
+    }
+
+    private func activePlanCard(_ workout: WorkoutDay) -> some View {
+        Button {
+            startWorkoutTrigger.toggle()
+            if calendar.isDateInToday(workout.date) {
+                showActiveSession = true
+            } else {
+                planSessionDayIndex = workout.dayIndex
+                navigateToPlanSession = true
+            }
+        } label: {
+            HStack(spacing: 16) {
+                VStack(spacing: 6) {
+                    Image(systemName: "figure.run")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.white)
+                    Image(systemName: "play.fill")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+                .frame(width: 52, height: 52)
+                .background(.white.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                VStack(alignment: .leading, spacing: 4) {
                     Text(heroLabel(for: workout).uppercased())
                         .font(.caption2.weight(.heavy))
-                        .tracking(1.0)
-                        .foregroundStyle(.white.opacity(0.8))
+                        .tracking(0.8)
+                        .foregroundStyle(.white.opacity(0.7))
 
-                    Spacer()
-
-                    if let tag = workout.tags.first {
-                        Text(tag)
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.white.opacity(0.9))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(.white.opacity(0.15))
-                            .clipShape(Capsule())
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
                     Text(workout.title)
-                        .font(.title.weight(.bold))
+                        .font(.headline.weight(.bold))
                         .foregroundStyle(.white)
-                        .lineLimit(2)
+                        .lineLimit(1)
 
-                    HStack(spacing: 14) {
-                        Label("\(workout.exercises.count) exercises", systemImage: "list.bullet")
+                    HStack(spacing: 10) {
+                        Label("\(workout.exercises.count)", systemImage: "list.bullet")
                         Label(estimatedDuration(workout), systemImage: "clock")
-                        if workout.completedExerciseCount > 0 {
-                            Label("\(workout.completedExerciseCount)/\(workout.exercises.count)", systemImage: "checkmark.circle")
+                        if let tag = workout.tags.first {
+                            Text(tag)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.white.opacity(0.12))
+                                .clipShape(Capsule())
                         }
                     }
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.6))
                 }
 
-                exerciseGlance(workout)
+                Spacer(minLength: 0)
 
-                Button {
-                    startWorkoutTrigger.toggle()
-                    if calendar.isDateInToday(workout.date) {
-                        showActiveSession = true
-                    } else {
-                        planSessionDayIndex = workout.dayIndex
-                        navigateToPlanSession = true
-                    }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "play.fill")
-                            .font(.subheadline.weight(.bold))
-                        Text("Start Workout")
-                            .font(.headline.weight(.bold))
-                    }
-                    .foregroundStyle(Color(hex: "#1A1A2E"))
-                    .frame(height: 54)
-                    .frame(maxWidth: .infinity)
-                    .background(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .white.opacity(0.15), radius: 12, y: 4)
-                }
-                .buttonStyle(PressScaleButtonStyle())
+                Image(systemName: "chevron.right")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.5))
             }
-            .padding(24)
+            .padding(18)
             .background {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 28)
+                    RoundedRectangle(cornerRadius: 22)
                         .fill(heroCardGradient)
-                    RoundedRectangle(cornerRadius: 28)
-                        .fill(MVMTheme.subtleGradient)
                     heroShimmerOverlay
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 28))
-            .shadow(color: MVMTheme.accent.opacity(0.25), radius: 32, y: 20)
-
-            activeSecondaryActions(workout)
+            .clipShape(RoundedRectangle(cornerRadius: 22))
+            .shadow(color: MVMTheme.accent.opacity(0.2), radius: 20, y: 12)
         }
+        .buttonStyle(PressScaleButtonStyle())
+        .contextMenu {
+            Button {
+                if calendar.isDateInToday(workout.date) {
+                    showWorkoutDetail = true
+                } else {
+                    planDetailDayIndex = workout.dayIndex
+                    navigateToPlanDetail = true
+                }
+            } label: {
+                Label("View Details", systemImage: "eye")
+            }
+
+            Button {
+                completeWorkoutTrigger.toggle()
+                vm.markDayCompleted(dayIndex: workout.dayIndex)
+            } label: {
+                Label("Mark Complete", systemImage: "checkmark.circle")
+            }
+
+            Button {
+                shareItems = ShareCardRenderer.shareItems(
+                    cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
+                )
+                showShareSheet = true
+            } label: {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+        }
+    }
+
+    private func completedPlanCard(_ workout: WorkoutDay) -> some View {
+        Button {
+            if calendar.isDateInToday(workout.date) {
+                showWorkoutDetail = true
+            } else {
+                planDetailDayIndex = workout.dayIndex
+                navigateToPlanDetail = true
+            }
+        } label: {
+            HStack(spacing: 16) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 52, height: 52)
+                    .background(.white.opacity(0.18))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("MISSION COMPLETE")
+                        .font(.caption2.weight(.heavy))
+                        .tracking(0.8)
+                        .foregroundStyle(.white.opacity(0.7))
+
+                    Text(workout.title)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+
+                    Text("\(workout.exercises.count) exercises done")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            .padding(18)
+            .background {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "#059669"), Color(hex: "#10B981").opacity(0.9)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 22))
+            .shadow(color: Color(hex: "#059669").opacity(0.15), radius: 16, y: 10)
+        }
+        .buttonStyle(PressScaleButtonStyle())
+    }
+
+    private func recoveryPlanCard(_ day: WorkoutDay) -> some View {
+        HStack(spacing: 16) {
+            Image(systemName: "leaf.fill")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 52, height: 52)
+                .background(.white.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("RECOVERY DAY")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.8)
+                    .foregroundStyle(.white.opacity(0.7))
+
+                Text("Rest & Mobility")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 8) {
+                Button {
+                    let session = vm.generateRecoverySession()
+                    recoverySession = session
+                    showRecoveryDetail = true
+                } label: {
+                    Text("Start")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color(hex: "#1A1A2E"))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(.white)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    vm.replaceRestDayWithWorkout(dayIndex: day.dayIndex)
+                } label: {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .frame(width: 36, height: 36)
+                        .background(.white.opacity(0.12))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(PressScaleButtonStyle())
+            }
+        }
+        .padding(18)
+        .background {
+            RoundedRectangle(cornerRadius: 22)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "#1E3A5F").opacity(0.9), Color(hex: "#2D4A6F").opacity(0.85)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .shadow(color: Color(hex: "#1E3A5F").opacity(0.15), radius: 16, y: 10)
+    }
+
+    private var buildPlanCard: some View {
+        Button {
+            vm.generateWeeklyPlan()
+        } label: {
+            HStack(spacing: 16) {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 52, height: 52)
+                    .background(.white.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("MY PLAN")
+                        .font(.caption2.weight(.heavy))
+                        .tracking(0.8)
+                        .foregroundStyle(.white.opacity(0.7))
+
+                    Text("Build Your Week")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+
+                    Text("Generate a personalized PT plan")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "plus")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            .padding(18)
+            .background {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 22)
+                        .fill(heroCardGradient)
+                    heroShimmerOverlay
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 22))
+            .shadow(color: MVMTheme.accent.opacity(0.2), radius: 20, y: 12)
+        }
+        .buttonStyle(PressScaleButtonStyle())
+    }
+
+    private func launcherCard(title: String, subtitle: String, icon: String, gradient: [Color], action: @escaping () -> Void) -> some View {
+        Button {
+            action()
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                Image(systemName: icon)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 40, height: 40)
+                    .background(.white.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 11))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(.white)
+
+                    Text(subtitle)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(
+                        LinearGradient(
+                            colors: gradient,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(PressScaleButtonStyle())
     }
 
     private func heroLabel(for workout: WorkoutDay) -> String {
@@ -458,336 +744,6 @@ struct HomeView: View {
         let f = DateFormatter()
         f.dateFormat = "EEEE"
         return "\(f.string(from: workout.date))'s PT"
-    }
-
-    private func exerciseGlance(_ workout: WorkoutDay) -> some View {
-        VStack(spacing: 6) {
-            ForEach(workout.exercises.prefix(3)) { exercise in
-                HStack(spacing: 10) {
-                    Circle()
-                        .fill(exercise.isCompleted ? .white : .white.opacity(0.3))
-                        .frame(width: 6, height: 6)
-
-                    Text(exercise.name)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(exercise.isCompleted ? .white.opacity(0.5) : .white.opacity(0.85))
-                        .strikethrough(exercise.isCompleted, color: .white.opacity(0.3))
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    Text(exercise.displayDetail)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.5))
-                        .lineLimit(1)
-                }
-            }
-
-            if workout.exercises.count > 3 {
-                HStack {
-                    Text("+\(workout.exercises.count - 3) more")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.4))
-                    Spacer()
-                }
-                .padding(.top, 2)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(.white.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func activeSecondaryActions(_ workout: WorkoutDay) -> some View {
-        HStack(spacing: 10) {
-            Button {
-                if calendar.isDateInToday(workout.date) {
-                    showWorkoutDetail = true
-                } else {
-                    planDetailDayIndex = workout.dayIndex
-                    navigateToPlanDetail = true
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "pencil")
-                        .font(.caption.weight(.bold))
-                    Text("Log")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(MVMTheme.secondaryText)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(MVMTheme.cardSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .buttonStyle(PressScaleButtonStyle())
-
-            Button {
-                completeWorkoutTrigger.toggle()
-                vm.markDayCompleted(dayIndex: workout.dayIndex)
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark")
-                        .font(.caption.weight(.bold))
-                    Text("Complete")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(MVMTheme.success)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(MVMTheme.success.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .buttonStyle(PressScaleButtonStyle())
-
-            Button {
-                shareItems = ShareCardRenderer.shareItems(
-                    cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
-                )
-                showShareSheet = true
-            } label: {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(MVMTheme.secondaryText)
-                    .frame(width: 44, height: 44)
-                    .background(MVMTheme.cardSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .buttonStyle(PressScaleButtonStyle())
-        }
-        .padding(.top, 12)
-    }
-
-    private func completedHero(_ workout: WorkoutDay) -> some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(spacing: 8) {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white)
-
-                Text("MISSION COMPLETE")
-                    .font(.caption2.weight(.heavy))
-                    .tracking(1.0)
-                    .foregroundStyle(.white.opacity(0.9))
-
-                Spacer()
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(workout.title)
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-
-                Text("\(workout.exercises.count) exercises completed")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.7))
-            }
-
-            Button {
-                if calendar.isDateInToday(workout.date) {
-                    showWorkoutDetail = true
-                } else {
-                    planDetailDayIndex = workout.dayIndex
-                    navigateToPlanDetail = true
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "eye")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Review Workout")
-                        .font(.headline.weight(.semibold))
-                }
-                .foregroundStyle(.white)
-                .frame(height: 50)
-                .frame(maxWidth: .infinity)
-                .background(.white.opacity(0.18))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-            .buttonStyle(PressScaleButtonStyle())
-        }
-        .padding(24)
-        .background {
-            RoundedRectangle(cornerRadius: 28)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(hex: "#059669"), Color(hex: "#10B981").opacity(0.9)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 28))
-        .shadow(color: Color(hex: "#059669").opacity(0.2), radius: 24, y: 16)
-    }
-
-    private func recoveryHero(_ day: WorkoutDay) -> some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(spacing: 8) {
-                Image(systemName: "leaf.fill")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.9))
-
-                Text("RECOVERY DAY")
-                    .font(.caption2.weight(.heavy))
-                    .tracking(1.0)
-                    .foregroundStyle(.white.opacity(0.8))
-
-                Spacer()
-
-                Text("Active Rest")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(.white.opacity(0.15))
-                    .clipShape(Capsule())
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Recovery & Mobility")
-                    .font(.title.weight(.bold))
-                    .foregroundStyle(.white)
-
-                Text("Light movement keeps the plan moving forward.")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
-            }
-
-            HStack(spacing: 12) {
-                Button {
-                    let session = vm.generateRecoverySession()
-                    recoverySession = session
-                    showRecoveryDetail = true
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "figure.cooldown")
-                            .font(.subheadline.weight(.bold))
-                        Text("Start Recovery")
-                            .font(.headline.weight(.bold))
-                    }
-                    .foregroundStyle(Color(hex: "#1A1A2E"))
-                    .frame(height: 52)
-                    .frame(maxWidth: .infinity)
-                    .background(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                }
-                .buttonStyle(PressScaleButtonStyle())
-
-                Button {
-                    vm.replaceRestDayWithWorkout(dayIndex: day.dayIndex)
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.subheadline.weight(.bold))
-                        Text("Swap")
-                            .font(.headline.weight(.semibold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(height: 52)
-                    .frame(maxWidth: .infinity)
-                    .background(.white.opacity(0.16))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                }
-                .buttonStyle(PressScaleButtonStyle())
-            }
-        }
-        .padding(24)
-        .background {
-            ZStack {
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(hex: "#1E3A5F").opacity(0.9),
-                                Color(hex: "#2D4A6F").opacity(0.85)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(MVMTheme.subtleGradient)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 28))
-        .shadow(color: Color(hex: "#1E3A5F").opacity(0.2), radius: 24, y: 16)
-    }
-
-    private var emptyHero: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(spacing: 8) {
-                Image(systemName: "plus.circle.fill")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.9))
-
-                Text("NO PT BUILT YET")
-                    .font(.caption2.weight(.heavy))
-                    .tracking(1.0)
-                    .foregroundStyle(.white.opacity(0.8))
-
-                Spacer()
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Build Today's PT")
-                    .font(.title.weight(.bold))
-                    .foregroundStyle(.white)
-
-                Text("Generate a workout and get moving.")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
-            }
-
-            HStack(spacing: 12) {
-                Button {
-                    vm.generateWeeklyPlan()
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.subheadline.weight(.bold))
-                        Text("Build Plan")
-                            .font(.headline.weight(.bold))
-                    }
-                    .foregroundStyle(Color(hex: "#1A1A2E"))
-                    .frame(height: 52)
-                    .frame(maxWidth: .infinity)
-                    .background(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .white.opacity(0.12), radius: 10, y: 4)
-                }
-                .buttonStyle(PressScaleButtonStyle())
-
-                Button {
-                    showWODSheet = true
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "bolt.fill")
-                            .font(.subheadline.weight(.bold))
-                        Text("Quick WOD")
-                            .font(.headline.weight(.semibold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(height: 52)
-                    .frame(maxWidth: .infinity)
-                    .background(.white.opacity(0.16))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                }
-                .buttonStyle(PressScaleButtonStyle())
-            }
-        }
-        .padding(24)
-        .background {
-            ZStack {
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(heroCardGradient)
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(MVMTheme.subtleGradient)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 28))
-        .shadow(color: MVMTheme.accent.opacity(0.2), radius: 24, y: 16)
     }
 
     // MARK: - Metrics Strip
@@ -854,54 +810,7 @@ struct HomeView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Tools Grid (4 items)
 
-    private var toolsGrid: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("TOOLS")
-                .font(.caption.weight(.bold))
-                .tracking(1.0)
-                .foregroundStyle(MVMTheme.tertiaryText)
-                .padding(.leading, 4)
-
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: 10),
-                    GridItem(.flexible(), spacing: 10)
-                ],
-                spacing: 10
-            ) {
-                compactTool(
-                    title: "WOD",
-                    icon: "star.fill",
-                    color: Color(hex: "#F59E0B")
-                ) {
-                    showWODSheet = true
-                }
-
-                compactTool(
-                    title: "Random",
-                    icon: "shuffle",
-                    color: Color(hex: "#6366F1")
-                ) {
-                    randomWorkout = vm.generateRandomWorkout()
-                    showRandomSheet = true
-                }
-
-                compactTool(
-                    title: "Unit PT",
-                    icon: "person.3.fill",
-                    color: Color(hex: "#2563EB")
-                ) { showUnitPTSheet = true }
-
-                compactTool(
-                    title: "Scan QR",
-                    icon: "qrcode.viewfinder",
-                    color: Color(hex: "#7C3AED")
-                ) { showScanSheet = true }
-            }
-        }
-    }
 
     // MARK: - AFT Calculator Button
 
@@ -1157,36 +1066,6 @@ struct HomeView: View {
         .buttonStyle(PressScaleButtonStyle())
     }
 
-    private func compactTool(title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button {
-            toolTapTrigger.toggle()
-            action()
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.body.weight(.bold))
-                    .foregroundStyle(color)
-                    .frame(width: 40, height: 40)
-                    .background(color.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(MVMTheme.primaryText)
-                    .lineLimit(1)
-
-                Spacer(minLength: 0)
-            }
-            .padding(14)
-            .background(MVMTheme.card)
-            .overlay {
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(MVMTheme.border)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-        }
-        .buttonStyle(PressScaleButtonStyle())
-    }
 
     // MARK: - Calendar Export Sheet
 
