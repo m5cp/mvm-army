@@ -19,8 +19,7 @@ struct AFTCalculatorView: View {
 
     @State private var didSave = false
     @State private var showExportSheet = false
-    @State private var shareItems: [Any] = []
-    @State private var showShareSheet = false
+    @State private var showAFTShareSheet: Bool = false
     @FocusState private var isAnyFieldFocused: Bool
 
     private var sdcTotalSeconds: Int {
@@ -79,22 +78,7 @@ struct AFTCalculatorView: View {
                     .sensoryFeedback(.success, trigger: didSave)
 
                     Button {
-                        let scoreRecord = AFTScoreRecord(
-                            deadliftLbs: preview.deadliftLbs,
-                            pushUpReps: preview.pushUpReps,
-                            sdcSeconds: preview.sdcSeconds,
-                            plankSeconds: preview.plankSeconds,
-                            runSeconds: preview.runSeconds,
-                            deadliftPoints: preview.deadliftPoints,
-                            pushUpPoints: preview.pushUpPoints,
-                            sdcPoints: preview.sdcPoints,
-                            plankPoints: preview.plankPoints,
-                            runPoints: preview.runPoints,
-                            totalScore: preview.totalScore,
-                            weakestEvents: preview.weakestEvents
-                        )
-                        shareItems = ShareCardRenderer.shareItems(cardType: .aft(score: scoreRecord, previous: vm.previousAFTScore))
-                        showShareSheet = true
+                        showAFTShareSheet = true
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "square.and.arrow.up")
@@ -153,8 +137,21 @@ struct AFTCalculatorView: View {
                 .fontWeight(.semibold)
             }
         }
-        .sheet(isPresented: $showShareSheet) {
-            ShareSheet(items: shareItems)
+        .sheet(isPresented: $showAFTShareSheet) {
+            AFTShareSheet(score: AFTScoreRecord(
+                deadliftLbs: preview.deadliftLbs,
+                pushUpReps: preview.pushUpReps,
+                sdcSeconds: preview.sdcSeconds,
+                plankSeconds: preview.plankSeconds,
+                runSeconds: preview.runSeconds,
+                deadliftPoints: preview.deadliftPoints,
+                pushUpPoints: preview.pushUpPoints,
+                sdcPoints: preview.sdcPoints,
+                plankPoints: preview.plankPoints,
+                runPoints: preview.runPoints,
+                totalScore: preview.totalScore,
+                weakestEvents: preview.weakestEvents
+            ), previous: vm.previousAFTScore)
         }
         .sheet(isPresented: $showExportSheet) {
             DAForm705ExportView(result: preview)
