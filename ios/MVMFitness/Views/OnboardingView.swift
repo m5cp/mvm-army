@@ -303,12 +303,8 @@ struct OnboardingView: View {
                     }
                     withAnimation { step += 1 }
                 } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "function")
-                            .font(.body.weight(.semibold))
-                        Text("Skip — AFT Calculator Only")
-                            .font(.headline.weight(.bold))
-                    }
+                    Text("Skip — AFT Calculator Only")
+                        .font(.headline.weight(.bold))
                     .foregroundStyle(MVMTheme.secondaryText)
                     .frame(height: 54)
                     .frame(maxWidth: .infinity)
