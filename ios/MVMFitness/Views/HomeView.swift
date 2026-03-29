@@ -11,9 +11,12 @@ struct HomeView: View {
     @State private var showActiveSession: Bool = false
     @State private var showUnitPTSheet: Bool = false
     @State private var showScanSheet: Bool = false
-    @State private var showAFTSheet: Bool = false
     @State private var showAFTCalculator: Bool = false
     @State private var showRecoveryDetail: Bool = false
+    @State private var showEditSheet: Bool = false
+    @State private var showCalendarSheet: Bool = false
+    @State private var showExportAlert: Bool = false
+    @State private var exportAlertMessage: String = ""
     @State private var randomWorkout: WorkoutDay?
     @State private var recoverySession: WorkoutDay?
     @State private var startWorkoutTrigger: Bool = false
@@ -21,21 +24,33 @@ struct HomeView: View {
     @State private var toolTapTrigger: Bool = false
     @State private var shareItems: [Any] = []
     @State private var showShareSheet: Bool = false
+    @State private var selectedDate: Date = Calendar.current.startOfDay(for: .now)
+    @State private var selectedDayIndex: Int?
+    @State private var navigateToPlanDetail: Bool = false
+    @State private var planDetailDayIndex: Int = 0
+    @State private var navigateToPlanSession: Bool = false
+    @State private var planSessionDayIndex: Int = 0
+    @State private var calendarService = CalendarExportService()
+
+    private let calendar = Calendar.current
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
-                headerSection
-                heroSection
-                metricsStrip
-                aftInsightBanner
-                toolsGrid
-                aftCalculatorButton
+            VStack(spacing: 0) {
+                weekCalendarStrip
+
+                VStack(spacing: 24) {
+                    heroSection
+                    metricsStrip
+                    toolsGrid
+                    aftCalculatorButton
+                    weekPlanSection
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 48)
+                .adaptiveContainer()
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 48)
-            .adaptiveContainer()
         }
         .background {
             ZStack {
@@ -50,6 +65,26 @@ struct HomeView: View {
                     .font(.caption.weight(.heavy))
                     .tracking(2.4)
                     .foregroundStyle(MVMTheme.secondaryText)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    if vm.currentPlan != nil {
+                        Button {
+                            vm.generateWeeklyPlan()
+                        } label: {
+                            Label("Regenerate Week", systemImage: "arrow.clockwise")
+                        }
+                        Button {
+                            showCalendarSheet = true
+                        } label: {
+                            Label("Export to Calendar", systemImage: "calendar.badge.plus")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+                }
             }
         }
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
@@ -81,6 +116,27 @@ struct HomeView: View {
                 }
             }
         }
+        .navigationDestination(isPresented: $navigateToPlanDetail) {
+            if vm.currentPlan?.days.contains(where: { $0.dayIndex == planDetailDayIndex }) == true {
+                WorkoutDetailView(dayIndex: planDetailDayIndex, isStandalone: false)
+            } else {
+                UnavailableFallbackView(title: "Workout Unavailable", message: "This workout could not be loaded.", action: "Go Back") {
+                    navigateToPlanDetail = false
+                }
+            }
+        }
+        .navigationDestination(isPresented: $navigateToPlanSession) {
+            if vm.currentPlan?.days.contains(where: { $0.dayIndex == planSessionDayIndex }) == true {
+                ActiveSessionView(dayIndex: planSessionDayIndex, isStandalone: false)
+            } else {
+                UnavailableFallbackView(title: "Session Unavailable", message: "This workout session could not be loaded.", action: "Go Back") {
+                    navigateToPlanSession = false
+                }
+            }
+        }
+        .navigationDestination(isPresented: $showAFTCalculator) {
+            AFTCalculatorView()
+        }
         .sheet(isPresented: $showWODSheet) {
             WODDetailView()
         }
@@ -109,11 +165,34 @@ struct HomeView: View {
         .sheet(isPresented: $showScanSheet) {
             QRScannerSheet()
         }
-        .sheet(isPresented: $showAFTSheet) {
-            AFTScoreSheet()
+        .sheet(isPresented: $showEditSheet) {
+            if let dayIndex = selectedDayIndex,
+               let plan = vm.currentPlan,
+               let day = plan.days.first(where: { $0.dayIndex == dayIndex }) {
+                EditWorkoutSheet(day: day)
+            } else {
+                NavigationStack {
+                    UnavailableFallbackView(title: "Edit Unavailable", message: "This workout could not be loaded for editing.", action: "Dismiss") {
+                        showEditSheet = false
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") { showEditSheet = false }
+                                .foregroundStyle(MVMTheme.primaryText)
+                        }
+                    }
+                    .toolbarBackground(MVMTheme.background, for: .navigationBar)
+                    .toolbarColorScheme(.dark, for: .navigationBar)
+                }
+            }
         }
-        .navigationDestination(isPresented: $showAFTCalculator) {
-            AFTCalculatorView()
+        .sheet(isPresented: $showCalendarSheet) {
+            calendarExportSheet
+        }
+        .alert("Calendar Export", isPresented: $showExportAlert) {
+            Button("OK") {}
+        } message: {
+            Text(exportAlertMessage)
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: startWorkoutTrigger)
         .sensoryFeedback(.success, trigger: completeWorkoutTrigger)
@@ -172,26 +251,93 @@ struct HomeView: View {
         .ignoresSafeArea()
     }
 
-    // MARK: - Header
+    // MARK: - Week Calendar Strip
 
-    private var headerSection: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(greetingText.uppercased())
-                    .font(.caption.weight(.semibold))
-                    .tracking(1.2)
-                    .foregroundStyle(MVMTheme.tertiaryText)
+    private var weekCalendarStrip: some View {
+        let weekDates = currentWeekDates
 
-                Text("Today")
-                    .font(.system(size: 34, weight: .bold))
+        return VStack(spacing: 12) {
+            HStack {
+                Text(monthYearString)
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
+
+                Spacer()
+
+                Text(weekRangeString)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(MVMTheme.tertiaryText)
             }
+            .padding(.horizontal, 20)
 
-            Spacer()
+            HStack(spacing: 0) {
+                ForEach(weekDates, id: \.self) { date in
+                    let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+                    let isToday = calendar.isDateInToday(date)
+                    let dayData = workoutDay(for: date)
+                    let hasWorkout = dayData != nil && !(dayData?.isRestDay ?? true)
+                    let isCompleted = dayData?.isCompleted ?? false
 
-            Text(todayDateString)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(MVMTheme.tertiaryText)
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            selectedDate = date
+                        }
+                    } label: {
+                        VStack(spacing: 6) {
+                            Text(shortDayName(date))
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(
+                                    isSelected ? .white :
+                                    isToday ? MVMTheme.accent :
+                                    MVMTheme.tertiaryText
+                                )
+
+                            Text(dayNumber(date))
+                                .font(.system(size: 17, weight: .bold, design: .rounded))
+                                .foregroundStyle(
+                                    isSelected ? .white :
+                                    isCompleted ? MVMTheme.success :
+                                    isToday ? MVMTheme.accent :
+                                    MVMTheme.primaryText
+                                )
+
+                            Circle()
+                                .fill(
+                                    isCompleted ? MVMTheme.success :
+                                    hasWorkout ? MVMTheme.accent.opacity(0.6) :
+                                    Color.clear
+                                )
+                                .frame(width: 5, height: 5)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background {
+                            if isSelected {
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [MVMTheme.accent, MVMTheme.accent2],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                                    .shadow(color: MVMTheme.accent.opacity(0.3), radius: 8, y: 4)
+                            } else if isToday {
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(MVMTheme.accent.opacity(0.3), lineWidth: 1)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+        }
+        .padding(.vertical, 12)
+        .background(MVMTheme.card)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(MVMTheme.border)
+                .frame(height: 1)
         }
     }
 
@@ -199,26 +345,25 @@ struct HomeView: View {
 
     private var heroSection: some View {
         Group {
-            individualHeroContent
+            if let selectedDay = selectedDayWorkout {
+                if selectedDay.isRestDay {
+                    recoveryHero(selectedDay)
+                } else if selectedDay.isCompleted {
+                    completedHero(selectedDay)
+                } else {
+                    activeHero(selectedDay)
+                }
+            } else {
+                emptyHero
+            }
         }
         .scaleEffect(animateHero ? 1 : 0.96)
         .opacity(animateHero ? 1 : 0)
     }
 
-    private var individualHeroContent: some View {
-        Group {
-            if let today = vm.todayWorkout {
-                if today.isCompleted {
-                    completedHero(today)
-                } else {
-                    activeHero(today)
-                }
-            } else if let recovery = todayRecoveryDay {
-                recoveryHero(recovery)
-            } else {
-                emptyHero
-            }
-        }
+    private var selectedDayWorkout: WorkoutDay? {
+        guard let plan = vm.currentPlan else { return nil }
+        return plan.days.first { calendar.isDate($0.date, inSameDayAs: selectedDate) }
     }
 
     private func activeHero(_ workout: WorkoutDay) -> some View {
@@ -229,7 +374,7 @@ struct HomeView: View {
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.white.opacity(0.9))
 
-                    Text("TODAY'S PT")
+                    Text(heroLabel(for: workout).uppercased())
                         .font(.caption2.weight(.heavy))
                         .tracking(1.0)
                         .foregroundStyle(.white.opacity(0.8))
@@ -268,7 +413,12 @@ struct HomeView: View {
 
                 Button {
                     startWorkoutTrigger.toggle()
-                    showActiveSession = true
+                    if calendar.isDateInToday(workout.date) {
+                        showActiveSession = true
+                    } else {
+                        planSessionDayIndex = workout.dayIndex
+                        navigateToPlanSession = true
+                    }
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "play.fill")
@@ -290,10 +440,8 @@ struct HomeView: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 28)
                         .fill(heroCardGradient)
-
                     RoundedRectangle(cornerRadius: 28)
                         .fill(MVMTheme.subtleGradient)
-
                     heroShimmerOverlay
                 }
             }
@@ -302,6 +450,14 @@ struct HomeView: View {
 
             activeSecondaryActions(workout)
         }
+    }
+
+    private func heroLabel(for workout: WorkoutDay) -> String {
+        if calendar.isDateInToday(workout.date) { return "Today's PT" }
+        if calendar.isDateInTomorrow(workout.date) { return "Tomorrow's PT" }
+        let f = DateFormatter()
+        f.dateFormat = "EEEE"
+        return "\(f.string(from: workout.date))'s PT"
     }
 
     private func exerciseGlance(_ workout: WorkoutDay) -> some View {
@@ -346,7 +502,12 @@ struct HomeView: View {
     private func activeSecondaryActions(_ workout: WorkoutDay) -> some View {
         HStack(spacing: 10) {
             Button {
-                showWorkoutDetail = true
+                if calendar.isDateInToday(workout.date) {
+                    showWorkoutDetail = true
+                } else {
+                    planDetailDayIndex = workout.dayIndex
+                    navigateToPlanDetail = true
+                }
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "pencil")
@@ -425,7 +586,12 @@ struct HomeView: View {
             }
 
             Button {
-                showWorkoutDetail = true
+                if calendar.isDateInToday(workout.date) {
+                    showWorkoutDetail = true
+                } else {
+                    planDetailDayIndex = workout.dayIndex
+                    navigateToPlanDetail = true
+                }
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "eye")
@@ -510,7 +676,7 @@ struct HomeView: View {
                 .buttonStyle(PressScaleButtonStyle())
 
                 Button {
-                    vm.generateWeeklyPlan()
+                    vm.replaceRestDayWithWorkout(dayIndex: day.dayIndex)
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.triangle.2.circlepath")
@@ -688,69 +854,7 @@ struct HomeView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - AFT Insight Banner
-
-    @ViewBuilder
-    private var aftInsightBanner: some View {
-        if let score = vm.latestAFTScore {
-            Button {
-                showAFTCalculator = true
-            } label: {
-                HStack(spacing: 16) {
-                    VStack(spacing: 4) {
-                        Text("\(score.totalScore)")
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
-                            .foregroundStyle(MVMTheme.primaryText)
-                            .contentTransition(.numericText())
-                        Text("AFT")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(MVMTheme.tertiaryText)
-                    }
-                    .frame(width: 60)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 6) {
-                            ForEach(aftEventPills(score), id: \.label) { pill in
-                                VStack(spacing: 2) {
-                                    Text(pill.label)
-                                        .font(.system(size: 9, weight: .bold))
-                                        .foregroundStyle(MVMTheme.tertiaryText)
-                                    Text("\(pill.value)")
-                                        .font(.caption2.weight(.bold))
-                                        .foregroundStyle(pill.color)
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                        }
-
-                        if !score.weakestEvents.isEmpty {
-                            HStack(spacing: 4) {
-                                Image(systemName: "target")
-                                    .font(.system(size: 9, weight: .bold))
-                                Text("Focus: \(score.weakestEvents.prefix(2).joined(separator: ", "))")
-                                    .font(.caption2.weight(.medium))
-                            }
-                            .foregroundStyle(MVMTheme.warning)
-                        }
-                    }
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                }
-                .padding(16)
-                .background(MVMTheme.card)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(MVMTheme.border)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-            }
-            .buttonStyle(PressScaleButtonStyle())
-        }
-    }
-
-    // MARK: - Tools Grid
+    // MARK: - Tools Grid (4 items)
 
     private var toolsGrid: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -763,29 +867,10 @@ struct HomeView: View {
             LazyVGrid(
                 columns: [
                     GridItem(.flexible(), spacing: 10),
-                    GridItem(.flexible(), spacing: 10),
                     GridItem(.flexible(), spacing: 10)
                 ],
                 spacing: 10
             ) {
-                compactTool(
-                    title: "Individual Plan",
-                    icon: "figure.strengthtraining.traditional",
-                    color: MVMTheme.accent
-                ) {
-                    if vm.currentPlan != nil {
-                        showWorkoutDetail = true
-                    } else {
-                        vm.generateWeeklyPlan()
-                    }
-                }
-
-                compactTool(
-                    title: "Quick Log",
-                    icon: "shield.fill",
-                    color: Color(hex: "#059669")
-                ) { showAFTSheet = true }
-
                 compactTool(
                     title: "WOD",
                     icon: "star.fill",
@@ -859,12 +944,225 @@ struct HomeView: View {
         .buttonStyle(PressScaleButtonStyle())
     }
 
+    // MARK: - Week Plan Section
+
+    @ViewBuilder
+    private var weekPlanSection: some View {
+        if let plan = vm.currentPlan {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    Text("THIS WEEK")
+                        .font(.caption.weight(.bold))
+                        .tracking(1.0)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .padding(.leading, 4)
+
+                    Spacer()
+
+                    weekProgressPill(plan)
+                }
+
+                ForEach(Array(plan.days.enumerated()), id: \.element.id) { offset, day in
+                    if day.isRestDay {
+                        weekRecoveryRow(day)
+                    } else {
+                        weekWorkoutRow(day)
+                    }
+                }
+            }
+        }
+    }
+
+    private func weekProgressPill(_ plan: WeeklyPlan) -> some View {
+        let total = plan.totalWorkoutDays
+        let completed = plan.completedCount
+        let progress: Int = total > 0 ? Int(Double(completed) / Double(total) * 100) : 0
+
+        return Text("\(completed)/\(total) · \(progress)%")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(MVMTheme.accent)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(MVMTheme.accent.opacity(0.1))
+            .clipShape(Capsule())
+    }
+
+    private func weekWorkoutRow(_ day: WorkoutDay) -> some View {
+        let isSelected = calendar.isDate(day.date, inSameDayAs: selectedDate)
+
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                selectedDate = calendar.startOfDay(for: day.date)
+            }
+        } label: {
+            HStack(spacing: 14) {
+                VStack(spacing: 2) {
+                    Text(shortDayName(day.date))
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+
+                    Text(dayNumber(day.date))
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            day.isCompleted ? MVMTheme.success :
+                            calendar.isDateInToday(day.date) ? MVMTheme.accent :
+                            MVMTheme.secondaryText
+                        )
+                }
+                .frame(width: 36)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(day.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(day.isCompleted ? MVMTheme.secondaryText : MVMTheme.primaryText)
+                        .lineLimit(1)
+
+                    HStack(spacing: 8) {
+                        if let tag = day.tags.first {
+                            Text(tag)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(MVMTheme.accent)
+                        }
+                        Text(estimatedDuration(day))
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
+                }
+
+                Spacer(minLength: 0)
+
+                if day.isCompleted {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(MVMTheme.success)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                isSelected ? MVMTheme.accent.opacity(0.08) :
+                MVMTheme.card.opacity(day.isCompleted ? 0.5 : 1)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(
+                        isSelected ? MVMTheme.accent.opacity(0.2) :
+                        day.isCompleted ? MVMTheme.success.opacity(0.1) :
+                        MVMTheme.border
+                    )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .contextMenu {
+            if !day.isCompleted {
+                Button {
+                    vm.markDayCompleted(dayIndex: day.dayIndex)
+                } label: {
+                    Label("Mark Complete", systemImage: "checkmark.circle")
+                }
+            } else {
+                Button {
+                    vm.markDayIncomplete(dayIndex: day.dayIndex)
+                } label: {
+                    Label("Mark Incomplete", systemImage: "arrow.uturn.backward")
+                }
+            }
+
+            Button {
+                selectedDayIndex = day.dayIndex
+                showEditSheet = true
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+
+            Button {
+                vm.regenerateSingleDay(dayIndex: day.dayIndex)
+            } label: {
+                Label("Regenerate", systemImage: "arrow.clockwise")
+            }
+
+            if !day.isCompleted {
+                Button {
+                    vm.convertDayToRecovery(dayIndex: day.dayIndex)
+                } label: {
+                    Label("Make Recovery Day", systemImage: "leaf")
+                }
+            }
+
+            Button {
+                Task {
+                    let result = await calendarService.exportWorkout(day)
+                    handleExportResult(result)
+                }
+            } label: {
+                Label("Add to Calendar", systemImage: "calendar.badge.plus")
+            }
+        }
+    }
+
+    private func weekRecoveryRow(_ day: WorkoutDay) -> some View {
+        let isSelected = calendar.isDate(day.date, inSameDayAs: selectedDate)
+
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                selectedDate = calendar.startOfDay(for: day.date)
+            }
+        } label: {
+            HStack(spacing: 14) {
+                VStack(spacing: 2) {
+                    Text(shortDayName(day.date))
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+
+                    Text(dayNumber(day.date))
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                .frame(width: 36)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Recovery & Mobility")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(MVMTheme.secondaryText)
+
+                    Text("Active rest · Light movement")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "leaf.fill")
+                    .font(.caption)
+                    .foregroundStyle(Color(hex: "#1E3A5F").opacity(0.5))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                isSelected ? MVMTheme.accent.opacity(0.05) : MVMTheme.card.opacity(0.4)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(
+                        isSelected ? MVMTheme.accent.opacity(0.15) : MVMTheme.border.opacity(0.5)
+                    )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(PressScaleButtonStyle())
+    }
+
     private func compactTool(title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
         Button {
             toolTapTrigger.toggle()
             action()
         } label: {
-            VStack(spacing: 10) {
+            HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.body.weight(.bold))
                     .foregroundStyle(color)
@@ -873,12 +1171,13 @@ struct HomeView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Text(title)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(MVMTheme.secondaryText)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.primaryText)
                     .lineLimit(1)
+
+                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(14)
             .background(MVMTheme.card)
             .overlay {
                 RoundedRectangle(cornerRadius: 18)
@@ -887,6 +1186,80 @@ struct HomeView: View {
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(PressScaleButtonStyle())
+    }
+
+    // MARK: - Calendar Export Sheet
+
+    private var calendarExportSheet: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 8) {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.system(size: 40))
+                    .foregroundStyle(MVMTheme.accent)
+                    .padding(.top, 8)
+
+                Text("Export to Calendar")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Text("Add your PT plan to your iOS Calendar.")
+                    .font(.subheadline)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+
+            VStack(spacing: 12) {
+                if let plan = vm.currentPlan {
+                    Button {
+                        Task {
+                            let result = await calendarService.exportWeeklyPlan(plan)
+                            handleExportResult(result)
+                            showCalendarSheet = false
+                        }
+                    } label: {
+                        HStack(spacing: 10) {
+                            if calendarService.isExporting {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Image(systemName: "calendar.badge.plus")
+                                    .font(.subheadline.weight(.bold))
+                            }
+                            Text("Export Full Week")
+                                .font(.headline.weight(.bold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(
+                            LinearGradient(
+                                colors: [MVMTheme.accent, MVMTheme.accent2],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .disabled(calendarService.isExporting)
+                    .buttonStyle(PressScaleButtonStyle())
+                }
+
+                Button {
+                    showCalendarSheet = false
+                } label: {
+                    Text("Cancel")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                .padding(.top, 4)
+            }
+            .padding(.horizontal, 20)
+        }
+        .padding(.vertical, 20)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(MVMTheme.background)
     }
 
     // MARK: - Helpers
@@ -900,22 +1273,48 @@ struct HomeView: View {
         return "Evening"
     }
 
-    private var todayDateString: String {
-        let f = DateFormatter()
-        f.dateFormat = "EEEE, d MMM"
-        return f.string(from: .now)
-    }
-
     private var formattedSteps: String {
         let steps = vm.pedometer.todaySteps
         if steps >= 1000 { return String(format: "%.1fk", Double(steps) / 1000) }
         return "\(steps)"
     }
 
-    private var todayRecoveryDay: WorkoutDay? {
-        guard let plan = vm.currentPlan else { return nil }
-        let today = Calendar.current.startOfDay(for: .now)
-        return plan.days.first { Calendar.current.isDate($0.date, inSameDayAs: today) && $0.isRestDay }
+    private var currentWeekDates: [Date] {
+        guard let plan = vm.currentPlan else {
+            let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: .now)) ?? .now
+            return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: startOfWeek) }
+        }
+        return plan.days.map { calendar.startOfDay(for: $0.date) }
+    }
+
+    private func workoutDay(for date: Date) -> WorkoutDay? {
+        vm.currentPlan?.days.first { calendar.isDate($0.date, inSameDayAs: date) }
+    }
+
+    private var monthYearString: String {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f.string(from: selectedDate)
+    }
+
+    private var weekRangeString: String {
+        let dates = currentWeekDates
+        guard let first = dates.first, let last = dates.last else { return "This Week" }
+        let f = DateFormatter()
+        f.dateFormat = "MMM d"
+        return "\(f.string(from: first)) – \(f.string(from: last))"
+    }
+
+    private func shortDayName(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "EEE"
+        return f.string(from: date).uppercased()
+    }
+
+    private func dayNumber(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "d"
+        return f.string(from: date)
     }
 
     private func estimatedDuration(_ workout: WorkoutDay) -> String {
@@ -950,26 +1349,17 @@ struct HomeView: View {
             )
     }
 
-    private struct AFTEventPill {
-        let label: String
-        let value: Int
-        let color: Color
-    }
-
-    private func aftEventPills(_ score: AFTScoreRecord) -> [AFTEventPill] {
-        [
-            AFTEventPill(label: "MDL", value: score.deadliftPoints, color: pillColor(score.deadliftPoints)),
-            AFTEventPill(label: "HRP", value: score.pushUpPoints, color: pillColor(score.pushUpPoints)),
-            AFTEventPill(label: "SDC", value: score.sdcPoints, color: pillColor(score.sdcPoints)),
-            AFTEventPill(label: "PLK", value: score.plankPoints, color: pillColor(score.plankPoints)),
-            AFTEventPill(label: "2MR", value: score.runPoints, color: pillColor(score.runPoints))
-        ]
-    }
-
-    private func pillColor(_ value: Int) -> Color {
-        if value >= 80 { return MVMTheme.success }
-        if value >= 60 { return MVMTheme.accent }
-        if value >= 40 { return MVMTheme.warning }
-        return MVMTheme.danger
+    private func handleExportResult(_ result: CalendarExportService.ExportResult) {
+        switch result {
+        case .success(let count):
+            exportAlertMessage = "\(count) workout\(count == 1 ? "" : "s") added to your calendar."
+        case .partial(let exported, let failed):
+            exportAlertMessage = "\(exported) exported, \(failed) failed. Try again for remaining."
+        case .denied:
+            exportAlertMessage = "Calendar access denied. Go to Settings → MVM Army → Calendars to enable."
+        case .error(let message):
+            exportAlertMessage = "Export failed: \(message)"
+        }
+        showExportAlert = true
     }
 }

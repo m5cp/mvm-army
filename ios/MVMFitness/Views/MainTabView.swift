@@ -11,13 +11,6 @@ struct MainTabView: View {
             }
 
             NavigationStack {
-                PlanView()
-            }
-            .tabItem {
-                Label("Plan", systemImage: "calendar")
-            }
-
-            NavigationStack {
                 ProgressViewScreen()
             }
             .tabItem {
