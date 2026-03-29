@@ -14,7 +14,6 @@ struct ProfileView: View {
     @AppStorage("dailyReminderEnabled") private var dailyReminderEnabled = false
     @AppStorage("reminderHour") private var reminderHour = 6
     @AppStorage("reminderMinute") private var reminderMinute = 0
-    @AppStorage("appearanceMode") private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("onboardingComplete") private var onboardingComplete = false
     @AppStorage("profileDisplayName") private var profileDisplayName = ""
 
@@ -25,22 +24,24 @@ struct ProfileView: View {
     @State private var resetAllTrigger = false
     @State private var showAvatarPicker = false
     @State private var imageManager = ProfileImageManager()
+    @State private var isEditingName: Bool = false
+    @FocusState private var nameFieldFocused: Bool
 
     var body: some View {
         ZStack {
             MVMTheme.background.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
+                VStack(spacing: 28) {
                     profileHeader
                     trainingSection
                     notificationsSection
-                    appearanceSection
                     appControlsSection
                     legalSection
                     footer
                 }
-                .padding(20)
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
                 .padding(.bottom, 40)
                 .adaptiveContainer()
             }
@@ -84,80 +85,51 @@ struct ProfileView: View {
         }
     }
 
-    // MARK: - Profile Header
-
-    @State private var isEditingName: Bool = false
-    @FocusState private var nameFieldFocused: Bool
+    // MARK: - Header
 
     private var profileHeader: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             Button {
                 showAvatarPicker = true
             } label: {
-                ZStack {
-                    if let image = imageManager.profileImage {
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 88, height: 88)
-                            .clipShape(Circle())
-                    } else if let avatarIdx = imageManager.selectedAvatarIndex,
-                              avatarIdx < ProfileImageManager.avatarSymbols.count {
-                        Circle()
-                            .fill(MVMTheme.accent.opacity(0.15))
-                            .frame(width: 88, height: 88)
-                            .overlay {
-                                Image(systemName: ProfileImageManager.avatarSymbols[avatarIdx])
-                                    .font(.system(size: 32, weight: .bold))
-                                    .foregroundStyle(MVMTheme.accent)
-                            }
-                    } else {
-                        Circle()
-                            .fill(MVMTheme.accent.opacity(0.12))
-                            .frame(width: 88, height: 88)
-                            .overlay {
-                                Image(systemName: "shield.fill")
-                                    .font(.system(size: 32, weight: .bold))
-                                    .foregroundStyle(MVMTheme.accent)
-                            }
-                    }
+                ZStack(alignment: .bottomTrailing) {
+                    avatarImage
+                        .frame(width: 96, height: 96)
+                        .clipShape(Circle())
 
                     Circle()
                         .fill(MVMTheme.card)
-                        .frame(width: 28, height: 28)
+                        .frame(width: 30, height: 30)
                         .overlay {
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(MVMTheme.accent)
                         }
                         .overlay {
                             Circle().stroke(MVMTheme.background, lineWidth: 2)
                         }
-                        .offset(x: 30, y: 30)
                 }
             }
             .buttonStyle(.plain)
 
-            VStack(spacing: 6) {
+            VStack(spacing: 8) {
                 if isEditingName {
                     TextField("Soldier", text: $profileDisplayName)
-                        .font(.title3.weight(.bold))
+                        .font(.title2.weight(.bold))
                         .foregroundStyle(MVMTheme.primaryText)
                         .multilineTextAlignment(.center)
                         .focused($nameFieldFocused)
                         .submitLabel(.done)
-                        .onSubmit {
-                            isEditingName = false
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
+                        .onSubmit { isEditingName = false }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
                         .background(MVMTheme.cardSoft)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .clipShape(.rect(cornerRadius: 12))
                         .overlay {
-                            RoundedRectangle(cornerRadius: 10)
+                            RoundedRectangle(cornerRadius: 12)
                                 .stroke(MVMTheme.accent.opacity(0.3))
                         }
-                        .frame(maxWidth: 220)
+                        .frame(maxWidth: 240)
                 } else {
                     Button {
                         isEditingName = true
@@ -165,11 +137,10 @@ struct ProfileView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Text(profileDisplayName.isEmpty ? "Soldier" : profileDisplayName)
-                                .font(.title3.weight(.bold))
+                                .font(.title2.weight(.bold))
                                 .foregroundStyle(MVMTheme.primaryText)
-
                             Image(systemName: "pencil")
-                                .font(.caption2.weight(.bold))
+                                .font(.caption.weight(.bold))
                                 .foregroundStyle(MVMTheme.tertiaryText)
                         }
                     }
@@ -177,24 +148,56 @@ struct ProfileView: View {
                 }
 
                 Text(profileSubtitle)
-                    .font(.caption.weight(.semibold))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(MVMTheme.accent)
             }
 
-            HStack(spacing: 24) {
-                statPill(value: "\(vm.totalWorkoutsCompleted)", label: "Workouts")
-                statPill(value: "\(vm.streak)", label: "Streak")
-                statPill(value: "\(vm.aftScores.count)", label: "AFT")
+            HStack(spacing: 0) {
+                statCell(value: "\(vm.totalWorkoutsCompleted)", label: "Workouts")
+                dividerLine
+                statCell(value: "\(vm.streak)", label: "Streak")
+                dividerLine
+                statCell(value: "\(vm.aftScores.count)", label: "AFT")
             }
+            .padding(.vertical, 14)
+            .background(MVMTheme.cardSoft)
+            .clipShape(.rect(cornerRadius: 14))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
+        .padding(.vertical, 28)
+        .padding(.horizontal, 20)
         .background(MVMTheme.card)
+        .clipShape(.rect(cornerRadius: 24))
         .overlay {
             RoundedRectangle(cornerRadius: 24)
-                .stroke(MVMTheme.accent.opacity(0.12))
+                .stroke(MVMTheme.border)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 24))
+    }
+
+    @ViewBuilder
+    private var avatarImage: some View {
+        if let image = imageManager.profileImage {
+            Image(uiImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+        } else if let avatarIdx = imageManager.selectedAvatarIndex,
+                  avatarIdx < ProfileImageManager.avatarSymbols.count {
+            Circle()
+                .fill(MVMTheme.accent.opacity(0.15))
+                .overlay {
+                    Image(systemName: ProfileImageManager.avatarSymbols[avatarIdx])
+                        .font(.system(size: 36, weight: .bold))
+                        .foregroundStyle(MVMTheme.accent)
+                }
+        } else {
+            Circle()
+                .fill(MVMTheme.accent.opacity(0.12))
+                .overlay {
+                    Image(systemName: "shield.fill")
+                        .font(.system(size: 36, weight: .bold))
+                        .foregroundStyle(MVMTheme.accent)
+                }
+        }
     }
 
     private var profileSubtitle: String {
@@ -203,81 +206,105 @@ struct ProfileView: View {
         return "\(mode) · \(focus)"
     }
 
-    private func statPill(value: String, label: String) -> some View {
-        VStack(spacing: 2) {
+    private func statCell(value: String, label: String) -> some View {
+        VStack(spacing: 3) {
             Text(value)
-                .font(.subheadline.weight(.bold))
+                .font(.headline.weight(.bold))
                 .foregroundStyle(MVMTheme.primaryText)
                 .contentTransition(.numericText())
             Text(label)
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(MVMTheme.tertiaryText)
         }
+        .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Training Setup
+    private var dividerLine: some View {
+        Rectangle()
+            .fill(MVMTheme.border)
+            .frame(width: 1, height: 28)
+    }
+
+    // MARK: - Training
 
     private var trainingSection: some View {
-        sectionCard(title: "Training Setup", icon: "figure.strengthtraining.traditional") {
-            profilePicker("PT Mode", selection: $ptModeRaw, values: PTMode.allCases.map(\.rawValue))
-            profilePicker("Duty Type", selection: $dutyTypeRaw, values: DutyType.allCases.map(\.rawValue))
-            profilePicker("Training Focus", selection: $trainingFocusRaw, values: TrainingFocus.allCases.map(\.rawValue))
-            profilePicker("Fitness Level", selection: $fitnessLevelRaw, values: FitnessLevel.allCases.map(\.rawValue))
-            profilePicker("Equipment", selection: $equipmentRaw, values: EquipmentOption.allCases.map(\.rawValue))
-
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Days per week")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                    Spacer()
-                    Text("\(daysPerWeek)")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(MVMTheme.accent)
-                }
-                Picker("Days", selection: $daysPerWeek) {
-                    ForEach(2...7, id: \.self) { d in
-                        Text("\(d)").tag(d)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Minutes per workout")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                    Spacer()
-                    Text("\(minutesPerWorkout) min")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(MVMTheme.accent)
-                }
-                Picker("Minutes", selection: $minutesPerWorkout) {
-                    Text("20").tag(20)
-                    Text("30").tag(30)
-                    Text("45").tag(45)
-                    Text("60").tag(60)
-                }
-                .pickerStyle(.segmented)
-            }
+        settingsSection(title: "TRAINING", icon: "figure.strengthtraining.traditional") {
+            settingsMenuRow(
+                icon: "target",
+                title: "Training Focus",
+                currentValue: trainingFocusRaw,
+                values: TrainingFocus.allCases.map(\.rawValue),
+                selection: $trainingFocusRaw
+            )
+            sectionDivider
+            settingsMenuRow(
+                icon: "chart.bar.fill",
+                title: "Fitness Level",
+                currentValue: fitnessLevelRaw,
+                values: FitnessLevel.allCases.map(\.rawValue),
+                selection: $fitnessLevelRaw
+            )
+            sectionDivider
+            settingsMenuRow(
+                icon: "dumbbell.fill",
+                title: "Equipment",
+                currentValue: equipmentRaw,
+                values: EquipmentOption.allCases.map(\.rawValue),
+                selection: $equipmentRaw
+            )
+            sectionDivider
+            settingsMenuRow(
+                icon: "person.2.fill",
+                title: "PT Mode",
+                currentValue: ptModeRaw,
+                values: PTMode.allCases.map(\.rawValue),
+                selection: $ptModeRaw
+            )
+            sectionDivider
+            settingsMenuRow(
+                icon: "briefcase.fill",
+                title: "Duty Type",
+                currentValue: dutyTypeRaw,
+                values: DutyType.allCases.map(\.rawValue),
+                selection: $dutyTypeRaw
+            )
+            sectionDivider
+            settingsMenuRow(
+                icon: "calendar",
+                title: "Days per Week",
+                currentValue: "\(daysPerWeek)",
+                values: (2...7).map { "\($0)" },
+                intSelection: $daysPerWeek
+            )
+            sectionDivider
+            settingsMenuRow(
+                icon: "clock.fill",
+                title: "Workout Duration",
+                currentValue: "\(minutesPerWorkout) min",
+                values: ["20", "30", "45", "60"],
+                intSelection: $minutesPerWorkout
+            )
         }
     }
-
-    // MARK: - Sharing & Identity
 
     // MARK: - Notifications
 
     private var notificationsSection: some View {
-        sectionCard(title: "Notifications", icon: "bell.badge") {
-            Toggle(isOn: $dailyReminderEnabled) {
-                HStack(spacing: 10) {
-                    Text("Daily Reminder")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                }
+        settingsSection(title: "NOTIFICATIONS", icon: "bell.badge") {
+            HStack {
+                Image(systemName: "bell.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 24)
+                Text("Daily Reminder")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(MVMTheme.primaryText)
+                Spacer()
+                Toggle("", isOn: $dailyReminderEnabled)
+                    .labelsHidden()
+                    .tint(MVMTheme.accent)
             }
-            .tint(MVMTheme.accent)
+            .frame(minHeight: 44)
             .onChange(of: dailyReminderEnabled) { _, newValue in
                 Task {
                     if newValue {
@@ -292,62 +319,61 @@ struct ProfileView: View {
             }
 
             if dailyReminderEnabled {
-                DatePicker("Reminder Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
-                    .font(.subheadline)
-                    .colorScheme(.dark)
-                    .onChange(of: reminderTime) { _, newValue in
-                        let comps = Calendar.current.dateComponents([.hour, .minute], from: newValue)
-                        reminderHour = comps.hour ?? 6
-                        reminderMinute = comps.minute ?? 0
-                        Task {
-                            if dailyReminderEnabled {
-                                await NotificationManager.scheduleDailyReminder(at: newValue)
-                            }
+                sectionDivider
+                HStack {
+                    Image(systemName: "clock")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.accent)
+                        .frame(width: 24)
+                    Text("Time")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Spacer()
+                    DatePicker("", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                        .colorScheme(.dark)
+                }
+                .frame(minHeight: 44)
+                .onChange(of: reminderTime) { _, newValue in
+                    let comps = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+                    reminderHour = comps.hour ?? 6
+                    reminderMinute = comps.minute ?? 0
+                    Task {
+                        if dailyReminderEnabled {
+                            await NotificationManager.scheduleDailyReminder(at: newValue)
                         }
                     }
-            }
-        }
-    }
-
-    // MARK: - Appearance
-
-    private var appearanceSection: some View {
-        sectionCard(title: "Appearance", icon: "paintbrush") {
-            Picker("Appearance", selection: $appearanceModeRaw) {
-                ForEach(AppearanceMode.allCases) { mode in
-                    Text(mode.title).tag(mode.rawValue)
                 }
             }
-            .tint(MVMTheme.primaryText)
         }
     }
 
     // MARK: - App Controls
 
     private var appControlsSection: some View {
-        sectionCard(title: "App Controls", icon: "gearshape") {
+        settingsSection(title: "APP", icon: "gearshape") {
             Button {
                 showResetPlanAlert = true
             } label: {
-                profileRow(icon: "arrow.clockwise", title: "Reset Weekly Plan", color: MVMTheme.warning)
+                settingsRow(icon: "arrow.clockwise", title: "Reset Weekly Plan", color: MVMTheme.warning)
             }
             .sensoryFeedback(.warning, trigger: resetPlanTrigger)
 
-            Divider().overlay(MVMTheme.border)
+            sectionDivider
 
             Button(role: .destructive) {
                 showResetAlert = true
             } label: {
-                profileRow(icon: "trash", title: "Reset All Data", color: MVMTheme.danger)
+                settingsRow(icon: "trash", title: "Reset All Data", color: MVMTheme.danger)
             }
             .sensoryFeedback(.warning, trigger: resetAllTrigger)
 
-            Divider().overlay(MVMTheme.border)
+            sectionDivider
 
             Button {
                 onboardingComplete = false
             } label: {
-                profileRow(icon: "arrow.counterclockwise", title: "Re-run Onboarding", color: MVMTheme.secondaryText)
+                settingsRow(icon: "arrow.counterclockwise", title: "Re-run Onboarding", color: MVMTheme.secondaryText)
             }
         }
     }
@@ -355,35 +381,35 @@ struct ProfileView: View {
     // MARK: - Legal
 
     private var legalSection: some View {
-        sectionCard(title: "Legal & Info", icon: "doc.text") {
+        settingsSection(title: "LEGAL", icon: "doc.text") {
             NavigationLink {
                 LegalTextView(title: "Privacy Policy", content: LegalContent.privacyPolicy)
             } label: {
-                profileRow(icon: "lock.shield", title: "Privacy Policy", color: MVMTheme.accent, showChevron: true)
+                settingsRow(icon: "lock.shield", title: "Privacy Policy", color: MVMTheme.accent, showChevron: true)
             }
 
-            Divider().overlay(MVMTheme.border)
+            sectionDivider
 
             NavigationLink {
                 LegalTextView(title: "Apple EULA", content: LegalContent.appleEULA)
             } label: {
-                profileRow(icon: "doc.plaintext", title: "Apple EULA", color: MVMTheme.accent, showChevron: true)
+                settingsRow(icon: "doc.plaintext", title: "Apple EULA", color: MVMTheme.accent, showChevron: true)
             }
 
-            Divider().overlay(MVMTheme.border)
+            sectionDivider
 
             NavigationLink {
                 LegalTextView(title: "Disclaimer", content: LegalContent.disclaimer)
             } label: {
-                profileRow(icon: "exclamationmark.triangle", title: "Disclaimer", color: MVMTheme.warning, showChevron: true)
+                settingsRow(icon: "exclamationmark.triangle", title: "Disclaimer", color: MVMTheme.warning, showChevron: true)
             }
 
-            Divider().overlay(MVMTheme.border)
+            sectionDivider
 
             NavigationLink {
                 LegalTextView(title: "Risks", content: LegalContent.risks)
             } label: {
-                profileRow(icon: "heart.text.square", title: "Risks", color: MVMTheme.danger, showChevron: true)
+                settingsRow(icon: "heart.text.square", title: "Risks", color: MVMTheme.danger, showChevron: true)
             }
         }
     }
@@ -396,16 +422,142 @@ struct ProfileView: View {
                 .font(.caption.weight(.heavy))
                 .tracking(2.0)
                 .foregroundStyle(MVMTheme.tertiaryText)
-
             Text("Me vs Me")
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(MVMTheme.tertiaryText.opacity(0.6))
-
             Text("Version 4.0")
                 .font(.caption2)
                 .foregroundStyle(MVMTheme.tertiaryText.opacity(0.4))
         }
         .padding(.top, 8)
+    }
+
+    // MARK: - Reusable Components
+
+    private func settingsSection<Content: View>(title: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+                Text(title)
+                    .font(.caption.weight(.bold))
+                    .tracking(0.8)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+            .padding(.horizontal, 4)
+            .padding(.bottom, 10)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
+            .background(MVMTheme.card)
+            .clipShape(.rect(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(MVMTheme.border)
+            }
+        }
+    }
+
+    private var sectionDivider: some View {
+        Divider()
+            .overlay(MVMTheme.border)
+            .padding(.leading, 36)
+    }
+
+    private func settingsRow(icon: String, title: String, color: Color, showChevron: Bool = false) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(color)
+                .frame(width: 24)
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(MVMTheme.primaryText)
+            Spacer()
+            if showChevron {
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+        }
+        .frame(minHeight: 48)
+        .contentShape(Rectangle())
+    }
+
+    private func settingsMenuRow(icon: String, title: String, currentValue: String, values: [String], selection: Binding<String>) -> some View {
+        Menu {
+            ForEach(values, id: \.self) { value in
+                Button {
+                    selection.wrappedValue = value
+                } label: {
+                    HStack {
+                        Text(value)
+                        if value == selection.wrappedValue {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 24)
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(MVMTheme.primaryText)
+                Spacer()
+                Text(currentValue)
+                    .font(.subheadline)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+            .frame(minHeight: 48)
+            .contentShape(Rectangle())
+        }
+    }
+
+    private func settingsMenuRow(icon: String, title: String, currentValue: String, values: [String], intSelection: Binding<Int>) -> some View {
+        Menu {
+            ForEach(values, id: \.self) { value in
+                Button {
+                    intSelection.wrappedValue = Int(value) ?? intSelection.wrappedValue
+                } label: {
+                    HStack {
+                        Text(title.contains("Duration") ? "\(value) min" : value)
+                        if Int(value) == intSelection.wrappedValue {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 24)
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(MVMTheme.primaryText)
+                Spacer()
+                Text(currentValue)
+                    .font(.subheadline)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+            .frame(minHeight: 48)
+            .contentShape(Rectangle())
+        }
     }
 
     // MARK: - Avatar Picker Sheet
@@ -421,7 +573,6 @@ struct ProfileView: View {
                             Text("Choose Profile Image")
                                 .font(.headline)
                                 .foregroundStyle(MVMTheme.primaryText)
-
                             Text("Upload a photo or pick an avatar")
                                 .font(.subheadline)
                                 .foregroundStyle(MVMTheme.secondaryText)
@@ -441,7 +592,7 @@ struct ProfileView: View {
                             .frame(height: 52)
                             .frame(maxWidth: .infinity)
                             .background(MVMTheme.heroGradient)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .clipShape(.rect(cornerRadius: 16))
                         }
                         .buttonStyle(PressScaleButtonStyle())
 
@@ -476,7 +627,6 @@ struct ProfileView: View {
                                                     Circle()
                                                         .stroke(isSelected ? MVMTheme.accent : MVMTheme.border, lineWidth: isSelected ? 2 : 1)
                                                 }
-
                                             Text(avatar.label)
                                                 .font(.caption2.weight(.medium))
                                                 .foregroundStyle(isSelected ? MVMTheme.accent : MVMTheme.tertiaryText)
@@ -503,7 +653,7 @@ struct ProfileView: View {
                                 .frame(height: 44)
                                 .frame(maxWidth: .infinity)
                                 .background(MVMTheme.danger.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .clipShape(.rect(cornerRadius: 14))
                             }
                             .buttonStyle(PressScaleButtonStyle())
                         }
@@ -523,80 +673,5 @@ struct ProfileView: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-    }
-
-    // MARK: - Section Card
-
-    private func sectionCard<Content: View>(title: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(MVMTheme.accent)
-                    .frame(width: 28, height: 28)
-                    .background(MVMTheme.accent.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                Text(title)
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
-            }
-
-            content()
-        }
-        .padding(18)
-        .premiumCard()
-    }
-
-    // MARK: - Profile Row
-
-    private func profileRow(icon: String, title: String, color: Color, showChevron: Bool = false) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(color)
-                .frame(width: 24)
-
-            Text(title)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(MVMTheme.primaryText)
-
-            Spacer()
-
-            if showChevron {
-                Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(MVMTheme.tertiaryText)
-            }
-        }
-        .frame(minHeight: 44)
-        .contentShape(Rectangle())
-    }
-
-    // MARK: - Pickers
-
-    private func profilePicker(_ title: String, selection: Binding<String>, values: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(MVMTheme.primaryText)
-
-            Picker(title, selection: selection) {
-                ForEach(values, id: \.self) { value in
-                    Text(value).tag(value)
-                }
-            }
-            .pickerStyle(.menu)
-            .tint(MVMTheme.primaryText)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 14)
-            .frame(height: 48)
-            .background(MVMTheme.cardSoft)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(MVMTheme.border)
-            }
-        }
     }
 }
