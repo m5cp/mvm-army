@@ -1,18 +1,32 @@
 import UIKit
-import PDFKit
 
 enum DAForm705PDFService {
 
     static func generatePDF(from data: DAForm705ExportData) -> Data? {
-        guard let templateURL = Bundle.main.url(forResource: "DA_Form_705_Army_Fitness_Test", withExtension: "pdf"),
-              let document = PDFDocument(url: templateURL) else {
-            return nil
+        let pageWidth: CGFloat = 612
+        let pageHeight: CGFloat = 792
+        let pageRect = CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight)
+        let margin: CGFloat = 36
+        let contentWidth = pageWidth - margin * 2
+
+        let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
+
+        return renderer.pdfData { context in
+            context.beginPage()
+
+            var y: CGFloat = margin
+
+            y = drawHeader(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, pageWidth: pageWidth)
+            y = drawUnofficialBanner(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth)
+            y = drawSoldierInfo(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, data: data)
+            y = drawTestInfo(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, data: data)
+            y = drawEventScores(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, data: data)
+            y = drawTotalAndResult(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, data: data)
+            y = drawBodyComposition(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, data: data)
+            y = drawAuthentication(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, data: data)
+
+            drawFooter(in: context.cgContext, margin: margin, pageWidth: pageWidth, pageHeight: pageHeight)
         }
-
-        fillSoldierInfo(in: document, data: data)
-        fillTestOneFields(in: document, data: data)
-
-        return document.dataRepresentation()
     }
 
     static func savePDFToTemp(data: Data, soldierName: String) -> URL? {
@@ -28,109 +42,360 @@ enum DAForm705PDFService {
         }
     }
 
-    private static func fillSoldierInfo(in document: PDFDocument, data: DAForm705ExportData) {
-        setTextField(in: document, fieldName: "Name", value: data.soldierName)
-        setTextField(in: document, fieldName: "Unit_Location", value: data.unit)
+    // MARK: - Drawing Sections
 
-        if data.sex == .male {
-            setCheckbox(in: document, fieldName: "Male", checked: true)
-        } else {
-            setCheckbox(in: document, fieldName: "Female", checked: true)
-        }
+    private static func drawHeader(in ctx: CGContext, at y: CGFloat, margin: CGFloat, contentWidth: CGFloat, pageWidth: CGFloat) -> CGFloat {
+        var currentY = y
 
-        if data.standard == .combat {
-            setCheckbox(in: document, fieldName: "Check_Standard_Combat", checked: true)
-        } else {
-            setCheckbox(in: document, fieldName: "Check_Standard_General", checked: true)
-        }
+        let titleAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 14),
+            .foregroundColor: UIColor.black
+        ]
+        let subtitleAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 9),
+            .foregroundColor: UIColor.darkGray
+        ]
+
+        let title = "ARMY COMBAT FITNESS TEST SCORECARD"
+        let titleSize = (title as NSString).size(withAttributes: titleAttrs)
+        let titleX = (pageWidth - titleSize.width) / 2
+        (title as NSString).draw(at: CGPoint(x: titleX, y: currentY), withAttributes: titleAttrs)
+        currentY += titleSize.height + 2
+
+        let formId = "DA FORM 705 (Unofficial Replica)"
+        let formSize = (formId as NSString).size(withAttributes: subtitleAttrs)
+        let formX = (pageWidth - formSize.width) / 2
+        (formId as NSString).draw(at: CGPoint(x: formX, y: currentY), withAttributes: subtitleAttrs)
+        currentY += formSize.height + 12
+
+        return currentY
     }
 
-    private static func fillTestOneFields(in document: PDFDocument, data: DAForm705ExportData) {
-        setTextField(in: document, fieldName: "Test_One_Age", value: "\(data.age)")
-        setTextField(in: document, fieldName: "Test_One_MOS", value: data.mos)
-        setTextField(in: document, fieldName: "Test_One_Rank_Grade", value: data.payGrade)
+    private static func drawUnofficialBanner(in ctx: CGContext, at y: CGFloat, margin: CGFloat, contentWidth: CGFloat) -> CGFloat {
+        var currentY = y
 
+        let bannerRect = CGRect(x: margin, y: currentY, width: contentWidth, height: 22)
+        ctx.setFillColor(UIColor(red: 0.95, green: 0.90, blue: 0.75, alpha: 1.0).cgColor)
+        ctx.fill(bannerRect)
+        ctx.setStrokeColor(UIColor(red: 0.75, green: 0.60, blue: 0.30, alpha: 1.0).cgColor)
+        ctx.setLineWidth(0.5)
+        ctx.stroke(bannerRect)
+
+        let bannerAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 8),
+            .foregroundColor: UIColor(red: 0.5, green: 0.3, blue: 0.0, alpha: 1.0)
+        ]
+        let bannerText = "UNOFFICIAL REPLICA — FOR PERSONAL REFERENCE ONLY — NOT AN OFFICIAL ARMY RECORD"
+        let bannerSize = (bannerText as NSString).size(withAttributes: bannerAttrs)
+        let bannerX = margin + (contentWidth - bannerSize.width) / 2
+        (bannerText as NSString).draw(at: CGPoint(x: bannerX, y: currentY + 6), withAttributes: bannerAttrs)
+        currentY += 22 + 12
+
+        return currentY
+    }
+
+    private static func drawSoldierInfo(in ctx: CGContext, at y: CGFloat, margin: CGFloat, contentWidth: CGFloat, data: DAForm705ExportData) -> CGFloat {
+        var currentY = y
+
+        currentY = drawSectionHeader(in: ctx, at: currentY, margin: margin, contentWidth: contentWidth, title: "I. SOLDIER INFORMATION")
+
+        let halfWidth = (contentWidth - 8) / 2
+        let thirdWidth = (contentWidth - 16) / 3
+
+        currentY = drawLabeledField(in: ctx, at: currentY, x: margin, width: contentWidth, label: "1. NAME (Last, First, MI)", value: data.soldierName)
+        currentY = drawLabeledField(in: ctx, at: currentY, x: margin, width: contentWidth, label: "2. UNIT / LOCATION", value: data.unit)
+
+        let row3Y = currentY
+        drawLabeledField(in: ctx, at: row3Y, x: margin, width: thirdWidth, label: "3. AGE", value: "\(data.age)")
+        drawLabeledField(in: ctx, at: row3Y, x: margin + thirdWidth + 8, width: thirdWidth, label: "4. SEX", value: data.sex.rawValue)
+        currentY = drawLabeledField(in: ctx, at: row3Y, x: margin + (thirdWidth + 8) * 2, width: thirdWidth, label: "5. MOS", value: data.mos)
+
+        let row4Y = currentY
+        drawLabeledField(in: ctx, at: row4Y, x: margin, width: halfWidth, label: "6. RANK / PAY GRADE", value: data.payGrade)
+        currentY = drawLabeledField(in: ctx, at: row4Y, x: margin + halfWidth + 8, width: halfWidth, label: "7. STANDARD", value: data.standard.rawValue)
+
+        currentY += 6
+        return currentY
+    }
+
+    private static func drawTestInfo(in ctx: CGContext, at y: CGFloat, margin: CGFloat, contentWidth: CGFloat, data: DAForm705ExportData) -> CGFloat {
+        var currentY = y
+
+        currentY = drawSectionHeader(in: ctx, at: currentY, margin: margin, contentWidth: contentWidth, title: "II. TEST INFORMATION")
+
+        let halfWidth = (contentWidth - 8) / 2
+        let row1Y = currentY
+        drawLabeledField(in: ctx, at: row1Y, x: margin, width: halfWidth, label: "8. TEST TYPE", value: data.testType.rawValue)
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd MMM yyyy"
-        setTextField(in: document, fieldName: "Test_One_Date", value: dateFormatter.string(from: data.testDate))
+        currentY = drawLabeledField(in: ctx, at: row1Y, x: margin + halfWidth + 8, width: halfWidth, label: "9. DATE OF TEST", value: dateFormatter.string(from: data.testDate))
 
-        setTextField(in: document, fieldName: "Test_One_First_Attempt", value: "\(data.deadliftLbs)")
-        setTextField(in: document, fieldName: "Test_One_Points1", value: "\(data.deadliftPoints)")
-
-        setTextField(in: document, fieldName: "Test_One_Repetitions", value: "\(data.pushUpReps)")
-        setTextField(in: document, fieldName: "Test_One_Points3", value: "\(data.pushUpPoints)")
-
-        setTextField(in: document, fieldName: "Test_One_Time1", value: formatTime(data.sdcSeconds))
-        setTextField(in: document, fieldName: "Test_One_Points4", value: "\(data.sdcPoints)")
-
-        setTextField(in: document, fieldName: "Test_One_Time2", value: formatTime(data.plankSeconds))
-        setTextField(in: document, fieldName: "Test_One_Points5", value: "\(data.plankPoints)")
-
-        setTextField(in: document, fieldName: "Test_One_Time3", value: formatTime(data.runSeconds))
-        setTextField(in: document, fieldName: "Test_One_Points6", value: "\(data.runPoints)")
-
-        setTextField(in: document, fieldName: "Test_One_Total_Points", value: "\(data.totalScore)")
-
-        if data.passed {
-            setCheckbox(in: document, fieldName: "Test_One_Go", checked: true)
-            setCheckbox(in: document, fieldName: "Test_One_Final_Go", checked: true)
-        } else {
-            setCheckbox(in: document, fieldName: "Test_One_NoGo", checked: true)
-            setCheckbox(in: document, fieldName: "Test_One_Final_NoGo", checked: true)
-        }
-
-        if !data.height.isEmpty {
-            setTextField(in: document, fieldName: "Test_One_Height", value: data.height)
-        }
-        if !data.weight.isEmpty {
-            setTextField(in: document, fieldName: "Test_One_Weight", value: data.weight)
-        }
-        if !data.bodyFatPercent.isEmpty {
-            setTextField(in: document, fieldName: "Test_One_Body_Fat", value: data.bodyFatPercent)
-        }
-        if !data.bodyCompDate.isEmpty {
-            setTextField(in: document, fieldName: "Test_One_Body_Composition_Date", value: data.bodyCompDate)
-        }
-
-        if !data.oicName.isEmpty {
-            setTextField(in: document, fieldName: "OIC_NCOIC_Name_Test_One", value: data.oicName)
-        }
-        if !data.ncoicName.isEmpty {
-            setTextField(in: document, fieldName: "OIC_NCOIC_Rank_Grade_Test_One", value: data.ncoicName)
-        }
-        if !data.oicDate.isEmpty {
-            setTextField(in: document, fieldName: "OIC_NCOIC_Date_Test_One", value: data.oicDate)
-        }
-
-        let soldierDateStr = dateFormatter.string(from: data.testDate)
-        setTextField(in: document, fieldName: "Signature_Soldier_Date_Test_One", value: soldierDateStr)
+        currentY += 6
+        return currentY
     }
 
-    // MARK: - Field Helpers
+    private static func drawEventScores(in ctx: CGContext, at y: CGFloat, margin: CGFloat, contentWidth: CGFloat, data: DAForm705ExportData) -> CGFloat {
+        var currentY = y
 
-    private static func setTextField(in document: PDFDocument, fieldName: String, value: String) {
-        guard !value.isEmpty else { return }
-        for pageIndex in 0..<document.pageCount {
-            guard let page = document.page(at: pageIndex) else { continue }
-            for annotation in page.annotations {
-                if annotation.fieldName == fieldName && annotation.widgetFieldType == .text {
-                    annotation.widgetStringValue = value
-                    return
-                }
-            }
+        currentY = drawSectionHeader(in: ctx, at: currentY, margin: margin, contentWidth: contentWidth, title: "III. EVENT SCORES")
+
+        let colWidths: [CGFloat] = [30, contentWidth * 0.30, contentWidth * 0.28, contentWidth * 0.15]
+        let pointsWidth = contentWidth - colWidths[0] - colWidths[1] - colWidths[2] - colWidths[3]
+
+        currentY = drawEventTableHeader(in: ctx, at: currentY, margin: margin, contentWidth: contentWidth, colWidths: colWidths, pointsWidth: pointsWidth)
+
+        let events: [(String, String, String, Int)] = [
+            ("1", "3 REPETITION MAXIMUM DEADLIFT (MDL)", "\(data.deadliftLbs) lbs", data.deadliftPoints),
+            ("2", "HAND RELEASE PUSH-UP (HRP)", "\(data.pushUpReps) reps", data.pushUpPoints),
+            ("3", "SPRINT-DRAG-CARRY (SDC)", formatTime(data.sdcSeconds), data.sdcPoints),
+            ("4", "PLANK (PLK)", formatTime(data.plankSeconds), data.plankPoints),
+            ("5", "TWO-MILE RUN (2MR)", formatTime(data.runSeconds), data.runPoints)
+        ]
+
+        for (num, name, raw, points) in events {
+            currentY = drawEventRow(in: ctx, at: currentY, margin: margin, contentWidth: contentWidth, colWidths: colWidths, pointsWidth: pointsWidth, num: num, name: name, raw: raw, points: points, minPoints: data.standard.minimumPerEvent)
         }
+
+        currentY += 6
+        return currentY
     }
 
-    private static func setCheckbox(in document: PDFDocument, fieldName: String, checked: Bool) {
-        for pageIndex in 0..<document.pageCount {
-            guard let page = document.page(at: pageIndex) else { continue }
-            for annotation in page.annotations {
-                if annotation.fieldName == fieldName && annotation.widgetFieldType == .button {
-                    annotation.buttonWidgetState = checked ? .onState : .offState
-                    return
-                }
-            }
+    private static func drawEventTableHeader(in ctx: CGContext, at y: CGFloat, margin: CGFloat, contentWidth: CGFloat, colWidths: [CGFloat], pointsWidth: CGFloat) -> CGFloat {
+        let rowHeight: CGFloat = 20
+        let headerRect = CGRect(x: margin, y: y, width: contentWidth, height: rowHeight)
+        ctx.setFillColor(UIColor(white: 0.90, alpha: 1).cgColor)
+        ctx.fill(headerRect)
+        ctx.setStrokeColor(UIColor.black.cgColor)
+        ctx.setLineWidth(0.5)
+        ctx.stroke(headerRect)
+
+        let headerAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 7),
+            .foregroundColor: UIColor.black
+        ]
+
+        let headers = ["#", "EVENT", "RAW SCORE", "SCALED", "POINTS"]
+        var x = margin + 4
+        for (i, header) in headers.enumerated() {
+            let w = i < colWidths.count ? colWidths[i] : pointsWidth
+            (header as NSString).draw(at: CGPoint(x: x, y: y + 5), withAttributes: headerAttrs)
+            x += w
         }
+
+        return y + rowHeight
+    }
+
+    private static func drawEventRow(in ctx: CGContext, at y: CGFloat, margin: CGFloat, contentWidth: CGFloat, colWidths: [CGFloat], pointsWidth: CGFloat, num: String, name: String, raw: String, points: Int, minPoints: Int) -> CGFloat {
+        let rowHeight: CGFloat = 24
+        let rowRect = CGRect(x: margin, y: y, width: contentWidth, height: rowHeight)
+        ctx.setStrokeColor(UIColor(white: 0.75, alpha: 1).cgColor)
+        ctx.setLineWidth(0.3)
+        ctx.stroke(rowRect)
+
+        let valueAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 9),
+            .foregroundColor: UIColor.black
+        ]
+        let pointsAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 10),
+            .foregroundColor: points >= minPoints ? UIColor(red: 0, green: 0.5, blue: 0, alpha: 1) : UIColor.red
+        ]
+
+        let passStr = points >= minPoints ? "GO" : "NO GO"
+        let passAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 8),
+            .foregroundColor: points >= minPoints ? UIColor(red: 0, green: 0.5, blue: 0, alpha: 1) : UIColor.red
+        ]
+
+        var x = margin + 4
+        let textY = y + 7
+
+        (num as NSString).draw(at: CGPoint(x: x, y: textY), withAttributes: valueAttrs)
+        x += colWidths[0]
+
+        (name as NSString).draw(at: CGPoint(x: x, y: textY), withAttributes: [.font: UIFont.systemFont(ofSize: 8), .foregroundColor: UIColor.black])
+        x += colWidths[1]
+
+        (raw as NSString).draw(at: CGPoint(x: x, y: textY), withAttributes: valueAttrs)
+        x += colWidths[2]
+
+        (passStr as NSString).draw(at: CGPoint(x: x, y: textY), withAttributes: passAttrs)
+        x += colWidths[3]
+
+        ("\(points)" as NSString).draw(at: CGPoint(x: x, y: textY - 1), withAttributes: pointsAttrs)
+
+        return y + rowHeight
+    }
+
+    private static func drawTotalAndResult(in ctx: CGContext, at y: CGFloat, margin: CGFloat, contentWidth: CGFloat, data: DAForm705ExportData) -> CGFloat {
+        var currentY = y
+
+        let totalRect = CGRect(x: margin, y: currentY, width: contentWidth, height: 32)
+        ctx.setFillColor(UIColor(white: 0.93, alpha: 1).cgColor)
+        ctx.fill(totalRect)
+        ctx.setStrokeColor(UIColor.black.cgColor)
+        ctx.setLineWidth(0.5)
+        ctx.stroke(totalRect)
+
+        let totalLabelAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 11),
+            .foregroundColor: UIColor.black
+        ]
+        let totalValueAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 14),
+            .foregroundColor: UIColor.black
+        ]
+        let resultColor: UIColor = data.passed ? UIColor(red: 0, green: 0.5, blue: 0, alpha: 1) : .red
+        let resultAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 12),
+            .foregroundColor: resultColor
+        ]
+
+        ("TOTAL SCORE:" as NSString).draw(at: CGPoint(x: margin + 8, y: currentY + 8), withAttributes: totalLabelAttrs)
+        ("\(data.totalScore) / 500" as NSString).draw(at: CGPoint(x: margin + 120, y: currentY + 7), withAttributes: totalValueAttrs)
+
+        let resultStr = data.passed ? "PASS (GO)" : "FAIL (NO GO)"
+        let resultSize = (resultStr as NSString).size(withAttributes: resultAttrs)
+        (resultStr as NSString).draw(at: CGPoint(x: margin + contentWidth - resultSize.width - 12, y: currentY + 9), withAttributes: resultAttrs)
+
+        currentY += 32 + 6
+
+        let minAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 8),
+            .foregroundColor: UIColor.darkGray
+        ]
+        let minText = "Standard: \(data.standard.rawValue) — Min \(data.standard.minimumPerEvent) pts/event, \(data.standard.minimumTotal) pts total"
+        (minText as NSString).draw(at: CGPoint(x: margin, y: currentY), withAttributes: minAttrs)
+        currentY += 16
+
+        return currentY
+    }
+
+    private static func drawBodyComposition(in ctx: CGContext, at y: CGFloat, margin: CGFloat, contentWidth: CGFloat, data: DAForm705ExportData) -> CGFloat {
+        let hasData = !data.height.isEmpty || !data.weight.isEmpty || !data.bodyFatPercent.isEmpty || !data.bodyCompDate.isEmpty
+        guard hasData else { return y }
+
+        var currentY = y
+        currentY = drawSectionHeader(in: ctx, at: currentY, margin: margin, contentWidth: contentWidth, title: "IV. BODY COMPOSITION")
+
+        let quarterWidth = (contentWidth - 24) / 4
+        let rowY = currentY
+        drawLabeledField(in: ctx, at: rowY, x: margin, width: quarterWidth, label: "HEIGHT", value: data.height)
+        drawLabeledField(in: ctx, at: rowY, x: margin + quarterWidth + 8, width: quarterWidth, label: "WEIGHT", value: data.weight)
+        drawLabeledField(in: ctx, at: rowY, x: margin + (quarterWidth + 8) * 2, width: quarterWidth, label: "BODY FAT %", value: data.bodyFatPercent)
+        currentY = drawLabeledField(in: ctx, at: rowY, x: margin + (quarterWidth + 8) * 3, width: quarterWidth, label: "BC DATE", value: data.bodyCompDate)
+
+        currentY += 6
+        return currentY
+    }
+
+    private static func drawAuthentication(in ctx: CGContext, at y: CGFloat, margin: CGFloat, contentWidth: CGFloat, data: DAForm705ExportData) -> CGFloat {
+        var currentY = y
+
+        currentY = drawSectionHeader(in: ctx, at: currentY, margin: margin, contentWidth: contentWidth, title: "V. AUTHENTICATION")
+
+        let halfWidth = (contentWidth - 8) / 2
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd MMM yyyy"
+
+        let row1Y = currentY
+        drawLabeledField(in: ctx, at: row1Y, x: margin, width: halfWidth, label: "SOLDIER NAME", value: data.soldierName)
+        currentY = drawLabeledField(in: ctx, at: row1Y, x: margin + halfWidth + 8, width: halfWidth, label: "DATE", value: dateFormatter.string(from: data.testDate))
+
+        let hasOIC = !data.oicName.isEmpty || !data.oicDate.isEmpty
+        let hasNCOIC = !data.ncoicName.isEmpty || !data.ncoicDate.isEmpty
+
+        if hasOIC {
+            let row2Y = currentY
+            drawLabeledField(in: ctx, at: row2Y, x: margin, width: halfWidth, label: "OIC / NCOIC NAME", value: data.oicName)
+            currentY = drawLabeledField(in: ctx, at: row2Y, x: margin + halfWidth + 8, width: halfWidth, label: "DATE", value: data.oicDate)
+        }
+
+        if hasNCOIC {
+            let row3Y = currentY
+            drawLabeledField(in: ctx, at: row3Y, x: margin, width: halfWidth, label: "NCOIC NAME", value: data.ncoicName)
+            currentY = drawLabeledField(in: ctx, at: row3Y, x: margin + halfWidth + 8, width: halfWidth, label: "DATE", value: data.ncoicDate)
+        }
+
+        let sigLineY = currentY + 10
+        ctx.setStrokeColor(UIColor.black.cgColor)
+        ctx.setLineWidth(0.5)
+
+        let sigLabelAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 7),
+            .foregroundColor: UIColor.darkGray
+        ]
+
+        ctx.move(to: CGPoint(x: margin, y: sigLineY + 14))
+        ctx.addLine(to: CGPoint(x: margin + halfWidth, y: sigLineY + 14))
+        ctx.strokePath()
+        ("SOLDIER'S SIGNATURE" as NSString).draw(at: CGPoint(x: margin, y: sigLineY + 16), withAttributes: sigLabelAttrs)
+
+        ctx.move(to: CGPoint(x: margin + halfWidth + 8, y: sigLineY + 14))
+        ctx.addLine(to: CGPoint(x: margin + contentWidth, y: sigLineY + 14))
+        ctx.strokePath()
+        ("OIC / NCOIC SIGNATURE" as NSString).draw(at: CGPoint(x: margin + halfWidth + 8, y: sigLineY + 16), withAttributes: sigLabelAttrs)
+
+        currentY = sigLineY + 32
+        return currentY
+    }
+
+    private static func drawFooter(in ctx: CGContext, margin: CGFloat, pageWidth: CGFloat, pageHeight: CGFloat) {
+        let footerAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 7),
+            .foregroundColor: UIColor.gray
+        ]
+        let footerY = pageHeight - margin + 4
+        let dateStr = DateFormatter.shortFileDate.string(from: .now)
+
+        let leftText = "DA FORM 705 — UNOFFICIAL REPLICA"
+        (leftText as NSString).draw(at: CGPoint(x: margin, y: footerY), withAttributes: footerAttrs)
+
+        let rightText = "Generated \(dateStr) — MVM Fitness App"
+        let rightSize = (rightText as NSString).size(withAttributes: footerAttrs)
+        (rightText as NSString).draw(at: CGPoint(x: pageWidth - margin - rightSize.width, y: footerY), withAttributes: footerAttrs)
+    }
+
+    // MARK: - Primitive Helpers
+
+    @discardableResult
+    private static func drawSectionHeader(in ctx: CGContext, at y: CGFloat, margin: CGFloat, contentWidth: CGFloat, title: String) -> CGFloat {
+        let headerRect = CGRect(x: margin, y: y, width: contentWidth, height: 20)
+        ctx.setFillColor(UIColor(white: 0.15, alpha: 1).cgColor)
+        ctx.fill(headerRect)
+
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 9),
+            .foregroundColor: UIColor.white
+        ]
+        (title as NSString).draw(at: CGPoint(x: margin + 8, y: y + 5), withAttributes: attrs)
+
+        return y + 20 + 4
+    }
+
+    @discardableResult
+    private static func drawLabeledField(in ctx: CGContext, at y: CGFloat, x: CGFloat, width: CGFloat, label: String, value: String) -> CGFloat {
+        let labelAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 7),
+            .foregroundColor: UIColor.darkGray
+        ]
+        let valueAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 10),
+            .foregroundColor: UIColor.black
+        ]
+
+        let fieldHeight: CGFloat = 30
+        let fieldRect = CGRect(x: x, y: y, width: width, height: fieldHeight)
+        ctx.setStrokeColor(UIColor(white: 0.75, alpha: 1).cgColor)
+        ctx.setLineWidth(0.3)
+        ctx.stroke(fieldRect)
+
+        (label as NSString).draw(at: CGPoint(x: x + 4, y: y + 2), withAttributes: labelAttrs)
+
+        let displayValue = value.isEmpty ? "—" : value
+        (displayValue as NSString).draw(at: CGPoint(x: x + 4, y: y + 14), withAttributes: valueAttrs)
+
+        return y + fieldHeight
     }
 
     private static func formatTime(_ totalSeconds: Int) -> String {

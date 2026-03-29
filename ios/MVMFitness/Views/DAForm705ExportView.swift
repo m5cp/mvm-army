@@ -56,12 +56,12 @@ struct DAForm705ExportView: View {
             HStack(spacing: 8) {
                 Image(systemName: "doc.richtext.fill")
                     .foregroundStyle(MVMTheme.accent)
-                Text("Export Official DA Form 705")
+                Text("Export DA Form 705 Replica")
                     .font(.headline)
                     .foregroundStyle(MVMTheme.primaryText)
             }
 
-            Text("Fills the official DA Form 705 PDF with your AFT data. Review and add optional details before exporting.")
+            Text("Generates an unofficial replica of DA Form 705 with your AFT data filled in. Review and add optional details before exporting.")
                 .font(.subheadline)
                 .foregroundStyle(MVMTheme.secondaryText)
         }
@@ -269,7 +269,7 @@ struct DAForm705ExportView: View {
                 } else {
                     Image(systemName: "square.and.arrow.up")
                 }
-                Text(isGenerating ? "Generating..." : "Export Official DA Form 705")
+                Text(isGenerating ? "Generating..." : "Export DA Form 705 Replica")
             }
             .font(.headline)
             .foregroundStyle(.white)
