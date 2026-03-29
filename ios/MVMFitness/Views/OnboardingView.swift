@@ -8,13 +8,15 @@ struct OnboardingView: View {
     @AppStorage("equipment") private var equipmentRaw: String = EquipmentOption.bodyweight.rawValue
     @AppStorage("daysPerWeek") private var daysPerWeek: Int = 3
     @AppStorage("minutesPerWorkout") private var minutesPerWorkout: Int = 30
+    @AppStorage("disclaimerAccepted") private var disclaimerAccepted: Bool = false
 
     @Environment(AppViewModel.self) private var vm
 
     @State private var step: Int = 0
     @State private var isGenerating: Bool = false
+    @State private var hasAgreed: Bool = false
 
-    private let totalSteps: Int = 4
+    private let totalSteps: Int = 5
 
     var body: some View {
         GeometryReader { geo in
@@ -56,6 +58,7 @@ struct OnboardingView: View {
                 Capsule()
                     .fill(i <= step ? MVMTheme.accent : Color.white.opacity(0.1))
                     .frame(height: 4)
+                    .animation(.spring(response: 0.3), value: step)
             }
         }
     }
@@ -68,7 +71,8 @@ struct OnboardingView: View {
         case 0: welcomeStep
         case 1: trainingSetupStep
         case 2: scheduleStep
-        case 3: reviewStep
+        case 3: disclaimerStep
+        case 4: reviewStep
         default: EmptyView()
         }
     }
@@ -259,7 +263,91 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 3: Review + Build
+    // MARK: - Step 3: Disclaimer
+
+    private var disclaimerStep: some View {
+        VStack(spacing: 24) {
+            sectionHeader(icon: "doc.text.fill", title: "Terms of Use")
+
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Accountability Tool", systemImage: "checkmark.shield.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.accent)
+
+                    Text("MVM Army is a physical fitness accountability tracker, training planner, and Army Fitness Test calculator. All workouts, training plans (WODs), and scoring calculations are based on publicly available, open-source U.S. Army physical fitness regulations and doctrine.")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.secondaryText)
+                        .lineSpacing(3)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Not Professional Advice", systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.warning)
+
+                    Text("This app does not provide medical, fitness, or health advice of any kind. It is not a substitute for professional guidance from a physician, certified trainer, or military medical provider. Always consult a qualified professional before starting or modifying any exercise program.")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.secondaryText)
+                        .lineSpacing(3)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Limitation of Liability", systemImage: "hand.raised.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.danger)
+
+                    Text("MVM Army and its developers assume no responsibility or liability for any injury, loss, or damage resulting from the use of this application. You use this app entirely at your own risk.")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.secondaryText)
+                        .lineSpacing(3)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Limited Access", systemImage: "lock.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+
+                    Text("If you do not agree, you may still browse the app and use the AFT Calculator. However, workout planning, logging, progress tracking, and all other features require acceptance of these terms.")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .lineSpacing(3)
+                }
+            }
+            .padding(16)
+            .background(Color.white.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+
+            Button {
+                withAnimation(.spring(response: 0.3)) {
+                    hasAgreed.toggle()
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: hasAgreed ? "checkmark.square.fill" : "square")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(hasAgreed ? MVMTheme.accent : MVMTheme.tertiaryText)
+                        .contentTransition(.symbolEffect(.replace))
+
+                    Text("I understand and agree to these terms")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(hasAgreed ? .white : MVMTheme.secondaryText)
+                        .multilineTextAlignment(.leading)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(hasAgreed ? MVMTheme.accent.opacity(0.1) : Color.white.opacity(0.03))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(hasAgreed ? MVMTheme.accent.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Step 4: Review + Build
 
     private var reviewStep: some View {
         VStack(spacing: 28) {
@@ -275,20 +363,31 @@ struct OnboardingView: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 16))
 
-            VStack(spacing: 10) {
-                Image(systemName: "exclamationmark.shield.fill")
-                    .font(.title3)
-                    .foregroundStyle(MVMTheme.warning)
-
-                Text("MVM Army provides workout structures for planning and accountability. It does not provide medical advice. Consult a physician before starting any exercise program.")
-                    .font(.caption)
-                    .foregroundStyle(MVMTheme.secondaryText)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(2)
+            if hasAgreed {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundStyle(MVMTheme.success)
+                    Text("Terms accepted — full access enabled")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(MVMTheme.success)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity)
+                .background(MVMTheme.success.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundStyle(MVMTheme.warning)
+                    Text("Calculator only — go back to accept terms for full access")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(MVMTheme.warning)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity)
+                .background(MVMTheme.warning.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .padding(16)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
         }
     }
 
@@ -357,7 +456,8 @@ struct OnboardingView: View {
     private var nextButtonTitle: String {
         switch step {
         case 0: return "Get Started"
-        case totalSteps - 1: return isGenerating ? "Building Your Plan..." : "Build My Plan"
+        case 3: return hasAgreed ? "I Agree — Continue" : "Skip — Calculator Only"
+        case totalSteps - 1: return isGenerating ? "Building Your Plan..." : (hasAgreed ? "Build My Plan" : "Enter App")
         default: return "Continue"
         }
     }
@@ -366,10 +466,15 @@ struct OnboardingView: View {
         if step < totalSteps - 1 {
             withAnimation { step += 1 }
         } else {
-            isGenerating = true
-            Task {
-                try? await Task.sleep(for: .milliseconds(600))
-                vm.generateWeeklyPlan()
+            disclaimerAccepted = hasAgreed
+            if hasAgreed {
+                isGenerating = true
+                Task {
+                    try? await Task.sleep(for: .milliseconds(600))
+                    vm.generateWeeklyPlan()
+                    onboardingComplete = true
+                }
+            } else {
                 onboardingComplete = true
             }
         }

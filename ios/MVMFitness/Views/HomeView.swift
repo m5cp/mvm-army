@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(AppViewModel.self) private var vm
+    @AppStorage("disclaimerAccepted") private var disclaimerAccepted: Bool = false
 
     @State private var animateHero: Bool = false
     @State private var animateMetrics: Bool = false
@@ -41,14 +42,22 @@ struct HomeView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                weekCalendarStrip
+                if disclaimerAccepted {
+                    weekCalendarStrip
+                }
 
                 VStack(spacing: 24) {
                     greetingHeader
-                    selectedDayWorkoutsSection
+                    if disclaimerAccepted {
+                        selectedDayWorkoutsSection
+                    }
                     aftCalculatorButton
-                    quickActions
-                    metricsStrip
+                    if disclaimerAccepted {
+                        quickActions
+                        metricsStrip
+                    } else {
+                        disclaimerBanner
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
@@ -263,6 +272,51 @@ struct HomeView: View {
                 .blur(radius: 60)
         }
         .ignoresSafeArea()
+    }
+
+    // MARK: - Disclaimer Banner
+
+    private var disclaimerBanner: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "lock.shield.fill")
+                .font(.title2)
+                .foregroundStyle(MVMTheme.accent)
+
+            Text("Limited Access Mode")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(MVMTheme.primaryText)
+
+            Text("Accept the terms of use to unlock workout planning, logging, progress tracking, and all training features.")
+                .font(.caption)
+                .foregroundStyle(MVMTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .lineSpacing(3)
+
+            Button {
+                disclaimerAccepted = true
+                vm.generateWeeklyPlan()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.shield.fill")
+                        .font(.subheadline.weight(.bold))
+                    Text("Accept Terms & Unlock")
+                        .font(.subheadline.weight(.bold))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(MVMTheme.heroGradient)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+        }
+        .padding(20)
+        .background(MVMTheme.card)
+        .overlay {
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(MVMTheme.border)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 
     // MARK: - Week Calendar Strip
