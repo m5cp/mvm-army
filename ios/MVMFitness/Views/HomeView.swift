@@ -1,10 +1,5 @@
 import SwiftUI
 
-private enum HomeMode: String, CaseIterable {
-    case individual = "Individual PT"
-    case unit = "Unit PT"
-}
-
 struct HomeView: View {
     @Environment(AppViewModel.self) private var vm
 
@@ -21,7 +16,6 @@ struct HomeView: View {
     @State private var showRecoveryDetail: Bool = false
     @State private var randomWorkout: WorkoutDay?
     @State private var recoverySession: WorkoutDay?
-    @State private var homeMode: HomeMode = .individual
     @State private var startWorkoutTrigger: Bool = false
     @State private var completeWorkoutTrigger: Bool = false
     @State private var toolTapTrigger: Bool = false
@@ -35,8 +29,8 @@ struct HomeView: View {
                 heroSection
                 metricsStrip
                 aftInsightBanner
-                modeSelector
-                toolsSection
+                toolsGrid
+                aftCalculatorButton
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -756,117 +750,7 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Mode Selector
-
-    private var modeSelector: some View {
-        HStack(spacing: 4) {
-            ForEach(HomeMode.allCases, id: \.rawValue) { mode in
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                        homeMode = mode
-                    }
-                } label: {
-                    Text(mode.rawValue)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(homeMode == mode ? .white : MVMTheme.tertiaryText)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background {
-                            if homeMode == mode {
-                                Capsule()
-                                    .fill(MVMTheme.accent.opacity(0.25))
-                                    .overlay {
-                                        Capsule()
-                                            .stroke(MVMTheme.accent.opacity(0.4), lineWidth: 1)
-                                    }
-                            }
-                        }
-                }
-                .buttonStyle(.plain)
-            }
-            Spacer()
-        }
-    }
-
-    // MARK: - Tools Section
-
-    private var toolsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            if homeMode == .unit {
-                unitPTContent
-            } else {
-                toolsGrid
-            }
-        }
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: homeMode)
-    }
-
-    private var unitPTContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if let latest = vm.unitPTPlans.first {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "person.3.fill")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(MVMTheme.accent)
-                        Text("Latest Unit PT")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(MVMTheme.secondaryText)
-                    }
-
-                    Text(latest.title)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .lineLimit(2)
-
-                    Text(latest.objective)
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                        .lineLimit(2)
-                }
-                .padding(18)
-                .premiumCard()
-            }
-
-            HStack(spacing: 10) {
-                Button {
-                    toolTapTrigger.toggle()
-                    showUnitPTSheet = true
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.subheadline.weight(.bold))
-                        Text("Build Formation PT")
-                            .font(.headline.weight(.bold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(height: 52)
-                    .frame(maxWidth: .infinity)
-                    .background(MVMTheme.heroGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: MVMTheme.accent.opacity(0.2), radius: 12, y: 6)
-                }
-                .buttonStyle(PressScaleButtonStyle())
-
-                Button {
-                    toolTapTrigger.toggle()
-                    showScanSheet = true
-                } label: {
-                    Image(systemName: "qrcode.viewfinder")
-                        .font(.body.weight(.bold))
-                        .foregroundStyle(MVMTheme.secondaryText)
-                        .frame(width: 52, height: 52)
-                        .background(MVMTheme.cardSoft)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(MVMTheme.border)
-                        }
-                }
-                .buttonStyle(PressScaleButtonStyle())
-            }
-        }
-    }
+    // MARK: - Tools Grid
 
     private var toolsGrid: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -885,21 +769,27 @@ struct HomeView: View {
                 spacing: 10
             ) {
                 compactTool(
-                    title: "AFT Calc",
-                    icon: "shield.checkered",
-                    color: Color(hex: "#059669")
-                ) { showAFTCalculator = true }
+                    title: "Individual Plan",
+                    icon: "figure.strengthtraining.traditional",
+                    color: MVMTheme.accent
+                ) {
+                    if vm.currentPlan != nil {
+                        showWorkoutDetail = true
+                    } else {
+                        vm.generateWeeklyPlan()
+                    }
+                }
 
                 compactTool(
                     title: "Quick Log",
                     icon: "shield.fill",
-                    color: Color(hex: "#047857")
+                    color: Color(hex: "#059669")
                 ) { showAFTSheet = true }
 
                 compactTool(
                     title: "WOD",
                     icon: "star.fill",
-                    color: MVMTheme.accent
+                    color: Color(hex: "#F59E0B")
                 ) {
                     showWODSheet = true
                 }
@@ -926,6 +816,47 @@ struct HomeView: View {
                 ) { showScanSheet = true }
             }
         }
+    }
+
+    // MARK: - AFT Calculator Button
+
+    private var aftCalculatorButton: some View {
+        Button {
+            toolTapTrigger.toggle()
+            showAFTCalculator = true
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "shield.checkered")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Color(hex: "#059669"))
+                    .frame(width: 44, height: 44)
+                    .background(Color(hex: "#059669").opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("AFT Calculator")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text("Full AFT scoring with soldier info")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+            .padding(16)
+            .background(MVMTheme.card)
+            .overlay {
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(MVMTheme.border)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+        }
+        .buttonStyle(PressScaleButtonStyle())
     }
 
     private func compactTool(title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
