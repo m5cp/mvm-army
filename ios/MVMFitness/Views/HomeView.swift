@@ -11,6 +11,7 @@ struct HomeView: View {
     @State private var showWorkoutDetail: Bool = false
     @State private var showActiveSession: Bool = false
     @State private var showUnitPTSheet: Bool = false
+    @State private var showMyPTPlanSheet: Bool = false
     @State private var showScanSheet: Bool = false
     @State private var showAFTCalculator: Bool = false
     @State private var showRecoveryDetail: Bool = false
@@ -179,6 +180,9 @@ struct HomeView: View {
                     .toolbarColorScheme(.dark, for: .navigationBar)
                 }
             }
+        }
+        .sheet(isPresented: $showMyPTPlanSheet) {
+            MyPTPlanSheet()
         }
         .sheet(isPresented: $showUnitPTSheet) {
             UnitPTBuilderSheet()
@@ -981,7 +985,7 @@ struct HomeView: View {
                     gradient: [Color(hex: "#3B82F6"), Color(hex: "#2563EB")]
                 ) {
                     toolTapTrigger.toggle()
-                    vm.generateWeeklyPlan()
+                    showMyPTPlanSheet = true
                 }
 
                 launcherCard(
