@@ -220,6 +220,9 @@ nonisolated struct WeeklyPlan: Codable, Identifiable, Hashable, Sendable {
     var equipment: String
     var minutesPerWorkout: Int
     var days: [WorkoutDay]
+    var totalWeeks: Int
+    var currentWeek: Int
+    var ptGoal: String
 
     init(
         weekStartDate: Date = .now,
@@ -227,7 +230,10 @@ nonisolated struct WeeklyPlan: Codable, Identifiable, Hashable, Sendable {
         level: String,
         equipment: String,
         minutesPerWorkout: Int,
-        days: [WorkoutDay]
+        days: [WorkoutDay],
+        totalWeeks: Int = 1,
+        currentWeek: Int = 1,
+        ptGoal: String = ""
     ) {
         self.id = UUID()
         self.weekStartDate = weekStartDate
@@ -236,6 +242,23 @@ nonisolated struct WeeklyPlan: Codable, Identifiable, Hashable, Sendable {
         self.equipment = equipment
         self.minutesPerWorkout = minutesPerWorkout
         self.days = days
+        self.totalWeeks = totalWeeks
+        self.currentWeek = currentWeek
+        self.ptGoal = ptGoal
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        weekStartDate = try container.decode(Date.self, forKey: .weekStartDate)
+        goal = try container.decode(String.self, forKey: .goal)
+        level = try container.decode(String.self, forKey: .level)
+        equipment = try container.decode(String.self, forKey: .equipment)
+        minutesPerWorkout = try container.decode(Int.self, forKey: .minutesPerWorkout)
+        days = try container.decode([WorkoutDay].self, forKey: .days)
+        totalWeeks = try container.decodeIfPresent(Int.self, forKey: .totalWeeks) ?? 1
+        currentWeek = try container.decodeIfPresent(Int.self, forKey: .currentWeek) ?? 1
+        ptGoal = try container.decodeIfPresent(String.self, forKey: .ptGoal) ?? ""
     }
 
     var completedCount: Int {

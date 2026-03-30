@@ -16,18 +16,29 @@ enum WorkoutGenerator {
         daysPerWeek: Int,
         minutesPerWorkout: Int,
         ptMode: PTMode,
-        dutyType: DutyType
+        dutyType: DutyType,
+        ptGoal: PTGoal? = nil,
+        totalWeeks: Int = 1,
+        currentWeek: Int = 1
     ) -> WeeklyPlan {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: .now)
+        let weekOffset = currentWeek - 1
+        let today = calendar.date(byAdding: .day, value: weekOffset * 7, to: calendar.startOfDay(for: .now)) ?? calendar.startOfDay(for: .now)
 
         let armyMode = ArmyGenerator.mapArmyMode(ptMode: ptMode, dutyType: dutyType)
         let armyEquipment = ArmyGenerator.mapArmyEquipment(equipment)
-        let armyFocuses = ArmyGenerator.mapArmyFocuses(focus)
+        let armyFocuses: [ArmyFocus] = ptGoal?.armyFocuses ?? ArmyGenerator.mapArmyFocuses(focus)
+
+        let progressionFocuses = applyWeeklyProgression(
+            baseFocuses: armyFocuses,
+            currentWeek: currentWeek,
+            totalWeeks: totalWeeks,
+            goal: ptGoal
+        )
 
         let armyTemplates = ArmyGenerator.weeklyPlan(
             mode: armyMode,
-            focuses: armyFocuses,
+            focuses: progressionFocuses,
             equipment: armyEquipment,
             days: daysPerWeek
         )
@@ -76,8 +87,57 @@ enum WorkoutGenerator {
             level: level.rawValue,
             equipment: equipment.rawValue,
             minutesPerWorkout: minutesPerWorkout,
-            days: days
+            days: days,
+            totalWeeks: totalWeeks,
+            currentWeek: currentWeek,
+            ptGoal: ptGoal?.rawValue ?? ""
         )
+    }
+
+    static func applyWeeklyProgression(
+        baseFocuses: [ArmyFocus],
+        currentWeek: Int,
+        totalWeeks: Int,
+        goal: PTGoal?
+    ) -> [ArmyFocus] {
+        guard let goal, totalWeeks > 1 else { return baseFocuses }
+
+        let progress = Double(currentWeek - 1) / Double(max(totalWeeks - 1, 1))
+
+        switch goal {
+        case .aftScoreImprovement:
+            if progress < 0.33 {
+                return [.lowerStrength, .upperEndurance, .endurance, .coreRun, .workCapacity, .recovery]
+            } else if progress < 0.66 {
+                return [.aftPrep, .workCapacity, .lowerStrength, .endurance, .upperEndurance, .coreRun]
+            } else {
+                return [.aftPrep, .aftPrep, .workCapacity, .endurance, .coreRun, .recovery]
+            }
+        case .endurance:
+            if progress < 0.5 {
+                return [.endurance, .coreRun, .endurance, .recovery, .workCapacity, .endurance]
+            } else {
+                return [.endurance, .endurance, .coreRun, .endurance, .workCapacity, .recovery]
+            }
+        case .power:
+            if progress < 0.5 {
+                return [.lowerStrength, .upperEndurance, .lowerStrength, .recovery, .workCapacity, .coreRun]
+            } else {
+                return [.lowerStrength, .lowerStrength, .workCapacity, .upperEndurance, .lowerStrength, .recovery]
+            }
+        case .speed:
+            if progress < 0.5 {
+                return [.workCapacity, .endurance, .tactical, .coreRun, .workCapacity, .recovery]
+            } else {
+                return [.workCapacity, .tactical, .workCapacity, .endurance, .tactical, .recovery]
+            }
+        case .cardio:
+            if progress < 0.5 {
+                return [.endurance, .coreRun, .endurance, .recovery, .coreRun, .endurance]
+            } else {
+                return [.endurance, .endurance, .coreRun, .endurance, .coreRun, .recovery]
+            }
+        }
     }
 
     static func generateWorkoutOfDay(

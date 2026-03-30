@@ -46,6 +46,51 @@ nonisolated enum FitnessLevel: String, CaseIterable, Codable, Identifiable, Send
     var id: String { rawValue }
 }
 
+nonisolated enum PTGoal: String, CaseIterable, Codable, Identifiable, Sendable {
+    case aftScoreImprovement = "AFT Score Improvement"
+    case endurance = "Endurance"
+    case power = "Power"
+    case speed = "Speed"
+    case cardio = "Cardio"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .aftScoreImprovement: return "shield.checkered"
+        case .endurance: return "figure.run"
+        case .power: return "figure.strengthtraining.traditional"
+        case .speed: return "bolt.fill"
+        case .cardio: return "heart.fill"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .aftScoreImprovement: return "Maximize your ACFT score across all events"
+        case .endurance: return "Build stamina for long-distance and sustained effort"
+        case .power: return "Increase explosive strength and max lifts"
+        case .speed: return "Improve sprint times, agility, and quickness"
+        case .cardio: return "Strengthen cardiovascular fitness and recovery"
+        }
+    }
+
+    var armyFocuses: [ArmyFocus] {
+        switch self {
+        case .aftScoreImprovement:
+            return [.lowerStrength, .upperEndurance, .workCapacity, .coreRun, .aftPrep, .endurance]
+        case .endurance:
+            return [.endurance, .coreRun, .endurance, .workCapacity, .endurance, .recovery]
+        case .power:
+            return [.lowerStrength, .lowerStrength, .upperEndurance, .workCapacity, .lowerStrength, .coreRun]
+        case .speed:
+            return [.workCapacity, .endurance, .tactical, .workCapacity, .coreRun, .endurance]
+        case .cardio:
+            return [.endurance, .coreRun, .endurance, .coreRun, .recovery, .endurance]
+        }
+    }
+}
+
 nonisolated enum EquipmentOption: String, CaseIterable, Codable, Identifiable, Sendable {
     case bodyweight = "Bodyweight"
     case minimal = "Minimal"

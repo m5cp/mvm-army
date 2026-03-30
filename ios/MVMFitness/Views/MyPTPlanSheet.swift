@@ -8,6 +8,10 @@ struct MyPTPlanSheet: View {
     @State private var animateCards: Bool = false
     @State private var refreshTrigger: Bool = false
 
+    @State private var selectedGoal: PTGoal = .aftScoreImprovement
+    @State private var selectedWeeks: Int = 4
+    @State private var showGoalSetup: Bool = true
+
     private let calendar = Calendar.current
 
     var body: some View {
@@ -17,9 +21,10 @@ struct MyPTPlanSheet: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 18) {
-                        if !hasGenerated && vm.currentPlan == nil {
-                            generateCard
+                        if showGoalSetup && vm.currentPlan == nil {
+                            goalSetupView
                         } else if let plan = vm.currentPlan {
+                            planHeaderBadge(plan)
                             weekOverviewHeader(plan)
                             weekProgressBar(plan)
 
@@ -27,7 +32,12 @@ struct MyPTPlanSheet: View {
                                 dayRow(day, offset: offset)
                             }
 
+                            if plan.currentWeek < plan.totalWeeks {
+                                nextWeekButton
+                            }
+
                             refreshButton
+                            newPlanButton
                         }
                     }
                     .padding(20)
@@ -48,7 +58,12 @@ struct MyPTPlanSheet: View {
             .onAppear {
                 if vm.currentPlan != nil {
                     hasGenerated = true
+                    showGoalSetup = false
                 }
+                if let goal = vm.currentPTGoal {
+                    selectedGoal = goal
+                }
+                selectedWeeks = vm.currentPlanWeeks
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.15)) {
                     animateCards = true
                 }
@@ -56,42 +71,250 @@ struct MyPTPlanSheet: View {
         }
     }
 
-    private var generateCard: some View {
-        VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: "figure.strengthtraining.traditional")
-                        .foregroundStyle(MVMTheme.accent)
-                    Text("My PT Plan")
-                        .font(.headline)
-                        .foregroundStyle(MVMTheme.primaryText)
-                }
+    // MARK: - Goal Setup
 
-                Text("Generate a personalized 7-day PT plan based on your training focus. It syncs to your home calendar and Today's PT.")
-                    .font(.subheadline)
+    private var goalSetupView: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 8) {
+                Image(systemName: "target")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 64, height: 64)
+                    .background(MVMTheme.accent.opacity(0.12))
+                    .clipShape(Circle())
+
+                Text("Set Your Goal")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Text("Your plan will be tailored to your goal using Army PRT principles and ACFT event standards.")
+                    .font(.caption)
                     .foregroundStyle(MVMTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
             }
 
+            VStack(alignment: .leading, spacing: 10) {
+                Text("TRAINING GOAL")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.8)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                ForEach(PTGoal.allCases) { goal in
+                    goalRow(goal)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("PLAN DURATION")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.8)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                HStack(spacing: 8) {
+                    ForEach([2, 4, 6, 8, 12], id: \.self) { weeks in
+                        Button {
+                            withAnimation(.spring(response: 0.25)) {
+                                selectedWeeks = weeks
+                            }
+                        } label: {
+                            VStack(spacing: 3) {
+                                Text("\(weeks)")
+                                    .font(.headline.weight(.bold))
+                                Text("wks")
+                                    .font(.caption2.weight(.medium))
+                            }
+                            .foregroundStyle(selectedWeeks == weeks ? .white : MVMTheme.secondaryText)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(selectedWeeks == weeks ? MVMTheme.accent : Color.white.opacity(0.06))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay {
+                                if selectedWeeks == weeks {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(MVMTheme.accent.opacity(0.4))
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
+            goalImpactPreview
+
             Button {
-                vm.generateWeeklyPlan()
+                vm.generateGoalPlan(goal: selectedGoal, weeks: selectedWeeks)
                 hasGenerated = true
+                showGoalSetup = false
+                animateCards = false
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) {
                     animateCards = true
                 }
             } label: {
-                Text("Generate PT Plan")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(height: 56)
-                    .frame(maxWidth: .infinity)
-                    .background(MVMTheme.heroGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                HStack(spacing: 10) {
+                    Image(systemName: "bolt.fill")
+                        .font(.subheadline.weight(.bold))
+                    Text("Generate \(selectedWeeks)-Week Plan")
+                        .font(.headline.weight(.bold))
+                }
+                .foregroundStyle(.white)
+                .frame(height: 56)
+                .frame(maxWidth: .infinity)
+                .background(MVMTheme.heroGradient)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
             }
             .buttonStyle(PressScaleButtonStyle())
         }
         .padding(18)
         .premiumCard()
     }
+
+    private func goalRow(_ goal: PTGoal) -> some View {
+        let isSelected = selectedGoal == goal
+
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                selectedGoal = goal
+            }
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: goal.icon)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(isSelected ? .white : MVMTheme.accent)
+                    .frame(width: 38, height: 38)
+                    .background(isSelected ? MVMTheme.accent : MVMTheme.accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(goal.rawValue)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text(goal.subtitle)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(MVMTheme.accent)
+                }
+            }
+            .padding(12)
+            .background(isSelected ? MVMTheme.accent.opacity(0.08) : Color.white.opacity(0.03))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(isSelected ? MVMTheme.accent.opacity(0.3) : MVMTheme.border)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var goalImpactPreview: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "info.circle.fill")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(MVMTheme.accent)
+                Text("PLAN BREAKDOWN")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.6)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+
+            let focuses = selectedGoal.armyFocuses
+            let uniqueFocuses = Array(Set(focuses))
+
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 8),
+                GridItem(.flexible(), spacing: 8)
+            ], spacing: 8) {
+                ForEach(uniqueFocuses, id: \.rawValue) { focus in
+                    let count = focuses.filter { $0 == focus }.count
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(MVMTheme.accent.opacity(0.6))
+                            .frame(width: 6, height: 6)
+                        Text(focus.rawValue)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                        Spacer(minLength: 0)
+                        Text("×\(count)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(MVMTheme.accent)
+                    }
+                }
+            }
+
+            Text("Week \(1) of \(selectedWeeks) • Periodized progression adapts each week")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(MVMTheme.tertiaryText)
+        }
+        .padding(14)
+        .background(MVMTheme.cardSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    // MARK: - Plan Header Badge
+
+    private func planHeaderBadge(_ plan: WeeklyPlan) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: selectedGoal.icon)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .background(MVMTheme.accent.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(plan.ptGoal.isEmpty ? "General Plan" : plan.ptGoal)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white)
+
+                Text("Week \(plan.currentWeek) of \(plan.totalWeeks)")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+
+            Spacer(minLength: 0)
+
+            let progress = Double(plan.currentWeek) / Double(max(plan.totalWeeks, 1))
+            ZStack {
+                Circle()
+                    .stroke(.white.opacity(0.15), lineWidth: 3)
+                    .frame(width: 40, height: 40)
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(MVMTheme.accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .frame(width: 40, height: 40)
+                    .rotationEffect(.degrees(-90))
+                Text("\(Int(progress * 100))%")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
+        }
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 18)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "#4A3DAF"), Color(hex: "#3B6DE0").opacity(0.9)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .opacity(animateCards ? 1 : 0)
+        .offset(y: animateCards ? 0 : 10)
+    }
+
+    // MARK: - Week Overview
 
     private func weekOverviewHeader(_ plan: WeeklyPlan) -> some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -104,7 +327,7 @@ struct MyPTPlanSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("YOUR WEEK")
+                    Text("WEEK \(plan.currentWeek)")
                         .font(.caption2.weight(.heavy))
                         .tracking(0.8)
                         .foregroundStyle(.white.opacity(0.7))
@@ -302,6 +525,39 @@ struct MyPTPlanSheet: View {
         )
     }
 
+    // MARK: - Action Buttons
+
+    private var nextWeekButton: some View {
+        Button {
+            refreshTrigger.toggle()
+            animateCards = false
+            vm.advanceToNextWeek()
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.1)) {
+                animateCards = true
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "arrow.right.circle.fill")
+                    .font(.subheadline.weight(.bold))
+                Text("Next Week")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .foregroundStyle(.white)
+            .frame(height: 48)
+            .frame(maxWidth: .infinity)
+            .background(
+                LinearGradient(
+                    colors: [MVMTheme.accent, MVMTheme.accent2],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .opacity(animateCards ? 1 : 0)
+    }
+
     private var refreshButton: some View {
         Button {
             refreshTrigger.toggle()
@@ -324,6 +580,27 @@ struct MyPTPlanSheet: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(PressScaleButtonStyle())
+        .opacity(animateCards ? 1 : 0)
+    }
+
+    private var newPlanButton: some View {
+        Button {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                showGoalSetup = true
+                vm.currentPlan = nil
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "plus.circle")
+                    .font(.subheadline.weight(.bold))
+                Text("New Plan")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .foregroundStyle(MVMTheme.secondaryText)
+            .frame(height: 44)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
         .opacity(animateCards ? 1 : 0)
     }
 

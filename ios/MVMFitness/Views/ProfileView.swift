@@ -11,6 +11,8 @@ struct ProfileView: View {
     @AppStorage("equipment") private var equipmentRaw = EquipmentOption.bodyweight.rawValue
     @AppStorage("daysPerWeek") private var daysPerWeek = 3
     @AppStorage("minutesPerWorkout") private var minutesPerWorkout = 30
+    @AppStorage("ptGoal") private var ptGoalRaw = ""
+    @AppStorage("planWeeks") private var planWeeks = 4
     @AppStorage("dailyReminderEnabled") private var dailyReminderEnabled = false
     @AppStorage("reminderHour") private var reminderHour = 6
     @AppStorage("reminderMinute") private var reminderMinute = 0
@@ -34,6 +36,7 @@ struct ProfileView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 28) {
                     profileHeader
+                    currentGoalSection
                     trainingSection
                     notificationsSection
                     appControlsSection
@@ -201,6 +204,9 @@ struct ProfileView: View {
     }
 
     private var profileSubtitle: String {
+        if let goal = PTGoal(rawValue: ptGoalRaw) {
+            return "\(goal.rawValue) · \(planWeeks)-Week Plan"
+        }
         let mode = PTMode(rawValue: ptModeRaw)?.rawValue ?? "Both"
         let focus = TrainingFocus(rawValue: trainingFocusRaw)?.rawValue ?? "General"
         return "\(mode) · \(focus)"
@@ -223,6 +229,89 @@ struct ProfileView: View {
         Rectangle()
             .fill(MVMTheme.border)
             .frame(width: 1, height: 28)
+    }
+
+    // MARK: - Current Goal
+
+    @ViewBuilder
+    private var currentGoalSection: some View {
+        if let goal = PTGoal(rawValue: ptGoalRaw) {
+            settingsSection(title: "CURRENT GOAL", icon: "target") {
+                VStack(spacing: 12) {
+                    HStack(spacing: 14) {
+                        Image(systemName: goal.icon)
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(
+                                LinearGradient(
+                                    colors: [MVMTheme.accent, MVMTheme.accent2],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(goal.rawValue)
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(MVMTheme.primaryText)
+                            Text(goal.subtitle)
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                                .lineLimit(2)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.vertical, 4)
+
+                    HStack(spacing: 16) {
+                        VStack(spacing: 2) {
+                            Text("\(planWeeks)")
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(MVMTheme.accent)
+                            Text("Weeks")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
+                        .frame(maxWidth: .infinity)
+
+                        Rectangle()
+                            .fill(MVMTheme.border)
+                            .frame(width: 1, height: 28)
+
+                        VStack(spacing: 2) {
+                            Text("\(vm.currentPlan?.currentWeek ?? 1)")
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(MVMTheme.accent)
+                            Text("Current")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
+                        .frame(maxWidth: .infinity)
+
+                        Rectangle()
+                            .fill(MVMTheme.border)
+                            .frame(width: 1, height: 28)
+
+                        VStack(spacing: 2) {
+                            Text("\(daysPerWeek)")
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(MVMTheme.accent)
+                            Text("Days/Wk")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .padding(12)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding(.vertical, 4)
+            }
+        }
     }
 
     // MARK: - Training

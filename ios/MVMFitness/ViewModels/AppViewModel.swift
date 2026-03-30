@@ -82,6 +82,16 @@ final class AppViewModel {
         DutyType(rawValue: UserDefaults.standard.string(forKey: "dutyType") ?? "") ?? .both
     }
 
+    var currentPTGoal: PTGoal? {
+        guard let raw = UserDefaults.standard.string(forKey: "ptGoal"), !raw.isEmpty else { return nil }
+        return PTGoal(rawValue: raw)
+    }
+
+    var currentPlanWeeks: Int {
+        let w = UserDefaults.standard.integer(forKey: "planWeeks")
+        return w > 0 ? w : 4
+    }
+
     // MARK: - Plan Generation
 
     func generateWeeklyPlan() {
@@ -95,7 +105,55 @@ final class AppViewModel {
             daysPerWeek: daysPerWeek,
             minutesPerWorkout: currentMinutes,
             ptMode: currentPTMode,
-            dutyType: currentDutyType
+            dutyType: currentDutyType,
+            ptGoal: currentPTGoal,
+            totalWeeks: currentPlanWeeks,
+            currentWeek: currentPlan?.currentWeek ?? 1
+        )
+        persistAll()
+    }
+
+    func generateGoalPlan(goal: PTGoal, weeks: Int) {
+        UserDefaults.standard.set(goal.rawValue, forKey: "ptGoal")
+        UserDefaults.standard.set(weeks, forKey: "planWeeks")
+
+        let days = UserDefaults.standard.integer(forKey: "daysPerWeek")
+        let daysPerWeek = days > 0 ? min(days, 7) : 3
+
+        currentPlan = WorkoutGenerator.generateWeeklyPlan(
+            focus: currentFocus,
+            level: currentLevel,
+            equipment: currentEquipment,
+            daysPerWeek: daysPerWeek,
+            minutesPerWorkout: currentMinutes,
+            ptMode: currentPTMode,
+            dutyType: currentDutyType,
+            ptGoal: goal,
+            totalWeeks: weeks,
+            currentWeek: 1
+        )
+        persistAll()
+    }
+
+    func advanceToNextWeek() {
+        guard let plan = currentPlan else { return }
+        let nextWeek = plan.currentWeek + 1
+        guard nextWeek <= plan.totalWeeks else { return }
+
+        let days = UserDefaults.standard.integer(forKey: "daysPerWeek")
+        let daysPerWeek = days > 0 ? min(days, 7) : 3
+
+        currentPlan = WorkoutGenerator.generateWeeklyPlan(
+            focus: currentFocus,
+            level: currentLevel,
+            equipment: currentEquipment,
+            daysPerWeek: daysPerWeek,
+            minutesPerWorkout: currentMinutes,
+            ptMode: currentPTMode,
+            dutyType: currentDutyType,
+            ptGoal: currentPTGoal,
+            totalWeeks: plan.totalWeeks,
+            currentWeek: nextWeek
         )
         persistAll()
     }
