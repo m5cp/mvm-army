@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreImage.CIFilterBuiltins
 
 struct MyPTPlanSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -11,6 +12,16 @@ struct MyPTPlanSheet: View {
     @State private var selectedGoal: PTGoal = .aftScoreImprovement
     @State private var selectedWeeks: Int = 4
     @State private var showGoalSetup: Bool = false
+
+    @State private var showCalendarSheet: Bool = false
+    @State private var showShareQRSheet: Bool = false
+    @State private var showExportPDFSheet: Bool = false
+    @State private var showSavedAlert: Bool = false
+    @State private var savedAlertMessage: String = ""
+    @State private var showExportAlert: Bool = false
+    @State private var exportAlertMessage: String = ""
+    @State private var calendarService = CalendarExportService()
+    @State private var actionTrigger: Bool = false
 
     private let calendar = Calendar.current
 
@@ -27,6 +38,8 @@ struct MyPTPlanSheet: View {
                             planHeaderBadge(plan)
                             weekOverviewHeader(plan)
                             weekProgressBar(plan)
+
+                            planActionsBar
 
                             ForEach(Array(plan.days.enumerated()), id: \.element.id) { offset, day in
                                 dayRow(day, offset: offset)
@@ -55,6 +68,30 @@ struct MyPTPlanSheet: View {
             .toolbarBackground(MVMTheme.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .sensoryFeedback(.impact(weight: .medium), trigger: refreshTrigger)
+            .sensoryFeedback(.success, trigger: actionTrigger)
+            .sheet(isPresented: $showCalendarSheet) {
+                calendarExportSheet
+            }
+            .sheet(isPresented: $showShareQRSheet) {
+                if let plan = vm.currentPlan {
+                    PlanShareSheet(plan: plan, shareText: vm.planShareText)
+                }
+            }
+            .sheet(isPresented: $showExportPDFSheet) {
+                if let plan = vm.currentPlan {
+                    PlanPDFExportSheet(plan: plan, goal: vm.currentPTGoal)
+                }
+            }
+            .alert("Saved", isPresented: $showSavedAlert) {
+                Button("OK") {}
+            } message: {
+                Text(savedAlertMessage)
+            }
+            .alert("Calendar Export", isPresented: $showExportAlert) {
+                Button("OK") {}
+            } message: {
+                Text(exportAlertMessage)
+            }
             .onAppear {
                 if let goal = vm.currentPTGoal {
                     selectedGoal = goal
@@ -69,6 +106,130 @@ struct MyPTPlanSheet: View {
                 }
             }
         }
+    }
+
+    // MARK: - Plan Actions Bar
+
+    private var planActionsBar: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 10) {
+                planActionButton(icon: "square.and.arrow.down", label: "Save") {
+                    actionTrigger.toggle()
+                    vm.savePlanSnapshot()
+                    savedAlertMessage = "Plan saved successfully."
+                    showSavedAlert = true
+                }
+
+                planActionButton(icon: "calendar.badge.plus", label: "Calendar") {
+                    showCalendarSheet = true
+                }
+
+                planActionButton(icon: "qrcode", label: "Share") {
+                    showShareQRSheet = true
+                }
+
+                planActionButton(icon: "doc.richtext", label: "Export") {
+                    showExportPDFSheet = true
+                }
+            }
+        }
+        .opacity(animateCards ? 1 : 0)
+        .offset(y: animateCards ? 0 : 8)
+    }
+
+    private func planActionButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button {
+            action()
+        } label: {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 44, height: 44)
+                    .background(MVMTheme.accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                Text(label)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(PressScaleButtonStyle())
+    }
+
+    // MARK: - Calendar Export Sheet
+
+    private var calendarExportSheet: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 8) {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.system(size: 40))
+                    .foregroundStyle(MVMTheme.accent)
+                    .padding(.top, 8)
+
+                Text("Sync to Calendar")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Text("Add your PT plan workouts to your iOS Calendar so they show up with reminders.")
+                    .font(.subheadline)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+
+            VStack(spacing: 12) {
+                if let plan = vm.currentPlan {
+                    Button {
+                        Task {
+                            let result = await calendarService.exportWeeklyPlan(plan)
+                            handleExportResult(result)
+                            showCalendarSheet = false
+                        }
+                    } label: {
+                        HStack(spacing: 10) {
+                            if calendarService.isExporting {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Image(systemName: "calendar.badge.plus")
+                                    .font(.subheadline.weight(.bold))
+                            }
+                            Text("Export Full Week")
+                                .font(.headline.weight(.bold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(
+                            LinearGradient(
+                                colors: [MVMTheme.accent, MVMTheme.accent2],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .disabled(calendarService.isExporting)
+                    .buttonStyle(PressScaleButtonStyle())
+                }
+
+                Button {
+                    showCalendarSheet = false
+                } label: {
+                    Text("Cancel")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                .padding(.top, 4)
+            }
+            .padding(.horizontal, 20)
+        }
+        .padding(.vertical, 20)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(MVMTheme.background)
     }
 
     // MARK: - Goal Setup
@@ -627,5 +788,317 @@ struct MyPTPlanSheet: View {
         let f = DateFormatter()
         f.dateFormat = "d"
         return f.string(from: date)
+    }
+
+    private func handleExportResult(_ result: CalendarExportService.ExportResult) {
+        switch result {
+        case .success(let count):
+            exportAlertMessage = "\(count) workout\(count == 1 ? "" : "s") added to your calendar."
+        case .partial(let exported, let failed):
+            exportAlertMessage = "\(exported) exported, \(failed) failed. Try again for remaining."
+        case .denied:
+            exportAlertMessage = "Calendar access denied. Go to Settings to enable."
+        case .error(let message):
+            exportAlertMessage = "Export failed: \(message)"
+        }
+        showExportAlert = true
+    }
+}
+
+// MARK: - Plan Share Sheet
+
+struct PlanShareSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let plan: WeeklyPlan
+    let shareText: String
+
+    @State private var qrImage: UIImage?
+    @State private var showSavedAlert: Bool = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                MVMTheme.background.ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        VStack(spacing: 16) {
+                            if let qrImage {
+                                Image(uiImage: qrImage)
+                                    .interpolation(.none)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 240, height: 240)
+                                    .padding(20)
+                                    .background(.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                            } else {
+                                VStack(spacing: 12) {
+                                    ProgressView()
+                                        .tint(MVMTheme.accent)
+                                    Text("Generating QR...")
+                                        .font(.caption)
+                                        .foregroundStyle(MVMTheme.secondaryText)
+                                }
+                                .frame(width: 240, height: 240)
+                            }
+
+                            VStack(spacing: 6) {
+                                Text(plan.ptGoal.isEmpty ? "PT Plan" : plan.ptGoal)
+                                    .font(.title3.weight(.bold))
+                                    .foregroundStyle(MVMTheme.primaryText)
+
+                                Text("Week \(plan.currentWeek) of \(plan.totalWeeks) · \(plan.totalWorkoutDays) workouts")
+                                    .font(.subheadline)
+                                    .foregroundStyle(MVMTheme.secondaryText)
+                            }
+
+                            Text("Scan with MVM Army to import this plan")
+                                .font(.caption)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(24)
+                        .premiumCard()
+
+                        if qrImage != nil {
+                            VStack(spacing: 12) {
+                                HStack(spacing: 12) {
+                                    if let qrImage {
+                                        ShareLink(
+                                            item: Image(uiImage: qrImage),
+                                            preview: SharePreview("PT Plan", image: Image(uiImage: qrImage))
+                                        ) {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "square.and.arrow.up")
+                                                Text("Share QR")
+                                            }
+                                            .font(.headline)
+                                            .foregroundStyle(.white)
+                                            .frame(height: 52)
+                                            .frame(maxWidth: .infinity)
+                                            .background(MVMTheme.heroGradient)
+                                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                                        }
+                                        .buttonStyle(PressScaleButtonStyle())
+                                    }
+
+                                    Button {
+                                        if let qrImage {
+                                            UIImageWriteToSavedPhotosAlbum(qrImage, nil, nil, nil)
+                                            showSavedAlert = true
+                                        }
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "square.and.arrow.down")
+                                            Text("Save")
+                                        }
+                                        .font(.headline)
+                                        .foregroundStyle(.white)
+                                        .frame(height: 52)
+                                        .frame(maxWidth: .infinity)
+                                        .background(Color(hex: "#2563EB"))
+                                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                                    }
+                                    .buttonStyle(PressScaleButtonStyle())
+                                }
+
+                                ShareLink(item: shareText) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "doc.text")
+                                        Text("Share as Text")
+                                    }
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(MVMTheme.accent)
+                                    .frame(height: 44)
+                                    .frame(maxWidth: .infinity)
+                                    .background(MVMTheme.accent.opacity(0.12))
+                                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                                }
+                                .buttonStyle(PressScaleButtonStyle())
+                            }
+                        }
+                    }
+                    .padding(20)
+                    .padding(.bottom, 36)
+                }
+            }
+            .navigationTitle("Share Plan")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(MVMTheme.primaryText)
+                }
+            }
+            .toolbarBackground(MVMTheme.background, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .alert("Saved", isPresented: $showSavedAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("QR code saved to your photo library.")
+            }
+        }
+        .onAppear {
+            generateQR()
+        }
+    }
+
+    private func generateQR() {
+        let payload = PTPlanQRPayload(from: plan)
+        guard let data = payload.compactJSON else { return }
+
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = data
+        filter.correctionLevel = "L"
+
+        guard let outputImage = filter.outputImage else { return }
+
+        let scale = 240.0 / outputImage.extent.width
+        let scaledImage = outputImage.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+
+        guard let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) else { return }
+        qrImage = UIImage(cgImage: cgImage)
+    }
+}
+
+// MARK: - Plan PDF Export Sheet
+
+struct PlanPDFExportSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let plan: WeeklyPlan
+    let goal: PTGoal?
+
+    @State private var pdfURL: URL?
+    @State private var isGenerating: Bool = false
+    @State private var showShareSheet: Bool = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                MVMTheme.background.ignoresSafeArea()
+
+                VStack(spacing: 24) {
+                    VStack(spacing: 12) {
+                        Image(systemName: "doc.richtext")
+                            .font(.system(size: 44))
+                            .foregroundStyle(MVMTheme.accent)
+                            .padding(.top, 20)
+
+                        Text("Export as PDF")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(MVMTheme.primaryText)
+
+                        Text("Generate a printable PDF of your full PT plan with all exercises and schedule details.")
+                            .font(.subheadline)
+                            .foregroundStyle(MVMTheme.secondaryText)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        planInfoRow(icon: "target", label: "Goal", value: goal?.rawValue ?? (plan.ptGoal.isEmpty ? "General" : plan.ptGoal))
+                        planInfoRow(icon: "calendar", label: "Week", value: "\(plan.currentWeek) of \(plan.totalWeeks)")
+                        planInfoRow(icon: "figure.run", label: "Workouts", value: "\(plan.totalWorkoutDays) sessions")
+                        planInfoRow(icon: "list.bullet", label: "Exercises", value: "\(plan.days.flatMap(\.exercises).count) total")
+                    }
+                    .padding(16)
+                    .background(MVMTheme.card)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(MVMTheme.border)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                    VStack(spacing: 12) {
+                        Button {
+                            generateAndShare()
+                        } label: {
+                            HStack(spacing: 10) {
+                                if isGenerating {
+                                    ProgressView()
+                                        .tint(.white)
+                                } else {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .font(.subheadline.weight(.bold))
+                                }
+                                Text("Generate & Share PDF")
+                                    .font(.headline.weight(.bold))
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(MVMTheme.heroGradient)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                        }
+                        .disabled(isGenerating)
+                        .buttonStyle(PressScaleButtonStyle())
+                    }
+                    .padding(.horizontal, 4)
+
+                    Spacer()
+                }
+                .padding(20)
+            }
+            .navigationTitle("Export PDF")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(MVMTheme.primaryText)
+                }
+            }
+            .toolbarBackground(MVMTheme.background, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .sheet(isPresented: $showShareSheet) {
+                if let pdfURL {
+                    ShareSheet(items: [pdfURL])
+                }
+            }
+        }
+    }
+
+    private func planInfoRow(icon: String, label: String, value: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(MVMTheme.accent)
+                .frame(width: 28, height: 28)
+                .background(MVMTheme.accent.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            Text(label)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(MVMTheme.secondaryText)
+
+            Spacer()
+
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(MVMTheme.primaryText)
+        }
+    }
+
+    private func generateAndShare() {
+        isGenerating = true
+
+        guard let pdfData = PTPlanPDFService.generatePDF(from: plan, goal: goal) else {
+            isGenerating = false
+            return
+        }
+
+        let goalName = goal?.rawValue ?? plan.ptGoal
+        guard let url = PTPlanPDFService.savePDFToTemp(data: pdfData, goalName: goalName) else {
+            isGenerating = false
+            return
+        }
+
+        pdfURL = url
+        isGenerating = false
+        showShareSheet = true
     }
 }

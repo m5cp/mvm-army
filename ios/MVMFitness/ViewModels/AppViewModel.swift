@@ -613,6 +613,48 @@ final class AppViewModel {
         persistAll()
     }
 
+    func savePlanSnapshot() {
+        persistAll()
+    }
+
+    func importPlan(_ plan: WeeklyPlan) {
+        currentPlan = plan
+        persistAll()
+    }
+
+    var planShareText: String {
+        guard let plan = currentPlan else { return "" }
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MMM d"
+        let goalLabel = plan.ptGoal.isEmpty ? "General" : plan.ptGoal
+
+        var text = "MVM Army — PT Plan\n"
+        text += "Goal: \(goalLabel) · Week \(plan.currentWeek) of \(plan.totalWeeks)\n"
+        if let first = plan.days.first, let last = plan.days.last {
+            text += "\(dateFormatter.string(from: first.date)) – \(dateFormatter.string(from: last.date))\n"
+        }
+        text += "\n"
+
+        for (index, day) in plan.days.enumerated() {
+            let dayFormatter = DateFormatter()
+            dayFormatter.dateFormat = "EEE"
+            let dayName = dayFormatter.string(from: day.date)
+
+            if day.isRestDay {
+                text += "Day \(index + 1) (\(dayName)): Rest & Recovery\n"
+            } else {
+                text += "Day \(index + 1) (\(dayName)): \(day.title)\n"
+                for exercise in day.exercises {
+                    text += "  • \(exercise.name) — \(exercise.displayDetail)\n"
+                }
+            }
+            text += "\n"
+        }
+
+        text += "#MVMArmy"
+        return text
+    }
+
     // MARK: - Computed
 
     var todayWorkout: WorkoutDay? {
