@@ -20,6 +20,7 @@ struct AFTCalculatorView: View {
     @State private var didSave = false
     @State private var showExportSheet = false
     @State private var showAFTShareSheet: Bool = false
+    @State private var isGoalMode: Bool = false
     @FocusState private var isAnyFieldFocused: Bool
 
     private var sdcTotalSeconds: Int {
@@ -56,67 +57,78 @@ struct AFTCalculatorView: View {
                 VStack(spacing: 18) {
                     infoCard
                     soldierInfoCard
-                    eventInputs
-                    scorePreview
-                    passFailCard
-                    weakestCard
+                    modeToggle
 
-                    Button {
-                        vm.saveAFTCalculatorResult(preview)
-                        didSave = true
-                    } label: {
-                        Text(didSave ? "Saved" : "Save AFT Result")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(height: 56)
-                            .frame(maxWidth: .infinity)
-                            .background(MVMTheme.heroGradient)
-                            .clipShape(RoundedRectangle(cornerRadius: 18))
-                            .shadow(color: MVMTheme.accent.opacity(0.28), radius: 18, y: 10)
-                    }
-                    .buttonStyle(PressScaleButtonStyle())
-                    .sensoryFeedback(.success, trigger: didSave)
-
-                    Button {
-                        showAFTShareSheet = true
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "square.and.arrow.up")
-                            Text("Share AFT Score")
-                        }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(height: 50)
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            LinearGradient(
-                                colors: [Color(hex: "#4F8CFF"), Color(hex: "#7C5CFF")],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ).opacity(0.85)
+                    if isGoalMode {
+                        AFTGoalModeView(
+                            age: Int(ageText) ?? 25,
+                            sex: sex,
+                            standard: standard,
+                            soldierName: soldierName
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
-                    .buttonStyle(PressScaleButtonStyle())
+                    } else {
+                        eventInputs
+                        scorePreview
+                        passFailCard
+                        weakestCard
 
-                    Button {
-                        showExportSheet = true
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "doc.text.fill")
-                            Text("Export DA Form 705")
+                        Button {
+                            vm.saveAFTCalculatorResult(preview)
+                            didSave = true
+                        } label: {
+                            Text(didSave ? "Saved" : "Save AFT Result")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(height: 56)
+                                .frame(maxWidth: .infinity)
+                                .background(MVMTheme.heroGradient)
+                                .clipShape(RoundedRectangle(cornerRadius: 18))
+                                .shadow(color: MVMTheme.accent.opacity(0.28), radius: 18, y: 10)
                         }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.accent)
-                        .frame(height: 50)
-                        .frame(maxWidth: .infinity)
-                        .background(MVMTheme.accent.opacity(0.12))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.accent.opacity(0.3))
+                        .buttonStyle(PressScaleButtonStyle())
+                        .sensoryFeedback(.success, trigger: didSave)
+
+                        Button {
+                            showAFTShareSheet = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share AFT Score")
+                            }
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(height: 50)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color(hex: "#4F8CFF"), Color(hex: "#7C5CFF")],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ).opacity(0.85)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
+                        .buttonStyle(PressScaleButtonStyle())
+
+                        Button {
+                            showExportSheet = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "doc.text.fill")
+                                Text("Export DA Form 705")
+                            }
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(MVMTheme.accent)
+                            .frame(height: 50)
+                            .frame(maxWidth: .infinity)
+                            .background(MVMTheme.accent.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.accent.opacity(0.3))
+                            }
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
                     }
-                    .buttonStyle(PressScaleButtonStyle())
                 }
                 .padding(20)
                 .padding(.bottom, 36)
@@ -157,6 +169,50 @@ struct AFTCalculatorView: View {
             DAForm705ExportView(result: preview)
         }
 
+    }
+
+    private var modeToggle: some View {
+        HStack(spacing: 0) {
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    isGoalMode = false
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "pencil.and.list.clipboard")
+                        .font(.caption)
+                    Text("Score")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(!isGoalMode ? .white : MVMTheme.secondaryText)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(!isGoalMode ? MVMTheme.accent : MVMTheme.cardSoft)
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    isGoalMode = true
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "target")
+                        .font(.caption)
+                    Text("Goal")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(isGoalMode ? .white : MVMTheme.secondaryText)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(isGoalMode ? Color(hex: "#7C5CFF") : MVMTheme.cardSoft)
+            }
+            .buttonStyle(.plain)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14).stroke(MVMTheme.border)
+        }
     }
 
     private var infoCard: some View {

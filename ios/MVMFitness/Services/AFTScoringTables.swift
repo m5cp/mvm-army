@@ -248,4 +248,38 @@ nonisolated enum AFTScoringTables: Sendable {
         let bounds = runBounds(age: age, sex: sex)
         return scoreLowerIsBetter(rawValue: seconds, bounds: bounds)
     }
+
+    // MARK: - Reverse Lookup (points → raw value needed)
+
+    static func rawForHigherIsBetter(targetPoints: Int, bounds: AFTEventBounds) -> Int {
+        let clamped = max(60, min(100, targetPoints))
+        let fraction = Double(clamped - 60) / 40.0
+        return Int((bounds.min60 + fraction * (bounds.max100 - bounds.min60)).rounded(.up))
+    }
+
+    static func rawForLowerIsBetter(targetPoints: Int, bounds: AFTEventBounds) -> Int {
+        let clamped = max(60, min(100, targetPoints))
+        let fraction = Double(clamped - 60) / 40.0
+        return Int((bounds.min60 - fraction * (bounds.min60 - bounds.max100)).rounded(.down))
+    }
+
+    static func deadliftNeeded(points: Int, age: Int, sex: SoldierSex) -> Int {
+        rawForHigherIsBetter(targetPoints: points, bounds: deadliftBounds(age: age, sex: sex))
+    }
+
+    static func pushUpNeeded(points: Int, age: Int, sex: SoldierSex) -> Int {
+        rawForHigherIsBetter(targetPoints: points, bounds: pushUpBounds(age: age, sex: sex))
+    }
+
+    static func sdcNeeded(points: Int, age: Int, sex: SoldierSex) -> Int {
+        rawForLowerIsBetter(targetPoints: points, bounds: sdcBounds(age: age, sex: sex))
+    }
+
+    static func plankNeeded(points: Int, age: Int, sex: SoldierSex) -> Int {
+        rawForHigherIsBetter(targetPoints: points, bounds: plankBounds(age: age, sex: sex))
+    }
+
+    static func runNeeded(points: Int, age: Int, sex: SoldierSex) -> Int {
+        rawForLowerIsBetter(targetPoints: points, bounds: runBounds(age: age, sex: sex))
+    }
 }
