@@ -57,15 +57,15 @@ nonisolated enum AFTScoringTables: Sendable {
         case .female:
             switch group {
             case .age17to21: return AFTEventBounds(max100: 210, min60: 120)
-            case .age22to26: return AFTEventBounds(max100: 210, min60: 120)
-            case .age27to31: return AFTEventBounds(max100: 210, min60: 120)
-            case .age32to36: return AFTEventBounds(max100: 210, min60: 120)
-            case .age37to41: return AFTEventBounds(max100: 190, min60: 120)
-            case .age42to46: return AFTEventBounds(max100: 190, min60: 120)
-            case .age47to51: return AFTEventBounds(max100: 170, min60: 100)
-            case .age52to56: return AFTEventBounds(max100: 150, min60: 80)
-            case .age57to61: return AFTEventBounds(max100: 130, min60: 80)
-            case .age62plus:  return AFTEventBounds(max100: 120, min60: 80)
+            case .age22to26: return AFTEventBounds(max100: 230, min60: 120)
+            case .age27to31: return AFTEventBounds(max100: 230, min60: 120)
+            case .age32to36: return AFTEventBounds(max100: 230, min60: 120)
+            case .age37to41: return AFTEventBounds(max100: 210, min60: 120)
+            case .age42to46: return AFTEventBounds(max100: 210, min60: 120)
+            case .age47to51: return AFTEventBounds(max100: 190, min60: 120)
+            case .age52to56: return AFTEventBounds(max100: 190, min60: 120)
+            case .age57to61: return AFTEventBounds(max100: 170, min60: 120)
+            case .age62plus:  return AFTEventBounds(max100: 170, min60: 120)
             }
         }
     }
@@ -81,25 +81,25 @@ nonisolated enum AFTScoringTables: Sendable {
             case .age22to26: return AFTEventBounds(max100: 61, min60: 10)
             case .age27to31: return AFTEventBounds(max100: 62, min60: 10)
             case .age32to36: return AFTEventBounds(max100: 60, min60: 10)
-            case .age37to41: return AFTEventBounds(max100: 57, min60: 10)
-            case .age42to46: return AFTEventBounds(max100: 54, min60: 10)
-            case .age47to51: return AFTEventBounds(max100: 50, min60: 10)
-            case .age52to56: return AFTEventBounds(max100: 46, min60: 10)
-            case .age57to61: return AFTEventBounds(max100: 43, min60: 10)
-            case .age62plus:  return AFTEventBounds(max100: 40, min60: 10)
+            case .age37to41: return AFTEventBounds(max100: 59, min60: 10)
+            case .age42to46: return AFTEventBounds(max100: 56, min60: 10)
+            case .age47to51: return AFTEventBounds(max100: 55, min60: 10)
+            case .age52to56: return AFTEventBounds(max100: 51, min60: 10)
+            case .age57to61: return AFTEventBounds(max100: 46, min60: 10)
+            case .age62plus:  return AFTEventBounds(max100: 43, min60: 10)
             }
         case .female:
             switch group {
-            case .age17to21: return AFTEventBounds(max100: 40, min60: 10)
-            case .age22to26: return AFTEventBounds(max100: 42, min60: 10)
-            case .age27to31: return AFTEventBounds(max100: 42, min60: 10)
-            case .age32to36: return AFTEventBounds(max100: 40, min60: 10)
-            case .age37to41: return AFTEventBounds(max100: 37, min60: 10)
-            case .age42to46: return AFTEventBounds(max100: 34, min60: 10)
-            case .age47to51: return AFTEventBounds(max100: 30, min60: 10)
-            case .age52to56: return AFTEventBounds(max100: 26, min60: 10)
-            case .age57to61: return AFTEventBounds(max100: 22, min60: 10)
-            case .age62plus:  return AFTEventBounds(max100: 18, min60: 10)
+            case .age17to21: return AFTEventBounds(max100: 53, min60: 10)
+            case .age22to26: return AFTEventBounds(max100: 50, min60: 10)
+            case .age27to31: return AFTEventBounds(max100: 48, min60: 10)
+            case .age32to36: return AFTEventBounds(max100: 46, min60: 10)
+            case .age37to41: return AFTEventBounds(max100: 43, min60: 10)
+            case .age42to46: return AFTEventBounds(max100: 41, min60: 10)
+            case .age47to51: return AFTEventBounds(max100: 39, min60: 10)
+            case .age52to56: return AFTEventBounds(max100: 37, min60: 10)
+            case .age57to61: return AFTEventBounds(max100: 33, min60: 10)
+            case .age62plus:  return AFTEventBounds(max100: 33, min60: 10)
             }
         }
     }
@@ -111,29 +111,29 @@ nonisolated enum AFTScoringTables: Sendable {
         switch sex {
         case .male:
             switch group {
-            case .age17to21: return AFTEventBounds(max100: 89, min60: 208)
-            case .age22to26: return AFTEventBounds(max100: 90, min60: 208)
-            case .age27to31: return AFTEventBounds(max100: 90, min60: 208)
-            case .age32to36: return AFTEventBounds(max100: 93, min60: 212)
-            case .age37to41: return AFTEventBounds(max100: 96, min60: 216)
-            case .age42to46: return AFTEventBounds(max100: 100, min60: 220)
-            case .age47to51: return AFTEventBounds(max100: 105, min60: 228)
-            case .age52to56: return AFTEventBounds(max100: 113, min60: 236)
-            case .age57to61: return AFTEventBounds(max100: 120, min60: 248)
-            case .age62plus:  return AFTEventBounds(max100: 129, min60: 260)
+            case .age17to21: return AFTEventBounds(max100: 89, min60: 148)
+            case .age22to26: return AFTEventBounds(max100: 90, min60: 151)
+            case .age27to31: return AFTEventBounds(max100: 90, min60: 152)
+            case .age32to36: return AFTEventBounds(max100: 93, min60: 156)
+            case .age37to41: return AFTEventBounds(max100: 96, min60: 161)
+            case .age42to46: return AFTEventBounds(max100: 100, min60: 165)
+            case .age47to51: return AFTEventBounds(max100: 105, min60: 173)
+            case .age52to56: return AFTEventBounds(max100: 112, min60: 180)
+            case .age57to61: return AFTEventBounds(max100: 118, min60: 192)
+            case .age62plus:  return AFTEventBounds(max100: 129, min60: 196)
             }
         case .female:
             switch group {
-            case .age17to21: return AFTEventBounds(max100: 114, min60: 248)
-            case .age22to26: return AFTEventBounds(max100: 113, min60: 248)
-            case .age27to31: return AFTEventBounds(max100: 115, min60: 250)
-            case .age32to36: return AFTEventBounds(max100: 118, min60: 254)
-            case .age37to41: return AFTEventBounds(max100: 122, min60: 260)
-            case .age42to46: return AFTEventBounds(max100: 128, min60: 268)
-            case .age47to51: return AFTEventBounds(max100: 136, min60: 280)
-            case .age52to56: return AFTEventBounds(max100: 145, min60: 296)
-            case .age57to61: return AFTEventBounds(max100: 155, min60: 312)
-            case .age62plus:  return AFTEventBounds(max100: 168, min60: 330)
+            case .age17to21: return AFTEventBounds(max100: 115, min60: 195)
+            case .age22to26: return AFTEventBounds(max100: 115, min60: 195)
+            case .age27to31: return AFTEventBounds(max100: 115, min60: 195)
+            case .age32to36: return AFTEventBounds(max100: 119, min60: 202)
+            case .age37to41: return AFTEventBounds(max100: 122, min60: 207)
+            case .age42to46: return AFTEventBounds(max100: 129, min60: 222)
+            case .age47to51: return AFTEventBounds(max100: 131, min60: 231)
+            case .age52to56: return AFTEventBounds(max100: 138, min60: 243)
+            case .age57to61: return AFTEventBounds(max100: 145, min60: 255)
+            case .age62plus:  return AFTEventBounds(max100: 155, min60: 270)
             }
         }
     }
@@ -142,33 +142,17 @@ nonisolated enum AFTScoringTables: Sendable {
 
     static func plankBounds(age: Int, sex: SoldierSex) -> AFTEventBounds {
         let group = AFTAgeGroup.from(age: age)
-        switch sex {
-        case .male:
-            switch group {
-            case .age17to21: return AFTEventBounds(max100: 220, min60: 110)
-            case .age22to26: return AFTEventBounds(max100: 215, min60: 110)
-            case .age27to31: return AFTEventBounds(max100: 210, min60: 110)
-            case .age32to36: return AFTEventBounds(max100: 205, min60: 110)
-            case .age37to41: return AFTEventBounds(max100: 200, min60: 100)
-            case .age42to46: return AFTEventBounds(max100: 195, min60: 100)
-            case .age47to51: return AFTEventBounds(max100: 190, min60: 90)
-            case .age52to56: return AFTEventBounds(max100: 185, min60: 90)
-            case .age57to61: return AFTEventBounds(max100: 180, min60: 80)
-            case .age62plus:  return AFTEventBounds(max100: 170, min60: 70)
-            }
-        case .female:
-            switch group {
-            case .age17to21: return AFTEventBounds(max100: 220, min60: 110)
-            case .age22to26: return AFTEventBounds(max100: 215, min60: 110)
-            case .age27to31: return AFTEventBounds(max100: 210, min60: 110)
-            case .age32to36: return AFTEventBounds(max100: 205, min60: 110)
-            case .age37to41: return AFTEventBounds(max100: 200, min60: 100)
-            case .age42to46: return AFTEventBounds(max100: 195, min60: 100)
-            case .age47to51: return AFTEventBounds(max100: 190, min60: 90)
-            case .age52to56: return AFTEventBounds(max100: 185, min60: 90)
-            case .age57to61: return AFTEventBounds(max100: 180, min60: 80)
-            case .age62plus:  return AFTEventBounds(max100: 170, min60: 70)
-            }
+        switch group {
+        case .age17to21: return AFTEventBounds(max100: 220, min60: 90)
+        case .age22to26: return AFTEventBounds(max100: 215, min60: 85)
+        case .age27to31: return AFTEventBounds(max100: 210, min60: 80)
+        case .age32to36: return AFTEventBounds(max100: 205, min60: 75)
+        case .age37to41: return AFTEventBounds(max100: 200, min60: 70)
+        case .age42to46: return AFTEventBounds(max100: 200, min60: 70)
+        case .age47to51: return AFTEventBounds(max100: 200, min60: 70)
+        case .age52to56: return AFTEventBounds(max100: 200, min60: 70)
+        case .age57to61: return AFTEventBounds(max100: 200, min60: 70)
+        case .age62plus:  return AFTEventBounds(max100: 200, min60: 70)
         }
     }
 
@@ -179,27 +163,27 @@ nonisolated enum AFTScoringTables: Sendable {
         switch sex {
         case .male:
             switch group {
-            case .age17to21: return AFTEventBounds(max100: 802, min60: 1316)
-            case .age22to26: return AFTEventBounds(max100: 807, min60: 1326)
-            case .age27to31: return AFTEventBounds(max100: 811, min60: 1338)
-            case .age32to36: return AFTEventBounds(max100: 823, min60: 1356)
-            case .age37to41: return AFTEventBounds(max100: 842, min60: 1386)
-            case .age42to46: return AFTEventBounds(max100: 867, min60: 1416)
-            case .age47to51: return AFTEventBounds(max100: 898, min60: 1452)
-            case .age52to56: return AFTEventBounds(max100: 935, min60: 1500)
-            case .age57to61: return AFTEventBounds(max100: 978, min60: 1560)
-            case .age62plus:  return AFTEventBounds(max100: 1028, min60: 1620)
+            case .age17to21: return AFTEventBounds(max100: 802, min60: 1320)
+            case .age22to26: return AFTEventBounds(max100: 807, min60: 1320)
+            case .age27to31: return AFTEventBounds(max100: 811, min60: 1320)
+            case .age32to36: return AFTEventBounds(max100: 822, min60: 1320)
+            case .age37to41: return AFTEventBounds(max100: 838, min60: 1331)
+            case .age42to46: return AFTEventBounds(max100: 845, min60: 1352)
+            case .age47to51: return AFTEventBounds(max100: 870, min60: 1375)
+            case .age52to56: return AFTEventBounds(max100: 909, min60: 1400)
+            case .age57to61: return AFTEventBounds(max100: 928, min60: 1416)
+            case .age62plus:  return AFTEventBounds(max100: 928, min60: 1416)
             }
         case .female:
             switch group {
-            case .age17to21: return AFTEventBounds(max100: 882, min60: 1476)
-            case .age22to26: return AFTEventBounds(max100: 888, min60: 1488)
-            case .age27to31: return AFTEventBounds(max100: 900, min60: 1506)
-            case .age32to36: return AFTEventBounds(max100: 918, min60: 1530)
-            case .age37to41: return AFTEventBounds(max100: 942, min60: 1560)
-            case .age42to46: return AFTEventBounds(max100: 972, min60: 1596)
-            case .age47to51: return AFTEventBounds(max100: 1008, min60: 1644)
-            case .age52to56: return AFTEventBounds(max100: 1050, min60: 1704)
+            case .age17to21: return AFTEventBounds(max100: 936, min60: 1476)
+            case .age22to26: return AFTEventBounds(max100: 936, min60: 1488)
+            case .age27to31: return AFTEventBounds(max100: 948, min60: 1506)
+            case .age32to36: return AFTEventBounds(max100: 954, min60: 1530)
+            case .age37to41: return AFTEventBounds(max100: 1020, min60: 1560)
+            case .age42to46: return AFTEventBounds(max100: 1044, min60: 1596)
+            case .age47to51: return AFTEventBounds(max100: 1056, min60: 1644)
+            case .age52to56: return AFTEventBounds(max100: 1140, min60: 1704)
             case .age57to61: return AFTEventBounds(max100: 1098, min60: 1776)
             case .age62plus:  return AFTEventBounds(max100: 1152, min60: 1860)
             }

@@ -23,7 +23,6 @@ struct AFTCalculatorView: View {
     @State private var runMinText: String = "16"
     @State private var runSecText: String = "00"
 
-    @State private var useAgeOverride: Bool = false
     @State private var didSave = false
     @State private var showExportSheet = false
     @State private var showAFTShareSheet: Bool = false
@@ -36,8 +35,7 @@ struct AFTCalculatorView: View {
     }
 
     private var scoringAge: Int {
-        if useAgeOverride { return 18 }
-        return Int(ageText) ?? 25
+        Int(ageText) ?? 25
     }
 
     private var deadliftPoints: Int {
@@ -123,7 +121,6 @@ struct AFTCalculatorView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     soldierInfoCard
-                    ageOverrideButton
                     deadliftEventCard
                     pushUpEventCard
                     sdcEventCard
@@ -279,52 +276,6 @@ struct AFTCalculatorView: View {
         }
         .padding(18)
         .premiumCard()
-    }
-
-    // MARK: - Age Override
-
-    private var ageOverrideButton: some View {
-        Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                useAgeOverride.toggle()
-            }
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: useAgeOverride ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(useAgeOverride ? MVMTheme.accent : MVMTheme.tertiaryText)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Grade me at 17–21 scale")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                    Text("Override age — uses toughest scoring standards")
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.secondaryText)
-                }
-
-                Spacer()
-
-                if useAgeOverride {
-                    Text("ON")
-                        .font(.caption.weight(.heavy))
-                        .foregroundStyle(MVMTheme.accent)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(MVMTheme.accent.opacity(0.15))
-                        .clipShape(Capsule())
-                }
-            }
-            .padding(16)
-            .background(useAgeOverride ? MVMTheme.accent.opacity(0.06) : MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(useAgeOverride ? MVMTheme.accent.opacity(0.3) : MVMTheme.border)
-            }
-        }
-        .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: useAgeOverride)
     }
 
     // MARK: - Event Cards
@@ -710,16 +661,7 @@ struct AFTCalculatorView: View {
                 scorePill("2MR", runPoints)
             }
 
-            if useAgeOverride {
-                HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.caption2)
-                    Text("Scored using 17–21 age group")
-                        .font(.caption)
-                }
-                .foregroundStyle(MVMTheme.warning)
-                .padding(.top, 4)
-            }
+
         }
         .padding(18)
         .premiumCard()
