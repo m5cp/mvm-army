@@ -81,17 +81,11 @@ struct OnboardingView: View {
 
     private var welcomeStep: some View {
         VStack(spacing: 32) {
-            ZStack {
-                Circle()
-                    .fill(MVMTheme.accent.opacity(0.08))
-                    .frame(width: 110, height: 110)
-                Circle()
-                    .fill(MVMTheme.accent.opacity(0.15))
-                    .frame(width: 76, height: 76)
-                Image(systemName: "shield.fill")
-                    .font(.system(size: 34, weight: .bold))
-                    .foregroundStyle(MVMTheme.heroGradient)
-            }
+            Image("AppLogo")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 120, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: 28))
 
             VStack(spacing: 10) {
                 Text("MVM ARMY")
