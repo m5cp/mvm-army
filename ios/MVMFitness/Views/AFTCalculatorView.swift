@@ -8,45 +8,112 @@ struct AFTCalculatorView: View {
     @State private var sex: SoldierSex = .male
     @State private var standard: AFTStandard = .combat
 
-    @State private var deadliftLbs: String = "180"
-    @State private var pushUpReps: String = "25"
-    @State private var sdcMinutes: String = "2"
-    @State private var sdcSeconds: String = "00"
-    @State private var plankMinutes: String = "2"
-    @State private var plankSeconds: String = "00"
-    @State private var runMinutes: String = "16"
-    @State private var runSeconds: String = "00"
+    @State private var deadliftLbs: Double = 180
+    @State private var pushUpReps: Double = 25
+    @State private var sdcSeconds: Double = 120
+    @State private var plankSeconds: Double = 120
+    @State private var runSeconds: Double = 960
 
+    @State private var deadliftText: String = "180"
+    @State private var pushUpText: String = "25"
+    @State private var sdcMinText: String = "2"
+    @State private var sdcSecText: String = "00"
+    @State private var plankMinText: String = "2"
+    @State private var plankSecText: String = "00"
+    @State private var runMinText: String = "16"
+    @State private var runSecText: String = "00"
+
+    @State private var useAgeOverride: Bool = false
     @State private var didSave = false
     @State private var showExportSheet = false
     @State private var showAFTShareSheet: Bool = false
-    @State private var isGoalMode: Bool = false
-    @FocusState private var isAnyFieldFocused: Bool
+    @FocusState private var focusedField: CalculatorField?
 
-    private var sdcTotalSeconds: Int {
-        (Int(sdcMinutes) ?? 0) * 60 + (Int(sdcSeconds) ?? 0)
+    private enum CalculatorField: Hashable {
+        case name, age
+        case deadlift, pushUp
+        case sdcMin, sdcSec, plankMin, plankSec, runMin, runSec
     }
 
-    private var plankTotalSeconds: Int {
-        (Int(plankMinutes) ?? 0) * 60 + (Int(plankSeconds) ?? 0)
+    private var scoringAge: Int {
+        if useAgeOverride { return 18 }
+        return Int(ageText) ?? 25
     }
 
-    private var runTotalSeconds: Int {
-        (Int(runMinutes) ?? 0) * 60 + (Int(runSeconds) ?? 0)
+    private var deadliftPoints: Int {
+        AFTScoringTables.scoreDeadlift(lbs: Int(deadliftLbs), age: scoringAge, sex: sex)
+    }
+    private var pushUpPoints: Int {
+        AFTScoringTables.scorePushUp(reps: Int(pushUpReps), age: scoringAge, sex: sex)
+    }
+    private var sdcPoints: Int {
+        AFTScoringTables.scoreSDC(seconds: Int(sdcSeconds), age: scoringAge, sex: sex)
+    }
+    private var plankPoints: Int {
+        AFTScoringTables.scorePlank(seconds: Int(plankSeconds), age: scoringAge, sex: sex)
+    }
+    private var runPoints: Int {
+        AFTScoringTables.scoreRun(seconds: Int(runSeconds), age: scoringAge, sex: sex)
+    }
+
+    private var totalScore: Int {
+        deadliftPoints + pushUpPoints + sdcPoints + plankPoints + runPoints
+    }
+
+    private func eventPassed(_ points: Int) -> Bool {
+        points >= standard.minimumPerEvent
+    }
+
+    private var allEventsPassed: Bool {
+        [deadliftPoints, pushUpPoints, sdcPoints, plankPoints, runPoints].allSatisfy { $0 >= standard.minimumPerEvent }
+    }
+
+    private var overallPassed: Bool {
+        allEventsPassed && totalScore >= standard.minimumTotal
     }
 
     private var preview: AFTCalculatorResult {
-        AFTCalculatorService.calculate(
+        let eventScores: [(String, Int)] = [
+            ("MDL", deadliftPoints), ("HRP", pushUpPoints), ("SDC", sdcPoints),
+            ("PLK", plankPoints), ("2MR", runPoints)
+        ]
+        let weakest = eventScores.sorted { $0.1 < $1.1 }.prefix(2).map(\.0)
+
+        return AFTCalculatorResult(
             soldierName: soldierName,
-            age: Int(ageText) ?? 25,
+            age: scoringAge,
             sex: sex,
             standard: standard,
-            deadliftLbs: Int(deadliftLbs) ?? 0,
-            pushUpReps: Int(pushUpReps) ?? 0,
-            sdcSeconds: sdcTotalSeconds,
-            plankSeconds: plankTotalSeconds,
-            runSeconds: runTotalSeconds
+            deadliftLbs: Int(deadliftLbs),
+            pushUpReps: Int(pushUpReps),
+            sdcSeconds: Int(sdcSeconds),
+            plankSeconds: Int(plankSeconds),
+            runSeconds: Int(runSeconds),
+            deadliftPoints: deadliftPoints,
+            pushUpPoints: pushUpPoints,
+            sdcPoints: sdcPoints,
+            plankPoints: plankPoints,
+            runPoints: runPoints,
+            totalScore: totalScore,
+            passed: overallPassed,
+            weakestEvents: weakest
         )
+    }
+
+    private var deadliftBounds: AFTEventBounds {
+        AFTScoringTables.deadliftBounds(age: scoringAge, sex: sex)
+    }
+    private var pushUpBounds: AFTEventBounds {
+        AFTScoringTables.pushUpBounds(age: scoringAge, sex: sex)
+    }
+    private var sdcBoundsVal: AFTEventBounds {
+        AFTScoringTables.sdcBounds(age: scoringAge, sex: sex)
+    }
+    private var plankBoundsVal: AFTEventBounds {
+        AFTScoringTables.plankBounds(age: scoringAge, sex: sex)
+    }
+    private var runBoundsVal: AFTEventBounds {
+        AFTScoringTables.runBounds(age: scoringAge, sex: sex)
     }
 
     var body: some View {
@@ -55,80 +122,16 @@ struct AFTCalculatorView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
-                    infoCard
                     soldierInfoCard
-                    modeToggle
-
-                    if isGoalMode {
-                        AFTGoalModeView(
-                            age: Int(ageText) ?? 25,
-                            sex: sex,
-                            standard: standard,
-                            soldierName: soldierName
-                        )
-                    } else {
-                        eventInputs
-                        scorePreview
-                        passFailCard
-                        weakestCard
-
-                        Button {
-                            vm.saveAFTCalculatorResult(preview)
-                            didSave = true
-                        } label: {
-                            Text(didSave ? "Saved" : "Save AFT Result")
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                                .frame(height: 56)
-                                .frame(maxWidth: .infinity)
-                                .background(MVMTheme.heroGradient)
-                                .clipShape(RoundedRectangle(cornerRadius: 18))
-                                .shadow(color: MVMTheme.accent.opacity(0.28), radius: 18, y: 10)
-                        }
-                        .buttonStyle(PressScaleButtonStyle())
-                        .sensoryFeedback(.success, trigger: didSave)
-
-                        Button {
-                            showAFTShareSheet = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share AFT Score")
-                            }
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(height: 50)
-                            .frame(maxWidth: .infinity)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color(hex: "#4F8CFF"), Color(hex: "#7C5CFF")],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                ).opacity(0.85)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                        }
-                        .buttonStyle(PressScaleButtonStyle())
-
-                        Button {
-                            showExportSheet = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "doc.text.fill")
-                                Text("Export DA Form 705")
-                            }
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(MVMTheme.accent)
-                            .frame(height: 50)
-                            .frame(maxWidth: .infinity)
-                            .background(MVMTheme.accent.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.accent.opacity(0.3))
-                            }
-                        }
-                        .buttonStyle(PressScaleButtonStyle())
-                    }
+                    ageOverrideButton
+                    deadliftEventCard
+                    pushUpEventCard
+                    sdcEventCard
+                    plankEventCard
+                    runEventCard
+                    totalScoreCard
+                    overallPassFailCard
+                    actionButtons
                 }
                 .padding(20)
                 .padding(.bottom, 36)
@@ -144,7 +147,7 @@ struct AFTCalculatorView: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
-                    isAnyFieldFocused = false
+                    focusedField = nil
                 }
                 .fontWeight(.semibold)
             }
@@ -168,70 +171,9 @@ struct AFTCalculatorView: View {
         .sheet(isPresented: $showExportSheet) {
             DAForm705ExportView(result: preview)
         }
-
     }
 
-    private var modeToggle: some View {
-        HStack(spacing: 0) {
-            Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    isGoalMode = false
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "pencil.and.list.clipboard")
-                        .font(.caption)
-                    Text("Score")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(!isGoalMode ? .white : MVMTheme.secondaryText)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(!isGoalMode ? MVMTheme.accent : MVMTheme.cardSoft)
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    isGoalMode = true
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "target")
-                        .font(.caption)
-                    Text("Goal")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(isGoalMode ? .white : MVMTheme.secondaryText)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(isGoalMode ? Color(hex: "#7C5CFF") : MVMTheme.cardSoft)
-            }
-            .buttonStyle(.plain)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14).stroke(MVMTheme.border)
-        }
-    }
-
-    private var infoCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: "shield.checkered")
-                    .foregroundStyle(MVMTheme.accent)
-                Text("AFT Calculator")
-                    .font(.headline)
-                    .foregroundStyle(MVMTheme.primaryText)
-            }
-
-            Text("Enter soldier info and event results. Scores are calculated using age- and sex-normed AFT scoring tables.")
-                .font(.subheadline)
-                .foregroundStyle(MVMTheme.secondaryText)
-        }
-        .padding(18)
-        .premiumCard()
-    }
+    // MARK: - Soldier Info
 
     private var soldierInfoCard: some View {
         VStack(spacing: 14) {
@@ -243,6 +185,7 @@ struct AFTCalculatorView: View {
                 TextField("Soldier Name", text: $soldierName)
                     .font(.body)
                     .foregroundStyle(MVMTheme.primaryText)
+                    .focused($focusedField, equals: .name)
                     .padding(.horizontal, 14)
                     .frame(height: 48)
                     .background(MVMTheme.cardSoft)
@@ -260,6 +203,7 @@ struct AFTCalculatorView: View {
 
                     TextField("25", text: $ageText)
                         .keyboardType(.numberPad)
+                        .focused($focusedField, equals: .age)
                         .font(.title3.weight(.bold))
                         .foregroundStyle(MVMTheme.primaryText)
                         .padding(.horizontal, 14)
@@ -337,148 +281,202 @@ struct AFTCalculatorView: View {
         .premiumCard()
     }
 
-    private var eventInputs: some View {
-        VStack(spacing: 14) {
-            eventField(
-                icon: "figure.strengthtraining.traditional",
-                title: "3RM Deadlift",
-                abbreviation: "MDL"
-            ) {
+    // MARK: - Age Override
+
+    private var ageOverrideButton: some View {
+        Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                useAgeOverride.toggle()
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: useAgeOverride ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(useAgeOverride ? MVMTheme.accent : MVMTheme.tertiaryText)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Grade me at 17–21 scale")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text("Override age — uses toughest scoring standards")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.secondaryText)
+                }
+
+                Spacer()
+
+                if useAgeOverride {
+                    Text("ON")
+                        .font(.caption.weight(.heavy))
+                        .foregroundStyle(MVMTheme.accent)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(MVMTheme.accent.opacity(0.15))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(16)
+            .background(useAgeOverride ? MVMTheme.accent.opacity(0.06) : MVMTheme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(useAgeOverride ? MVMTheme.accent.opacity(0.3) : MVMTheme.border)
+            }
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: useAgeOverride)
+    }
+
+    // MARK: - Event Cards
+
+    private var deadliftEventCard: some View {
+        eventSliderCard(
+            icon: "figure.strengthtraining.traditional",
+            title: "3RM Deadlift",
+            abbreviation: "MDL",
+            points: deadliftPoints,
+            value: $deadliftLbs,
+            range: 0...400,
+            step: 10,
+            displayValue: "\(Int(deadliftLbs)) lbs",
+            textContent: {
                 HStack(spacing: 8) {
-                    numericInput(text: $deadliftLbs, placeholder: "180")
+                    TextField("180", text: $deadliftText)
+                        .keyboardType(.numberPad)
+                        .focused($focusedField, equals: .deadlift)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                        .padding(.horizontal, 12)
+                        .frame(height: 48)
+                        .frame(maxWidth: 100)
+                        .background(MVMTheme.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+                        }
+                        .onChange(of: deadliftText) { _, newValue in
+                            if let val = Double(newValue) {
+                                deadliftLbs = min(400, max(0, val))
+                            }
+                        }
                     Text("lbs")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(MVMTheme.secondaryText)
                 }
+            },
+            onSliderChange: {
+                deadliftText = "\(Int(deadliftLbs))"
             }
+        )
+    }
 
-            eventField(
-                icon: "figure.core.training",
-                title: "Hand-Release Push-Up",
-                abbreviation: "HRP"
-            ) {
+    private var pushUpEventCard: some View {
+        eventSliderCard(
+            icon: "figure.core.training",
+            title: "Hand-Release Push-Up",
+            abbreviation: "HRP",
+            points: pushUpPoints,
+            value: $pushUpReps,
+            range: 0...80,
+            step: 1,
+            displayValue: "\(Int(pushUpReps)) reps",
+            textContent: {
                 HStack(spacing: 8) {
-                    numericInput(text: $pushUpReps, placeholder: "25")
+                    TextField("25", text: $pushUpText)
+                        .keyboardType(.numberPad)
+                        .focused($focusedField, equals: .pushUp)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                        .padding(.horizontal, 12)
+                        .frame(height: 48)
+                        .frame(maxWidth: 100)
+                        .background(MVMTheme.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+                        }
+                        .onChange(of: pushUpText) { _, newValue in
+                            if let val = Double(newValue) {
+                                pushUpReps = min(80, max(0, val))
+                            }
+                        }
                     Text("reps")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(MVMTheme.secondaryText)
                 }
+            },
+            onSliderChange: {
+                pushUpText = "\(Int(pushUpReps))"
             }
-
-            eventField(
-                icon: "figure.run",
-                title: "Sprint-Drag-Carry",
-                abbreviation: "SDC"
-            ) {
-                timeInput(minutes: $sdcMinutes, seconds: $sdcSeconds)
-            }
-
-            eventField(
-                icon: "figure.pilates",
-                title: "Plank",
-                abbreviation: "PLK"
-            ) {
-                timeInput(minutes: $plankMinutes, seconds: $plankSeconds)
-            }
-
-            eventField(
-                icon: "figure.run.circle",
-                title: "2-Mile Run",
-                abbreviation: "2MR"
-            ) {
-                timeInput(minutes: $runMinutes, seconds: $runSeconds)
-            }
-        }
-        .padding(18)
-        .premiumCard()
+        )
     }
 
-    private var scorePreview: some View {
-        VStack(spacing: 16) {
-            Text("Total Score")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(MVMTheme.secondaryText)
-
-            Text("\(preview.totalScore)")
-                .font(.system(size: 64, weight: .bold, design: .rounded))
-                .foregroundStyle(MVMTheme.primaryText)
-                .contentTransition(.numericText())
-
-            Text("/ 500")
-                .font(.title3.weight(.medium))
-                .foregroundStyle(MVMTheme.tertiaryText)
-                .padding(.top, -12)
-
-            HStack(spacing: 8) {
-                scorePill("MDL", preview.deadliftPoints)
-                scorePill("HRP", preview.pushUpPoints)
-                scorePill("SDC", preview.sdcPoints)
-                scorePill("PLK", preview.plankPoints)
-                scorePill("2MR", preview.runPoints)
-            }
-        }
-        .padding(18)
-        .premiumCard()
+    private var sdcEventCard: some View {
+        timeEventSliderCard(
+            icon: "figure.run",
+            title: "Sprint-Drag-Carry",
+            abbreviation: "SDC",
+            points: sdcPoints,
+            totalSeconds: $sdcSeconds,
+            range: 60...300,
+            minText: $sdcMinText,
+            secText: $sdcSecText,
+            minField: .sdcMin,
+            secField: .sdcSec,
+            lowerIsBetter: true
+        )
     }
 
-    private var passFailCard: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(preview.passed ? MVMTheme.success.opacity(0.18) : MVMTheme.danger.opacity(0.18))
-                    .frame(width: 50, height: 50)
-
-                Image(systemName: preview.passed ? "checkmark.shield.fill" : "xmark.shield.fill")
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(preview.passed ? MVMTheme.success : MVMTheme.danger)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(preview.passed ? "PASS" : "NO GO")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(preview.passed ? MVMTheme.success : MVMTheme.danger)
-
-                Text("\(standard.rawValue) Standard — Min \(standard.minimumPerEvent) per event, \(standard.minimumTotal) total")
-                    .font(.caption)
-                    .foregroundStyle(MVMTheme.secondaryText)
-            }
-
-            Spacer()
-        }
-        .padding(18)
-        .premiumCard()
+    private var plankEventCard: some View {
+        timeEventSliderCard(
+            icon: "figure.pilates",
+            title: "Plank",
+            abbreviation: "PLK",
+            points: plankPoints,
+            totalSeconds: $plankSeconds,
+            range: 0...300,
+            minText: $plankMinText,
+            secText: $plankSecText,
+            minField: .plankMin,
+            secField: .plankSec,
+            lowerIsBetter: false
+        )
     }
 
-    private var weakestCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.triangle")
-                    .foregroundStyle(MVMTheme.warning)
-                Text("Weakest Events")
-                    .font(.headline)
-                    .foregroundStyle(MVMTheme.primaryText)
-            }
-
-            Text(preview.weakestEvents.joined(separator: " and "))
-                .font(.subheadline)
-                .foregroundStyle(MVMTheme.secondaryText)
-
-            Text("Focus training on these events to improve your total score.")
-                .font(.caption)
-                .foregroundStyle(MVMTheme.tertiaryText)
-        }
-        .padding(18)
-        .premiumCard()
+    private var runEventCard: some View {
+        timeEventSliderCard(
+            icon: "figure.run.circle",
+            title: "2-Mile Run",
+            abbreviation: "2MR",
+            points: runPoints,
+            totalSeconds: $runSeconds,
+            range: 600...1800,
+            minText: $runMinText,
+            secText: $runSecText,
+            minField: .runMin,
+            secField: .runSec,
+            lowerIsBetter: true
+        )
     }
+
+    // MARK: - Generic Event Slider Card
 
     @ViewBuilder
-    private func eventField<Content: View>(
+    private func eventSliderCard<TextContent: View>(
         icon: String,
         title: String,
         abbreviation: String,
-        @ViewBuilder content: () -> Content
+        points: Int,
+        value: Binding<Double>,
+        range: ClosedRange<Double>,
+        step: Double,
+        displayValue: String,
+        @ViewBuilder textContent: () -> TextContent,
+        onSliderChange: @escaping () -> Void
     ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let passed = eventPassed(points)
+
+        VStack(spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.caption)
@@ -490,50 +488,335 @@ struct AFTCalculatorView: View {
 
                 Spacer()
 
+                goNoGoBadge(passed: passed)
+            }
+
+            HStack(spacing: 12) {
+                textContent()
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(points)")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(pointsColor(points))
+                        .contentTransition(.numericText())
+
+                    Text("pts")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+            }
+
+            Slider(value: value, in: range, step: step)
+                .tint(sliderTint(points))
+                .onChange(of: value.wrappedValue) { _, _ in
+                    onSliderChange()
+                }
+
+            HStack {
                 Text(abbreviation)
-                    .font(.caption.weight(.bold))
+                    .font(.caption2.weight(.bold))
                     .foregroundStyle(MVMTheme.accent)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(MVMTheme.accent.opacity(0.12))
                     .clipShape(Capsule())
-            }
 
-            content()
+                Spacer()
+
+                Text("Min \(standard.minimumPerEvent) pts to pass")
+                    .font(.caption2)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
         }
-        .padding(14)
-        .background(MVMTheme.cardSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(16)
+        .background(passed ? MVMTheme.card : MVMTheme.card)
         .overlay {
-            RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.border)
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(passed ? MVMTheme.success.opacity(0.2) : (points > 0 ? MVMTheme.danger.opacity(0.2) : MVMTheme.border), lineWidth: 1)
         }
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.25), radius: 18, y: 10)
     }
 
-    private func numericInput(text: Binding<String>, placeholder: String) -> some View {
-        TextField(placeholder, text: text)
-            .keyboardType(.numberPad)
-            .focused($isAnyFieldFocused)
-            .font(.title3.weight(.bold))
-            .foregroundStyle(MVMTheme.primaryText)
-            .padding(.horizontal, 12)
-            .frame(height: 48)
-            .frame(maxWidth: 100)
-            .background(MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+    @ViewBuilder
+    private func timeEventSliderCard(
+        icon: String,
+        title: String,
+        abbreviation: String,
+        points: Int,
+        totalSeconds: Binding<Double>,
+        range: ClosedRange<Double>,
+        minText: Binding<String>,
+        secText: Binding<String>,
+        minField: CalculatorField,
+        secField: CalculatorField,
+        lowerIsBetter: Bool
+    ) -> some View {
+        let passed = eventPassed(points)
+
+        VStack(spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.accent)
+
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Spacer()
+
+                goNoGoBadge(passed: passed)
+            }
+
+            HStack(spacing: 12) {
+                HStack(spacing: 6) {
+                    TextField("0", text: minText)
+                        .keyboardType(.numberPad)
+                        .focused($focusedField, equals: minField)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                        .padding(.horizontal, 12)
+                        .frame(height: 48)
+                        .frame(maxWidth: 70)
+                        .background(MVMTheme.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+                        }
+                        .onChange(of: minText.wrappedValue) { _, _ in
+                            syncTimeToSlider(minText: minText.wrappedValue, secText: secText.wrappedValue, totalSeconds: totalSeconds, range: range)
+                        }
+
+                    Text(":")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+
+                    TextField("00", text: secText)
+                        .keyboardType(.numberPad)
+                        .focused($focusedField, equals: secField)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                        .padding(.horizontal, 12)
+                        .frame(height: 48)
+                        .frame(maxWidth: 70)
+                        .background(MVMTheme.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+                        }
+                        .onChange(of: secText.wrappedValue) { _, _ in
+                            syncTimeToSlider(minText: minText.wrappedValue, secText: secText.wrappedValue, totalSeconds: totalSeconds, range: range)
+                        }
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(points)")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(pointsColor(points))
+                        .contentTransition(.numericText())
+
+                    Text("pts")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+            }
+
+            Slider(value: totalSeconds, in: range, step: 1)
+                .tint(sliderTint(points))
+                .onChange(of: totalSeconds.wrappedValue) { _, newVal in
+                    let secs = Int(newVal)
+                    minText.wrappedValue = "\(secs / 60)"
+                    secText.wrappedValue = String(format: "%02d", secs % 60)
+                }
+
+            HStack {
+                Text(abbreviation)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(MVMTheme.accent.opacity(0.12))
+                    .clipShape(Capsule())
+
+                Spacer()
+
+                Text(lowerIsBetter ? "Lower is better" : "Higher is better")
+                    .font(.caption2)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+        }
+        .padding(16)
+        .background(MVMTheme.card)
+        .overlay {
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(passed ? MVMTheme.success.opacity(0.2) : (points > 0 ? MVMTheme.danger.opacity(0.2) : MVMTheme.border), lineWidth: 1)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.25), radius: 18, y: 10)
+    }
+
+    private func syncTimeToSlider(minText: String, secText: String, totalSeconds: Binding<Double>, range: ClosedRange<Double>) {
+        let mins = Int(minText) ?? 0
+        let secs = Int(secText) ?? 0
+        let total = Double(mins * 60 + secs)
+        totalSeconds.wrappedValue = min(range.upperBound, max(range.lowerBound, total))
+    }
+
+    // MARK: - GO / NO-GO Badge
+
+    private func goNoGoBadge(passed: Bool) -> some View {
+        Text(passed ? "GO" : "NO GO")
+            .font(.caption.weight(.heavy))
+            .foregroundStyle(passed ? MVMTheme.success : MVMTheme.danger)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                (passed ? MVMTheme.success : MVMTheme.danger).opacity(0.12)
+            )
+            .clipShape(Capsule())
             .overlay {
-                RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+                Capsule().stroke((passed ? MVMTheme.success : MVMTheme.danger).opacity(0.3))
             }
     }
 
-    private func timeInput(minutes: Binding<String>, seconds: Binding<String>) -> some View {
-        HStack(spacing: 6) {
-            numericInput(text: minutes, placeholder: "0")
-            Text(":")
-                .font(.title3.weight(.bold))
+    // MARK: - Total Score
+
+    private var totalScoreCard: some View {
+        VStack(spacing: 12) {
+            Text("Total Score")
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(MVMTheme.secondaryText)
-            numericInput(text: seconds, placeholder: "00")
+
+            Text("\(totalScore)")
+                .font(.system(size: 64, weight: .bold, design: .rounded))
+                .foregroundStyle(MVMTheme.primaryText)
+                .contentTransition(.numericText())
+
+            Text("/ 500")
+                .font(.title3.weight(.medium))
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .padding(.top, -12)
+
+            HStack(spacing: 8) {
+                scorePill("MDL", deadliftPoints)
+                scorePill("HRP", pushUpPoints)
+                scorePill("SDC", sdcPoints)
+                scorePill("PLK", plankPoints)
+                scorePill("2MR", runPoints)
+            }
+
+            if useAgeOverride {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption2)
+                    Text("Scored using 17–21 age group")
+                        .font(.caption)
+                }
+                .foregroundStyle(MVMTheme.warning)
+                .padding(.top, 4)
+            }
+        }
+        .padding(18)
+        .premiumCard()
+    }
+
+    private var overallPassFailCard: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(overallPassed ? MVMTheme.success.opacity(0.18) : MVMTheme.danger.opacity(0.18))
+                    .frame(width: 50, height: 50)
+
+                Image(systemName: overallPassed ? "checkmark.shield.fill" : "xmark.shield.fill")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(overallPassed ? MVMTheme.success : MVMTheme.danger)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(overallPassed ? "GO" : "NO GO")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(overallPassed ? MVMTheme.success : MVMTheme.danger)
+
+                Text("\(standard.rawValue) Standard — Min \(standard.minimumPerEvent)/evt, \(standard.minimumTotal) total")
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.secondaryText)
+            }
+
+            Spacer()
+        }
+        .padding(18)
+        .premiumCard()
+    }
+
+    // MARK: - Action Buttons
+
+    private var actionButtons: some View {
+        VStack(spacing: 12) {
+            Button {
+                vm.saveAFTCalculatorResult(preview)
+                didSave = true
+            } label: {
+                Text(didSave ? "Saved" : "Save AFT Result")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(height: 56)
+                    .frame(maxWidth: .infinity)
+                    .background(MVMTheme.heroGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .shadow(color: MVMTheme.accent.opacity(0.28), radius: 18, y: 10)
+            }
+            .buttonStyle(PressScaleButtonStyle())
+            .sensoryFeedback(.success, trigger: didSave)
+
+            Button {
+                showAFTShareSheet = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.and.arrow.up")
+                    Text("Share AFT Score")
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(height: 50)
+                .frame(maxWidth: .infinity)
+                .background(
+                    LinearGradient(
+                        colors: [Color(hex: "#4F8CFF"), Color(hex: "#7C5CFF")],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ).opacity(0.85)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            Button {
+                showExportSheet = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "doc.text.fill")
+                    Text("Export DA Form 705")
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(MVMTheme.accent)
+                .frame(height: 50)
+                .frame(maxWidth: .infinity)
+                .background(MVMTheme.accent.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.accent.opacity(0.3))
+                }
+            }
+            .buttonStyle(PressScaleButtonStyle())
         }
     }
+
+    // MARK: - Helpers
 
     private func scorePill(_ label: String, _ value: Int) -> some View {
         VStack(spacing: 4) {
@@ -542,7 +825,7 @@ struct AFTCalculatorView: View {
                 .foregroundStyle(MVMTheme.secondaryText)
             Text("\(value)")
                 .font(.subheadline.weight(.bold))
-                .foregroundStyle(pillColor(value))
+                .foregroundStyle(pointsColor(value))
                 .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity)
@@ -554,10 +837,15 @@ struct AFTCalculatorView: View {
         }
     }
 
-    private func pillColor(_ value: Int) -> Color {
-        if value >= 80 { return MVMTheme.success }
-        if value >= 60 { return MVMTheme.accent }
+    private func pointsColor(_ value: Int) -> Color {
+        if value >= standard.minimumPerEvent { return MVMTheme.success }
         if value >= 40 { return MVMTheme.warning }
+        return MVMTheme.danger
+    }
+
+    private func sliderTint(_ points: Int) -> Color {
+        if points >= standard.minimumPerEvent { return MVMTheme.success }
+        if points >= 40 { return MVMTheme.warning }
         return MVMTheme.danger
     }
 }
