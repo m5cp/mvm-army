@@ -13,6 +13,8 @@ final class AppViewModel {
     var importedWorkouts: [WorkoutDay] = []
     var aftScores: [AFTScoreRecord] = []
     var aftCalculatorResults: [AFTCalculatorResult] = []
+    var wodPlan: WODPlan?
+    var todayCrossFitWOD: WODTemplate?
 
     init() {
         loadLocalData()
@@ -30,6 +32,8 @@ final class AppViewModel {
         importedWorkouts = LocalStore.load([WorkoutDay].self, forKey: "importedWorkouts", fallback: [])
         aftScores = LocalStore.load([AFTScoreRecord].self, forKey: "aftScores", fallback: [])
         aftCalculatorResults = LocalStore.load([AFTCalculatorResult].self, forKey: "aftCalculatorResults", fallback: [])
+        wodPlan = LocalStore.load(WODPlan?.self, forKey: "wodPlan", fallback: nil)
+        loadTodayCrossFitWOD()
     }
 
     func persistAll() {
@@ -42,6 +46,7 @@ final class AppViewModel {
         LocalStore.save(importedWorkouts, forKey: "importedWorkouts")
         LocalStore.save(aftScores, forKey: "aftScores")
         LocalStore.save(aftCalculatorResults, forKey: "aftCalculatorResults")
+        LocalStore.save(wodPlan, forKey: "wodPlan")
     }
 
     func syncTodaySteps() {
@@ -724,6 +729,110 @@ final class AppViewModel {
         return recentSteps.map(\.steps).reduce(0, +) / recentSteps.count
     }
 
+    // MARK: - WOD Plan
+
+    func loadTodayCrossFitWOD() {
+        let lastDate = UserDefaults.standard.double(forKey: "lastCrossFitWODDate")
+        let today = Calendar.current.startOfDay(for: .now)
+        if lastDate > 0, Calendar.current.isDate(Date(timeIntervalSince1970: lastDate), inSameDayAs: today) {
+            if let data = UserDefaults.standard.data(forKey: "todayCrossFitWOD"),
+               let template = try? JSONDecoder().decode(WODTemplate.self, from: data) {
+                todayCrossFitWOD = template
+                return
+            }
+        }
+        regenerateCrossFitWOD()
+    }
+
+    func regenerateCrossFitWOD() {
+        let template = WODService.generateWOD(
+            equipment: currentEquipment,
+            dutyType: currentDutyType
+        )
+        todayCrossFitWOD = template
+        if let data = try? JSONEncoder().encode(template) {
+            UserDefaults.standard.set(data, forKey: "todayCrossFitWOD")
+        }
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastCrossFitWODDate")
+    }
+
+    var todayPTWorkout: WorkoutDay? {
+        guard let plan = currentPlan else { return nil }
+        let today = Calendar.current.startOfDay(for: .now)
+        return plan.days.first { Calendar.current.isDate($0.date, inSameDayAs: today) }
+    }
+
+    var todayWODPlanDay: WODPlanDay? {
+        guard let plan = wodPlan else { return nil }
+        let today = Calendar.current.startOfDay(for: .now)
+        return plan.days.first { Calendar.current.isDate($0.date, inSameDayAs: today) && !$0.isRestDay }
+    }
+
+    func generateWODPlan(goal: PTGoal, weeks: Int) {
+        UserDefaults.standard.set(goal.rawValue, forKey: "ptGoal")
+        UserDefaults.standard.set(weeks, forKey: "planWeeks")
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)) ?? today
+
+        var days: [WODPlanDay] = []
+        let daysCount = 7
+        let restDayIndices: Set<Int> = [3, 6]
+
+        let pool = WODTemplateLibrary.allTemplates
+        var usedTitles: Set<String> = []
+
+        for i in 0..<daysCount {
+            guard let date = calendar.date(byAdding: .day, value: i, to: startOfWeek) else { continue }
+
+            if restDayIndices.contains(i) {
+                let restTemplate = WODTemplate(
+                    title: "Rest & Recovery",
+                    category: .crossfit,
+                    format: .circuit,
+                    durationMinutes: 0,
+                    equipment: .none,
+                    movements: [],
+                    workoutDescription: "Active rest day"
+                )
+                days.append(WODPlanDay(date: date, template: restTemplate, isRestDay: true))
+            } else {
+                let available = pool.filter { !usedTitles.contains($0.title) }
+                let selected = available.randomElement() ?? pool.randomElement() ?? pool[0]
+                usedTitles.insert(selected.title)
+                days.append(WODPlanDay(date: date, template: selected))
+            }
+        }
+
+        wodPlan = WODPlan(
+            days: days,
+            ptGoal: goal.rawValue,
+            totalWeeks: weeks,
+            currentWeek: 1,
+            weekStartDate: startOfWeek
+        )
+        persistAll()
+    }
+
+    func refreshWODPlan() {
+        guard let plan = wodPlan else { return }
+        let goal = PTGoal(rawValue: plan.ptGoal) ?? .aftScoreImprovement
+        generateWODPlan(goal: goal, weeks: plan.totalWeeks)
+    }
+
+    func regenerateWODDay(dayId: UUID) {
+        guard var plan = wodPlan,
+              let idx = plan.days.firstIndex(where: { $0.id == dayId }) else { return }
+        let currentTitle = plan.days[idx].template.title
+        let pool = WODTemplateLibrary.allTemplates.filter { $0.title != currentTitle }
+        if let newTemplate = pool.randomElement() {
+            plan.days[idx] = WODPlanDay(date: plan.days[idx].date, template: newTemplate)
+            wodPlan = plan
+            persistAll()
+        }
+    }
+
     func resetAllData() {
         currentPlan = nil
         completedRecords = []
@@ -734,6 +843,8 @@ final class AppViewModel {
         importedWorkouts = []
         aftScores = []
         aftCalculatorResults = []
+        wodPlan = nil
+        todayCrossFitWOD = nil
         persistAll()
     }
 }
