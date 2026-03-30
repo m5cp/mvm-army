@@ -48,11 +48,10 @@ struct HomeView: View {
 
                 VStack(spacing: 24) {
                     greetingHeader
+                    aftCalculatorHero
                     if disclaimerAccepted {
+                        wodSecondaryCard
                         selectedDayWorkoutsSection
-                    }
-                    aftCalculatorButton
-                    if disclaimerAccepted {
                         quickActions
                         metricsStrip
                     } else {
@@ -976,28 +975,15 @@ struct HomeView: View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
                 launcherCard(
-                    title: "WOD",
-                    subtitle: "Workout of the Day",
-                    icon: "bolt.fill",
-                    gradient: [Color(hex: "#F59E0B"), Color(hex: "#D97706")]
+                    title: "My PT Plan",
+                    subtitle: "Build your week",
+                    icon: "figure.strengthtraining.traditional",
+                    gradient: [Color(hex: "#3B82F6"), Color(hex: "#2563EB")]
                 ) {
                     toolTapTrigger.toggle()
-                    showWODSheet = true
+                    vm.generateWeeklyPlan()
                 }
 
-                launcherCard(
-                    title: "Random",
-                    subtitle: "Surprise me",
-                    icon: "shuffle",
-                    gradient: [Color(hex: "#6366F1"), Color(hex: "#4F46E5")]
-                ) {
-                    toolTapTrigger.toggle()
-                    randomWorkout = vm.generateRandomWorkout()
-                    showRandomSheet = true
-                }
-            }
-
-            HStack(spacing: 10) {
                 launcherCard(
                     title: "Unit PT",
                     subtitle: "Build for your team",
@@ -1007,6 +993,10 @@ struct HomeView: View {
                     toolTapTrigger.toggle()
                     showUnitPTSheet = true
                 }
+            }
+
+            HStack(spacing: 10) {
+                randomPTCard
 
                 launcherCard(
                     title: "Scan QR",
@@ -1019,6 +1009,58 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private var randomPTCard: some View {
+        Button {
+            toolTapTrigger.toggle()
+            randomWorkout = vm.generateRandomWorkout()
+            showRandomSheet = true
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Image(systemName: "shuffle")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 40, height: 40)
+                        .background(.white.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 11))
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .frame(width: 28, height: 28)
+                        .background(.white.opacity(0.1))
+                        .clipShape(Circle())
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Random PT")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(.white)
+
+                    Text("Surprise me")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "#6366F1"), Color(hex: "#4F46E5")],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(PressScaleButtonStyle())
     }
 
     private func launcherCard(title: String, subtitle: String, icon: String, gradient: [Color], action: @escaping () -> Void) -> some View {
@@ -1132,31 +1174,126 @@ struct HomeView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - AFT Calculator Button
+    // MARK: - AFT Calculator Hero
 
-    private var aftCalculatorButton: some View {
+    private var aftCalculatorHero: some View {
         Button {
             toolTapTrigger.toggle()
             showAFTCalculator = true
         } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "shield.checkered")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(Color(hex: "#059669"))
-                    .frame(width: 44, height: 44)
-                    .background(Color(hex: "#059669").opacity(0.12))
+            VStack(spacing: 16) {
+                HStack(spacing: 0) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("ACFT CALCULATOR")
+                            .font(.caption.weight(.heavy))
+                            .tracking(1.2)
+                            .foregroundStyle(.white.opacity(0.7))
+
+                        Text("Score Your\nFitness Test")
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .lineSpacing(2)
+
+                        Text("Full scoring with DA 705 export")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+
+                    Spacer(minLength: 0)
+
+                    ZStack {
+                        Circle()
+                            .fill(.white.opacity(0.08))
+                            .frame(width: 80, height: 80)
+                        Circle()
+                            .fill(.white.opacity(0.06))
+                            .frame(width: 60, height: 60)
+                        Image(systemName: "shield.checkered")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                }
+
+                HStack(spacing: 10) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.caption.weight(.bold))
+                        Text("Calculate Score")
+                            .font(.subheadline.weight(.bold))
+                    }
+                    .foregroundStyle(Color(hex: "#1A1A2E"))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
+                    .background(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("AFT Calculator")
+
+                }
+            }
+            .padding(20)
+            .background {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(hex: "#059669"),
+                                    Color(hex: "#047857"),
+                                    Color(hex: "#065F46")
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(
+                            LinearGradient(
+                                colors: [.clear, .white.opacity(0.05), .clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .shadow(color: Color(hex: "#059669").opacity(0.25), radius: 24, y: 14)
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .scaleEffect(animateHero ? 1 : 0.96)
+        .opacity(animateHero ? 1 : 0)
+    }
+
+    // MARK: - WOD Secondary Card
+
+    private var wodSecondaryCard: some View {
+        Button {
+            toolTapTrigger.toggle()
+            showWODSheet = true
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "bolt.fill")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706")],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Workout of the Day")
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(MVMTheme.primaryText)
-                    Text("Full AFT scoring with soldier info")
+                    Text("Today's curated PT session")
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(MVMTheme.tertiaryText)
                 }
 
-                Spacer()
+                Spacer(minLength: 0)
 
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.bold))
@@ -1171,6 +1308,8 @@ struct HomeView: View {
             .clipShape(RoundedRectangle(cornerRadius: 20))
         }
         .buttonStyle(PressScaleButtonStyle())
+        .opacity(animateHero ? 1 : 0)
+        .offset(y: animateHero ? 0 : 6)
     }
 
     // MARK: - Calendar Export Sheet
