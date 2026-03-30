@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var showMyPTPlanSheet: Bool = false
     @State private var showScanSheet: Bool = false
     @State private var showAFTCalculator: Bool = false
+    @State private var showResources: Bool = false
     @State private var showRecoveryDetail: Bool = false
     @State private var showEditSheet: Bool = false
     @State private var showCalendarSheet: Bool = false
@@ -150,6 +151,9 @@ struct HomeView: View {
         }
         .navigationDestination(isPresented: $showAFTCalculator) {
             AFTCalculatorView()
+        }
+        .navigationDestination(isPresented: $showResources) {
+            ResourcesView()
         }
         .navigationDestination(isPresented: $navigateToUnitPTDetail) {
             if let unitDay = selectedUnitPTDay {
@@ -706,6 +710,7 @@ struct HomeView: View {
                     gradient: [Color(hex: "#059669"), Color(hex: "#047857")]
                 ) {
                     toolTapTrigger.toggle()
+                    showResources = true
                 }
             }
         }

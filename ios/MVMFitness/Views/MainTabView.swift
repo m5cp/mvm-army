@@ -24,57 +24,27 @@ nonisolated enum AppTab: Int, CaseIterable, Sendable {
 
 struct MainTabView: View {
     @State private var selectedTab: AppTab = .home
-    @State private var dragOffset: CGFloat = 0
-    @State private var isDragging: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
-            GeometryReader { geo in
-                HStack(spacing: 0) {
-                    NavigationStack {
-                        HomeView()
-                    }
-                    .frame(width: geo.size.width)
-
-                    NavigationStack {
-                        ProgressViewScreen()
-                    }
-                    .frame(width: geo.size.width)
-
-                    NavigationStack {
-                        ProfileView()
-                    }
-                    .frame(width: geo.size.width)
+            TabView(selection: $selectedTab) {
+                NavigationStack {
+                    HomeView()
                 }
-                .offset(x: -CGFloat(selectedTab.rawValue) * geo.size.width + dragOffset)
-                .animation(.spring(response: 0.35, dampingFraction: 0.86), value: selectedTab)
-                .gesture(
-                    DragGesture(minimumDistance: 20)
-                        .onChanged { value in
-                            let horizontal = abs(value.translation.width)
-                            let vertical = abs(value.translation.height)
-                            if horizontal > vertical * 1.2 {
-                                isDragging = true
-                                dragOffset = value.translation.width
-                            }
-                        }
-                        .onEnded { value in
-                            let threshold: CGFloat = geo.size.width * 0.15
-                            let velocity = value.predictedEndTranslation.width
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
-                                if (value.translation.width < -threshold || velocity < -200),
-                                   let next = AppTab(rawValue: selectedTab.rawValue + 1) {
-                                    selectedTab = next
-                                } else if (value.translation.width > threshold || velocity > 200),
-                                          let prev = AppTab(rawValue: selectedTab.rawValue - 1) {
-                                    selectedTab = prev
-                                }
-                                dragOffset = 0
-                                isDragging = false
-                            }
-                        }
-                )
+                .tag(AppTab.home)
+
+                NavigationStack {
+                    ProgressViewScreen()
+                }
+                .tag(AppTab.progress)
+
+                NavigationStack {
+                    ProfileView()
+                }
+                .tag(AppTab.profile)
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .animation(.spring(response: 0.35, dampingFraction: 0.86), value: selectedTab)
 
             customTabBar
         }
