@@ -10,7 +10,7 @@ struct MyPTPlanSheet: View {
 
     @State private var selectedGoal: PTGoal = .aftScoreImprovement
     @State private var selectedWeeks: Int = 4
-    @State private var showGoalSetup: Bool = true
+    @State private var showGoalSetup: Bool = false
 
     private let calendar = Calendar.current
 
@@ -21,7 +21,7 @@ struct MyPTPlanSheet: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 18) {
-                        if showGoalSetup && vm.currentPlan == nil {
+                        if showGoalSetup || vm.currentPTGoal == nil {
                             goalSetupView
                         } else if let plan = vm.currentPlan {
                             planHeaderBadge(plan)
@@ -56,12 +56,12 @@ struct MyPTPlanSheet: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .sensoryFeedback(.impact(weight: .medium), trigger: refreshTrigger)
             .onAppear {
-                if vm.currentPlan != nil {
-                    hasGenerated = true
-                    showGoalSetup = false
-                }
                 if let goal = vm.currentPTGoal {
                     selectedGoal = goal
+                    hasGenerated = vm.currentPlan != nil
+                    showGoalSetup = false
+                } else {
+                    showGoalSetup = true
                 }
                 selectedWeeks = vm.currentPlanWeeks
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.15)) {

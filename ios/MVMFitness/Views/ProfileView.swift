@@ -4,19 +4,12 @@ import PhotosUI
 struct ProfileView: View {
     @Environment(AppViewModel.self) private var vm
 
-    @AppStorage("ptMode") private var ptModeRaw = PTMode.both.rawValue
-    @AppStorage("dutyType") private var dutyTypeRaw = DutyType.both.rawValue
-    @AppStorage("trainingFocus") private var trainingFocusRaw = TrainingFocus.generalArmyFitness.rawValue
-    @AppStorage("fitnessLevel") private var fitnessLevelRaw = FitnessLevel.intermediate.rawValue
-    @AppStorage("equipment") private var equipmentRaw = EquipmentOption.bodyweight.rawValue
-    @AppStorage("daysPerWeek") private var daysPerWeek = 3
-    @AppStorage("minutesPerWorkout") private var minutesPerWorkout = 30
     @AppStorage("ptGoal") private var ptGoalRaw = ""
     @AppStorage("planWeeks") private var planWeeks = 4
+    @AppStorage("daysPerWeek") private var daysPerWeek = 3
     @AppStorage("dailyReminderEnabled") private var dailyReminderEnabled = false
     @AppStorage("reminderHour") private var reminderHour = 6
     @AppStorage("reminderMinute") private var reminderMinute = 0
-    @AppStorage("onboardingComplete") private var onboardingComplete = false
     @AppStorage("profileDisplayName") private var profileDisplayName = ""
 
     @State private var reminderTime = Calendar.current.date(from: DateComponents(hour: 6, minute: 0)) ?? .now
@@ -37,7 +30,6 @@ struct ProfileView: View {
                 VStack(spacing: 28) {
                     profileHeader
                     currentGoalSection
-                    trainingSection
                     notificationsSection
                     appControlsSection
                     legalSection
@@ -207,9 +199,7 @@ struct ProfileView: View {
         if let goal = PTGoal(rawValue: ptGoalRaw) {
             return "\(goal.rawValue) · \(planWeeks)-Week Plan"
         }
-        let mode = PTMode(rawValue: ptModeRaw)?.rawValue ?? "Both"
-        let focus = TrainingFocus(rawValue: trainingFocusRaw)?.rawValue ?? "General"
-        return "\(mode) · \(focus)"
+        return "No goal set · Open My PT Plan"
     }
 
     private func statCell(value: String, label: String) -> some View {
@@ -233,10 +223,9 @@ struct ProfileView: View {
 
     // MARK: - Current Goal
 
-    @ViewBuilder
     private var currentGoalSection: some View {
-        if let goal = PTGoal(rawValue: ptGoalRaw) {
-            settingsSection(title: "CURRENT GOAL", icon: "target") {
+        settingsSection(title: "CURRENT GOAL", icon: "target") {
+            if let goal = PTGoal(rawValue: ptGoalRaw) {
                 VStack(spacing: 12) {
                     HStack(spacing: 14) {
                         Image(systemName: goal.icon)
@@ -310,69 +299,32 @@ struct ProfileView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .padding(.vertical, 4)
+            } else {
+                VStack(spacing: 12) {
+                    HStack(spacing: 14) {
+                        Image(systemName: "target")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                            .frame(width: 44, height: 44)
+                            .background(MVMTheme.cardSoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("No Goal Set")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(MVMTheme.primaryText)
+                            Text("Open My PT Plan to set your training goal and plan duration")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                                .lineLimit(2)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.vertical, 4)
+                }
+                .padding(.vertical, 4)
             }
-        }
-    }
-
-    // MARK: - Training
-
-    private var trainingSection: some View {
-        settingsSection(title: "TRAINING", icon: "figure.strengthtraining.traditional") {
-            settingsMenuRow(
-                icon: "target",
-                title: "Training Focus",
-                currentValue: trainingFocusRaw,
-                values: TrainingFocus.allCases.map(\.rawValue),
-                selection: $trainingFocusRaw
-            )
-            sectionDivider
-            settingsMenuRow(
-                icon: "chart.bar.fill",
-                title: "Fitness Level",
-                currentValue: fitnessLevelRaw,
-                values: FitnessLevel.allCases.map(\.rawValue),
-                selection: $fitnessLevelRaw
-            )
-            sectionDivider
-            settingsMenuRow(
-                icon: "dumbbell.fill",
-                title: "Equipment",
-                currentValue: equipmentRaw,
-                values: EquipmentOption.allCases.map(\.rawValue),
-                selection: $equipmentRaw
-            )
-            sectionDivider
-            settingsMenuRow(
-                icon: "person.2.fill",
-                title: "PT Mode",
-                currentValue: ptModeRaw,
-                values: PTMode.allCases.map(\.rawValue),
-                selection: $ptModeRaw
-            )
-            sectionDivider
-            settingsMenuRow(
-                icon: "briefcase.fill",
-                title: "Duty Type",
-                currentValue: dutyTypeRaw,
-                values: DutyType.allCases.map(\.rawValue),
-                selection: $dutyTypeRaw
-            )
-            sectionDivider
-            settingsMenuRow(
-                icon: "calendar",
-                title: "Days per Week",
-                currentValue: "\(daysPerWeek)",
-                values: (1...7).map { "\($0)" },
-                intSelection: $daysPerWeek
-            )
-            sectionDivider
-            settingsMenuRow(
-                icon: "clock.fill",
-                title: "Workout Duration",
-                currentValue: "\(minutesPerWorkout) min",
-                values: ["20", "30", "45", "60"],
-                intSelection: $minutesPerWorkout
-            )
         }
     }
 
@@ -456,14 +408,6 @@ struct ProfileView: View {
                 settingsRow(icon: "trash", title: "Reset All Data", color: MVMTheme.danger)
             }
             .sensoryFeedback(.warning, trigger: resetAllTrigger)
-
-            sectionDivider
-
-            Button {
-                onboardingComplete = false
-            } label: {
-                settingsRow(icon: "arrow.counterclockwise", title: "Re-run Onboarding", color: MVMTheme.secondaryText)
-            }
 
             sectionDivider
 
@@ -583,78 +527,6 @@ struct ProfileView: View {
         }
         .frame(minHeight: 48)
         .contentShape(Rectangle())
-    }
-
-    private func settingsMenuRow(icon: String, title: String, currentValue: String, values: [String], selection: Binding<String>) -> some View {
-        Menu {
-            ForEach(values, id: \.self) { value in
-                Button {
-                    selection.wrappedValue = value
-                } label: {
-                    HStack {
-                        Text(value)
-                        if value == selection.wrappedValue {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(MVMTheme.accent)
-                    .frame(width: 24)
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(MVMTheme.primaryText)
-                Spacer()
-                Text(currentValue)
-                    .font(.subheadline)
-                    .foregroundStyle(MVMTheme.secondaryText)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(MVMTheme.tertiaryText)
-            }
-            .frame(minHeight: 48)
-            .contentShape(Rectangle())
-        }
-    }
-
-    private func settingsMenuRow(icon: String, title: String, currentValue: String, values: [String], intSelection: Binding<Int>) -> some View {
-        Menu {
-            ForEach(values, id: \.self) { value in
-                Button {
-                    intSelection.wrappedValue = Int(value) ?? intSelection.wrappedValue
-                } label: {
-                    HStack {
-                        Text(title.contains("Duration") ? "\(value) min" : value)
-                        if Int(value) == intSelection.wrappedValue {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(MVMTheme.accent)
-                    .frame(width: 24)
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(MVMTheme.primaryText)
-                Spacer()
-                Text(currentValue)
-                    .font(.subheadline)
-                    .foregroundStyle(MVMTheme.secondaryText)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(MVMTheme.tertiaryText)
-            }
-            .frame(minHeight: 48)
-            .contentShape(Rectangle())
-        }
     }
 
     // MARK: - Avatar Picker Sheet
