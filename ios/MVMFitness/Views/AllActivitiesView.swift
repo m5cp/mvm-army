@@ -35,6 +35,7 @@ struct AllActivitiesView: View {
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
+            await vm.healthKit.fetchTodayActiveCalories()
             await vm.healthKit.fetchAllActivities()
         }
     }

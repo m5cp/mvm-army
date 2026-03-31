@@ -78,6 +78,11 @@ struct ProgressViewScreen: View {
                 try? await Task.sleep(for: .milliseconds(400))
                 vm.syncTodaySteps()
             }
+            if hasRequestedHealthKit {
+                Task {
+                    await vm.healthKit.refreshAll()
+                }
+            }
             withAnimation(.easeOut(duration: 0.5).delay(0.1)) {
                 appeared = true
             }
