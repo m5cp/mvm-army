@@ -178,7 +178,7 @@ enum WorkoutGenerator {
             title: chosen.title,
             exercises: exercises,
             templateTag: chosen.title,
-            tags: modeTags + [chosen.focus.rawValue, "WOD"]
+            tags: modeTags + [chosen.focus.rawValue, "Functional"]
         )
     }
 

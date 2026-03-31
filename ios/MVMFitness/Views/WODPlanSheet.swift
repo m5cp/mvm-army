@@ -106,7 +106,7 @@ struct WODPlanSheet: View {
                 wodActionButton(icon: "square.and.arrow.down", label: "Save") {
                     actionTrigger.toggle()
                     vm.saveWODPlanSnapshot()
-                    savedAlertMessage = "WOD plan saved successfully."
+                    savedAlertMessage = "Fitness plan saved successfully."
                     showSavedAlert = true
                 }
 
@@ -162,7 +162,7 @@ struct WODPlanSheet: View {
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
-                Text("Add your WOD plan workouts to your iOS Calendar so they show up with reminders.")
+                Text("Add your fitness plan workouts to your iOS Calendar so they show up with reminders.")
                     .font(.subheadline)
                     .foregroundStyle(MVMTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -443,7 +443,7 @@ struct WODPlanSheet: View {
                 Text("\(workoutDays)")
                     .font(.system(.title2, design: .rounded).weight(.bold))
                     .foregroundStyle(.white)
-                Text("WODs")
+                Text("Sessions")
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.white.opacity(0.6))
             }
@@ -512,7 +512,7 @@ struct WODPlanSheet: View {
                             HStack(spacing: 3) {
                                 Image(systemName: "medal.fill")
                                     .font(.system(size: 9))
-                                Text("HERO")
+                                Text("MEMORIAL")
                                     .font(.system(size: 9, weight: .heavy))
                             }
                             .foregroundStyle(Color(hex: "#C4A35A"))
@@ -694,7 +694,7 @@ struct WODPlanShareSheet: View {
                                     .font(.title3.weight(.bold))
                                     .foregroundStyle(MVMTheme.primaryText)
 
-                                Text("Week \(plan.currentWeek) of \(plan.totalWeeks) \u{00b7} \(plan.days.filter { !$0.isRestDay }.count) WODs")
+                                Text("Week \(plan.currentWeek) of \(plan.totalWeeks) \u{00b7} \(plan.days.filter { !$0.isRestDay }.count) Sessions")
                                     .font(.subheadline)
                                     .foregroundStyle(MVMTheme.secondaryText)
                             }
@@ -819,7 +819,7 @@ struct WODPlanPDFExportSheet: View {
                             .font(.title3.weight(.bold))
                             .foregroundStyle(MVMTheme.primaryText)
 
-                        Text("Generate a printable PDF of your full WOD plan with all movements and schedule details.")
+                        Text("Generate a printable PDF of your full fitness plan with all movements and schedule details.")
                             .font(.subheadline)
                             .foregroundStyle(MVMTheme.secondaryText)
                             .multilineTextAlignment(.center)
@@ -1005,16 +1005,16 @@ enum WODPlanCardRenderer {
                 .font: UIFont.systemFont(ofSize: 22, weight: .medium),
                 .foregroundColor: UIColor.white.withAlphaComponent(0.5)
             ]
-            let weekStr = NSAttributedString(string: "Week \(plan.currentWeek) of \(plan.totalWeeks) \u{00b7} \(workoutDays.count) WODs", attributes: weekAttrs)
+            let weekStr = NSAttributedString(string: "Week \(plan.currentWeek) of \(plan.totalWeeks) \u{00b7} \(workoutDays.count) Sessions", attributes: weekAttrs)
             weekStr.draw(at: CGPoint(x: 60, y: 240))
 
             let boxWidth = (w - 160) / 3
             let boxHeight: CGFloat = 100
             let statsY: CGFloat = 300
-            ShareCardCGHelpers.drawStatBox(context: context, x: 60, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(workoutDays.count)", label: "WODs", valueColor: wodAmber)
+            ShareCardCGHelpers.drawStatBox(context: context, x: 60, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(workoutDays.count)", label: "Sessions", valueColor: wodAmber)
 
             let heroCount = workoutDays.filter { HeroWODLibrary.isHeroWorkout($0.template) }.count
-            ShareCardCGHelpers.drawStatBox(context: context, x: 60 + boxWidth + 20, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(heroCount)", label: "Hero", valueColor: heroGold)
+            ShareCardCGHelpers.drawStatBox(context: context, x: 60 + boxWidth + 20, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(heroCount)", label: "Memorial", valueColor: heroGold)
 
             let restCount = plan.days.filter { $0.isRestDay }.count
             ShareCardCGHelpers.drawStatBox(context: context, x: 60 + (boxWidth + 20) * 2, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(restCount)", label: "Rest", valueColor: ShareCardCGHelpers.successGreen)
@@ -1075,7 +1075,7 @@ enum WODPlanCardRenderer {
                         .font: UIFont.systemFont(ofSize: 14, weight: .heavy),
                         .foregroundColor: heroGold
                     ]
-                    let heroTagStr = NSAttributedString(string: "HERO", attributes: heroTagAttrs)
+                    let heroTagStr = NSAttributedString(string: "MEMORIAL", attributes: heroTagAttrs)
                     let heroTagSize = heroTagStr.size()
                     heroTagStr.draw(at: CGPoint(x: w - 60 - heroTagSize.width, y: rowY + 10))
                 }
@@ -1088,7 +1088,7 @@ enum WODPlanCardRenderer {
                     .font: UIFont.systemFont(ofSize: 18, weight: .medium),
                     .foregroundColor: UIColor.white.withAlphaComponent(0.3)
                 ]
-                let moreStr = NSAttributedString(string: "+\(workoutDays.count - 5) more WODs", attributes: moreAttrs)
+                let moreStr = NSAttributedString(string: "+\(workoutDays.count - 5) more sessions", attributes: moreAttrs)
                 moreStr.draw(at: CGPoint(x: 95, y: rowY + 4))
             }
 

@@ -3,7 +3,7 @@ import Foundation
 nonisolated enum WorkoutSource: String, Codable, CaseIterable, Identifiable, Sendable {
     case individual = "Individual"
     case unit = "Unit PT"
-    case wod = "WOD"
+    case wod = "Functional"
     case random = "Random"
     case imported = "Imported"
 

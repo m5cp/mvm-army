@@ -29,7 +29,7 @@ struct PTWODDetailView: View {
                     noPlanState
                 }
             }
-            .navigationTitle("PT Workout of the Day")
+            .navigationTitle("Today's Individual PT")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -41,7 +41,7 @@ struct PTWODDetailView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .sheet(isPresented: $showQRSheet) {
                 if let workout {
-                    WorkoutQRSheet(workout: workout, workoutType: "PT WOD")
+                    WorkoutQRSheet(workout: workout, workoutType: "Individual PT")
                 }
             }
             .sheet(isPresented: $showShareSheet) {
@@ -104,7 +104,7 @@ struct PTWODDetailView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white.opacity(0.9))
 
-                Text("PT WOD")
+                Text("INDIVIDUAL PT")
                     .font(.caption2.weight(.heavy))
                     .tracking(1.0)
                     .foregroundStyle(.white.opacity(0.8))
@@ -516,7 +516,7 @@ struct PTWODShareSheet: View {
                     .padding(.vertical, 20)
                 }
             }
-            .navigationTitle("Share PT WOD")
+            .navigationTitle("Share Individual PT")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(MVMTheme.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
@@ -556,7 +556,7 @@ struct PTWODShareSheet: View {
     }
 
     private func buildShareText() -> String {
-        var text = "MVM Fitness — PT WOD: \(workout.title)\n"
+        var text = "MVM Fitness — Individual PT: \(workout.title)\n"
         text += "\(workout.exercises.count) exercises\n\n"
         for exercise in workout.exercises {
             text += "• \(exercise.name) — \(exercise.displayDetail)\n"

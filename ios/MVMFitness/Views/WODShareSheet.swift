@@ -54,7 +54,7 @@ struct WODShareSheet: View {
 
                         Button {
                             if let image = renderedImage {
-                                let text = "MVM Fitness — WOD: \(template.title)\n#MVMFitness #ArmyFitness"
+                                let text = "MVM Fitness — \(template.title)\n#MVMFitness #ArmyFitness"
                                 let activityVC = UIActivityViewController(activityItems: [image, text], applicationActivities: nil)
                                 guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                                       let rootVC = windowScene.windows.first?.rootViewController else { return }
@@ -88,7 +88,7 @@ struct WODShareSheet: View {
                     .padding(.vertical, 20)
                 }
             }
-            .navigationTitle("WOD Share Card")
+            .navigationTitle("Workout Share Card")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(MVMTheme.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
@@ -260,7 +260,7 @@ enum WODCardRenderer {
             .font: UIFont.systemFont(ofSize: 20, weight: .heavy),
             .foregroundColor: ShareCardCGHelpers.warningAmber
         ]
-        let starStr = NSAttributedString(string: "★  WOD", attributes: starAttrs)
+        let starStr = NSAttributedString(string: "★  FUNCTIONAL FITNESS", attributes: starAttrs)
         let starSize = starStr.size()
         let pillRect = CGRect(x: 60, y: 130, width: starSize.width + 28, height: 36)
         let pillPath = UIBezierPath(roundedRect: pillRect, cornerRadius: 18)

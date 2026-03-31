@@ -1,17 +1,17 @@
 import Foundation
 
 nonisolated enum WODHeroPreference: String, Codable, CaseIterable, Sendable, Identifiable {
-    case regular = "Functional WOD Plan"
-    case mixed = "Mix of Hero"
-    case heroOnly = "Full Hero Plan"
+    case regular = "Functional Fitness Plan"
+    case mixed = "Mix of Memorial"
+    case heroOnly = "Full Memorial Plan"
 
     var id: String { rawValue }
 
     var subtitle: String {
         switch self {
         case .regular: return "Standard functional workouts"
-        case .mixed: return "Blend of hero and regular WODs"
-        case .heroOnly: return "All hero WODs honoring fallen heroes"
+        case .mixed: return "Blend of memorial and regular workouts"
+        case .heroOnly: return "All memorial workouts honoring the fallen"
         }
     }
 

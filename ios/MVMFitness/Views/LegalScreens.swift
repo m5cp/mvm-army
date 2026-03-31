@@ -33,6 +33,9 @@ Last updated: March 2026
 
 MVM Fitness ("the App") is designed to help users organize, track, and plan fitness training. Your privacy matters, and this policy explains how the App handles your information.
 
+Offline-First Design
+MVM Fitness is designed to work fully offline. All core features — including the AFT Calculator, workout viewing, plan management, workout logging, progress tracking, share card generation, and QR code creation — function without an internet connection. Cloud sync, if available, is optional and the app never depends on it.
+
 Data Storage
 All data — including workout plans, completed records, AFT scores, step history, and user preferences — is stored locally on your device. The App does not transmit, upload, or share your data with any external server, database, or third party unless you explicitly choose to export or share content.
 
@@ -59,6 +62,10 @@ When you export a DA Form 705 PDF, share a QR code, or add events to your calend
 Third-Party Services
 The App does not use analytics, advertising, or tracking frameworks. No third-party SDKs collect data from the App.
 
+Data is never sold to third parties.
+
+This app is not affiliated with or endorsed by CrossFit, Inc.
+
 Children's Privacy
 The App is not directed at children under 13 and does not knowingly collect information from children.
 
@@ -74,9 +81,11 @@ Terms of Use
 
 Last updated: March 2026
 
-By downloading, installing, or using MVM Fitness ("the App"), you agree to these Terms of Use and Apple's standard Licensed Application End User License Agreement (EULA) available at:
+By downloading, installing, or using MVM Fitness ("the App"), you agree to these Terms of Use and Apple's Standard Licensed Application End User License Agreement (EULA) available at:
 
 https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+This app is not affiliated with or endorsed by CrossFit, Inc. Workout names and formats are used for general fitness and educational purposes only.
 
 Fitness Disclaimer
 The App is a fitness planning and accountability tool. It generates workout templates based on publicly available exercise formats and user preferences. It does not provide personalized fitness prescriptions, medical advice, or clinical recommendations.

@@ -77,7 +77,7 @@ enum ShareCardRenderer {
         case .completion(let title, let count, let duration):
             return "MVM Fitness — Completed: \(title)\n\(count) exercises · \(duration)\n#MVMFitness"
         case .completedWorkout(let record):
-            let prefix = record.source == .wod ? "WOD: " : ""
+            let prefix = record.source == .wod ? "Functional: " : ""
             return "MVM Fitness — \(prefix)\(record.title)\n\(record.exerciseCount) exercises\n#MVMFitness"
         }
     }
@@ -322,7 +322,7 @@ enum CompletedWorkoutCGRenderer {
                     .font: UIFont.systemFont(ofSize: 20, weight: .bold),
                     .foregroundColor: ShareCardCGHelpers.warningAmber
                 ]
-                let wodStr = NSAttributedString(string: "WOD", attributes: wodAttrs)
+                let wodStr = NSAttributedString(string: "FUNCTIONAL", attributes: wodAttrs)
                 let wodSize = wodStr.size()
                 let pillRect = CGRect(x: (w - wodSize.width - 24) / 2, y: 380, width: wodSize.width + 24, height: 32)
                 let pillPath = UIBezierPath(roundedRect: pillRect, cornerRadius: 16)
@@ -349,7 +349,7 @@ enum CompletedWorkoutCGRenderer {
 
             let sourceLabel: String
             switch record.source {
-            case .wod: sourceLabel = "WOD"
+            case .wod: sourceLabel = "Functional"
             case .unit: sourceLabel = "Unit PT"
             case .individual: sourceLabel = "Individual"
             case .random: sourceLabel = "Random"

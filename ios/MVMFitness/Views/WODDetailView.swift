@@ -36,7 +36,7 @@ struct WODDetailView: View {
                     unavailableState
                 }
             }
-            .navigationTitle("Functional / Hero Workout")
+            .navigationTitle("Functional Fitness Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -48,7 +48,7 @@ struct WODDetailView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .sheet(isPresented: $showQRSheet) {
                 if let workout {
-                    WorkoutQRSheet(workout: workout, workoutType: "WOD")
+                    WorkoutQRSheet(workout: workout, workoutType: "Functional")
                 }
             }
             .sheet(isPresented: $showShareSheet) {
@@ -90,7 +90,7 @@ struct WODDetailView: View {
         VStack(spacing: 16) {
             ProgressView()
                 .tint(MVMTheme.accent)
-            Text("Generating WOD...")
+            Text("Generating workout...")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(MVMTheme.secondaryText)
         }
@@ -102,7 +102,7 @@ struct WODDetailView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(MVMTheme.accent.opacity(0.5))
 
-            Text("Functional / Hero Workout Unavailable")
+            Text("Functional Fitness Workout Unavailable")
                 .font(.title3.weight(.bold))
                 .foregroundStyle(MVMTheme.primaryText)
 
@@ -116,7 +116,7 @@ struct WODDetailView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.clockwise")
                         .font(.subheadline.weight(.bold))
-                    Text("Generate WOD")
+                    Text("Generate Workout")
                         .font(.headline.weight(.bold))
                 }
                 .foregroundStyle(.white)
@@ -159,7 +159,7 @@ struct WODDetailView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white.opacity(0.9))
 
-                Text(isHero ? "HERO WORKOUT" : "WOD")
+                Text(isHero ? "MEMORIAL WORKOUT" : "FUNCTIONAL FITNESS")
                     .font(.caption2.weight(.heavy))
                     .tracking(1.0)
                     .foregroundStyle(.white.opacity(0.8))
@@ -360,19 +360,19 @@ struct WODDetailView: View {
                         generateTrigger.toggle()
                         generateAnother()
                     } label: {
-                        Label("Regular WOD", systemImage: "arrow.clockwise")
+                        Label("Functional Workout", systemImage: "arrow.clockwise")
                     }
                     Button {
                         generateTrigger.toggle()
                         generateHero()
                     } label: {
-                        Label("Hero Workout", systemImage: "medal.fill")
+                        Label("Memorial Workout", systemImage: "medal.fill")
                     }
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.clockwise")
                             .font(.caption.weight(.bold))
-                        Text("New WOD")
+                        Text("New Workout")
                             .font(.subheadline.weight(.semibold))
                     }
                     .foregroundStyle(MVMTheme.secondaryText)

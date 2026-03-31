@@ -36,7 +36,7 @@ struct HomeView: View {
     @State private var showCompletionShare: Bool = false
     @State private var completedWorkoutTitle: String = ""
     @State private var completedExerciseCount: Int = 0
-    @State private var showPTWODSheet: Bool = false
+    @State private var showPTWorkoutSheet: Bool = false
     @State private var navigateToCalendarDay: Bool = false
     @State private var calendarDayDate: Date = .now
     @State private var navigateToTrainingCalendar: Bool = false
@@ -53,7 +53,6 @@ struct HomeView: View {
 
                     if disclaimerAccepted {
                         todayWorkoutSection
-                        quickStartSection
                         planningSection
                         dailyActivitySection
                     } else {
@@ -190,7 +189,7 @@ struct HomeView: View {
         .sheet(isPresented: $showWODSheet) {
             WODDetailView()
         }
-        .sheet(isPresented: $showPTWODSheet) {
+        .sheet(isPresented: $showPTWorkoutSheet) {
             PTWODDetailView()
         }
         .sheet(isPresented: $showWODPlanSheet) {
@@ -578,85 +577,7 @@ struct HomeView: View {
         .buttonStyle(PressScaleButtonStyle())
     }
 
-    // MARK: - Quick Start Section (PRIORITY 3)
-
-    private var quickStartSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("QUICK START")
-                .font(.caption.weight(.heavy))
-                .tracking(1.2)
-                .foregroundStyle(MVMTheme.tertiaryText)
-                .padding(.leading, 4)
-
-            HStack(spacing: 10) {
-                quickStartCard(
-                    title: "PT WOD",
-                    subtitle: "Today's PT session",
-                    icon: "figure.run",
-                    gradient: MVMTheme.ptGradient
-                ) {
-                    toolTapTrigger.toggle()
-                    if vm.todayPTWorkout != nil {
-                        showPTWODSheet = true
-                    } else {
-                        showMyPTPlanSheet = true
-                    }
-                }
-
-                quickStartCard(
-                    title: "Functional / Hero",
-                    subtitle: "WOD of the day",
-                    icon: "bolt.fill",
-                    gradient: MVMTheme.functionalGradient
-                ) {
-                    toolTapTrigger.toggle()
-                    showWODSheet = true
-                }
-            }
-        }
-        .opacity(animateHero ? 1 : 0)
-        .offset(y: animateHero ? 0 : 8)
-    }
-
-    private func quickStartCard(title: String, subtitle: String, icon: String, gradient: LinearGradient, action: @escaping () -> Void) -> some View {
-        Button {
-            action()
-        } label: {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 6) {
-                    Image(systemName: icon)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
-                        .background(.white.opacity(0.15))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                    Spacer(minLength: 0)
-                }
-
-                Spacer(minLength: 0)
-
-                Text(title)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
-
-                Text(subtitle)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.55))
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 120)
-            .background {
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(gradient)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-        }
-        .buttonStyle(PressScaleButtonStyle())
-    }
-
-    // MARK: - Planning Section (PRIORITY 4)
+    // MARK: - Planning Section (PRIORITY 3)
 
     private var planningSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -679,7 +600,7 @@ struct HomeView: View {
 
                 planRow(
                     title: "Plan My Functional Fitness",
-                    subtitle: "Functional & Hero Workouts",
+                    subtitle: "Functional & memorial workouts",
                     icon: "bolt.heart.fill",
                     color: MVMTheme.heroAmber
                 ) {
@@ -740,7 +661,7 @@ struct HomeView: View {
         .buttonStyle(PressScaleButtonStyle())
     }
 
-    // MARK: - Daily Activity Section (PRIORITY 5)
+    // MARK: - Daily Activity Section (PRIORITY 4)
 
     private var dailyActivitySection: some View {
         VStack(alignment: .leading, spacing: 12) {

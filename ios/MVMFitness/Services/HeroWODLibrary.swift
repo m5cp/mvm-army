@@ -42,7 +42,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Run", duration: "1 mile")
             ],
             workoutDescription: "For time. Partition the pull-ups, push-ups, and squats as needed. Start and finish with a 1-mile run. Rx: 20-lb vest/body armor.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "JT",
@@ -62,7 +62,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Push-Ups", reps: "9")
             ],
             workoutDescription: "21-15-9 reps for time of handstand push-ups, ring dips, and push-ups.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Michael",
@@ -76,7 +76,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Sit-Ups", reps: "50")
             ],
             workoutDescription: "3 rounds for time of 800m run, 50 back extensions, and 50 sit-ups.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Daniel",
@@ -94,7 +94,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Pull-Ups", reps: "50")
             ],
             workoutDescription: "For time: 50 pull-ups, 400m run, 21 thrusters, 800m run, 21 thrusters, 400m run, 50 pull-ups.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Josh",
@@ -111,7 +111,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Pull-Ups", reps: "18")
             ],
             workoutDescription: "For time: 21 OHS, 42 pull-ups, 15 OHS, 30 pull-ups, 9 OHS, 18 pull-ups.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "DT",
@@ -125,7 +125,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Push Jerk", reps: "6", notes: "155/105 lbs")
             ],
             workoutDescription: "5 rounds for time: 12 deadlifts, 9 hang power cleans, 6 push jerks.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Nate",
@@ -139,7 +139,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Pistols (alternating)", reps: "8")
             ],
             workoutDescription: "AMRAP 20 minutes: 2 muscle-ups, 4 handstand push-ups, 8 pistols.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Randy",
@@ -151,7 +151,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Power Snatch", reps: "75", notes: "75/55 lbs")
             ],
             workoutDescription: "For time: 75 power snatches at 75/55 lbs.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Tommy V",
@@ -168,7 +168,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Rope Climb (15 ft)", reps: "6")
             ],
             workoutDescription: "For time: 21 thrusters + 12 rope climbs, 15 thrusters + 9 rope climbs, 9 thrusters + 6 rope climbs.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Griff",
@@ -183,7 +183,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Run Backwards", duration: "400m")
             ],
             workoutDescription: "For time: 800m run, 400m run backwards, 800m run, 400m run backwards.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Luce",
@@ -200,7 +200,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Clean & Jerk", reps: "10", notes: "135/95 lbs")
             ],
             workoutDescription: "3 rounds for time: 1-mile run + 10 clean & jerks at 135/95 lbs. Rx with 20-lb vest.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "RJ",
@@ -215,7 +215,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Air Squats", reps: "15")
             ],
             workoutDescription: "5 rounds for time: 800m run, 5 pull-ups, 10 push-ups, 15 air squats.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Loredo",
@@ -231,7 +231,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Pull-Ups", reps: "24")
             ],
             workoutDescription: "6 rounds for time: 200m run, 24 air squats, 24 push-ups, 24 lunges, 24 pull-ups.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Whitten",
@@ -247,7 +247,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Double-Unders", reps: "22")
             ],
             workoutDescription: "5 rounds for time: 22 burpees, 22 KB swings, 22 box jumps, 22 wall balls, 22 double-unders.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Wittman",
@@ -261,7 +261,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Box Jump", reps: "15", notes: "24 in")
             ],
             workoutDescription: "7 rounds for time: 15 KB swings, 15 power cleans, 15 box jumps.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "The Seven",
@@ -279,7 +279,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Pull-Ups", reps: "7")
             ],
             workoutDescription: "7 rounds for time: 7 HSPU, 7 thrusters, 7 K2E, 7 deadlifts, 7 burpees, 7 KB swings, 7 pull-ups.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Clovis",
@@ -292,7 +292,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Burpees", reps: "150")
             ],
             workoutDescription: "For time: 10-mile run, then 150 burpees. Partition as needed during the run.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Jag 28",
@@ -308,7 +308,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Sit-Ups", reps: "28")
             ],
             workoutDescription: "8 rounds for time: 800m run, 28 push-ups, 28 pull-ups, 28 air squats, 28 sit-ups.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Helton",
@@ -322,7 +322,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Burpees", reps: "30")
             ],
             workoutDescription: "3 rounds for time: 800m run, 30 DB squat cleans, 30 burpees.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "McGhee",
@@ -336,7 +336,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Box Jump", reps: "9", notes: "24 in")
             ],
             workoutDescription: "AMRAP 30 minutes: 5 deadlifts, 13 push-ups, 9 box jumps.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         ),
         WODTemplate(
             title: "Arnie",
@@ -352,7 +352,7 @@ enum HeroWODLibrary {
                 WODMovement(name: "Kettlebell Clean & Jerk (L)", reps: "7")
             ],
             workoutDescription: "With a single 2-pood KB, AMRAP-like flow: 1 TGU each side, 6 KB swings, 7 C&J each side. Repeat.",
-            notes: "Hero Workout"
+            notes: "Memorial Workout"
         )
     ]
 
@@ -533,11 +533,10 @@ enum HeroWODLibrary {
     }
 
     static func isHeroWorkout(_ template: WODTemplate) -> Bool {
-        template.notes == "Hero Workout"
+        template.notes == "Memorial Workout"
     }
 
-    @available(*, deprecated, renamed: "isHeroWorkout")
-    static func isHeroWOD(_ template: WODTemplate) -> Bool {
+    static func isMemorialWorkout(_ template: WODTemplate) -> Bool {
         isHeroWorkout(template)
     }
 
