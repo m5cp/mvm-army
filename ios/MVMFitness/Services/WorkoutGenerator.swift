@@ -224,8 +224,8 @@ enum WorkoutGenerator {
         )
     }
 
-    static func generateUnitPT(focus: TrainingFocus, level: FitnessLevel) -> UnitPTPlan {
-        let armyFocuses = ArmyGenerator.mapArmyFocuses(focus)
+    static func generateUnitPT(focus: TrainingFocus, level: FitnessLevel, goal: PTGoal? = nil, weeks: Int = 4) -> UnitPTPlan {
+        let armyFocuses: [ArmyFocus] = goal?.armyFocuses ?? ArmyGenerator.mapArmyFocuses(focus)
         let randomFocus = armyFocuses.randomElement() ?? .aftPrep
 
         let unitTemplates = ArmyTemplateLibrary.templates.filter { $0.mode == .unitPT && $0.focus == randomFocus }

@@ -23,6 +23,9 @@ struct UnitPTBuilderSheet: View {
     }()
     @State private var addedToCalendar: Bool = false
 
+    @State private var selectedGoal: PTGoal = .aftScoreImprovement
+    @State private var selectedWeeks: Int = 4
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -31,7 +34,7 @@ struct UnitPTBuilderSheet: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 18) {
                         if plan == nil {
-                            generateCard
+                            goalSetupView
                         }
 
                         if let plan {
@@ -66,32 +69,93 @@ struct UnitPTBuilderSheet: View {
         }
     }
 
-    private var generateCard: some View {
-        VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: "person.3.fill")
-                        .foregroundStyle(MVMTheme.accent)
-                    Text("Unit PT Builder")
-                        .font(.headline)
-                        .foregroundStyle(MVMTheme.primaryText)
-                }
+    // MARK: - Goal Setup
 
-                Text("Generate a structured PT plan based on your training focus. Share it via QR code.")
-                    .font(.subheadline)
+    private var goalSetupView: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 8) {
+                Image(systemName: "person.3.fill")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 64, height: 64)
+                    .background(MVMTheme.accent.opacity(0.12))
+                    .clipShape(Circle())
+
+                Text("Unit PT Builder")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Text("Build a structured Unit PT session tailored to your training goal. Share via QR code or text.")
+                    .font(.caption)
                     .foregroundStyle(MVMTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
             }
 
+            VStack(alignment: .leading, spacing: 10) {
+                Text("TRAINING GOAL")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.8)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                ForEach(PTGoal.allCases) { goal in
+                    unitGoalRow(goal)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("PLAN DURATION")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.8)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                HStack(spacing: 8) {
+                    ForEach([2, 4, 6, 8, 12], id: \.self) { weeks in
+                        Button {
+                            withAnimation(.spring(response: 0.25)) {
+                                selectedWeeks = weeks
+                            }
+                        } label: {
+                            VStack(spacing: 3) {
+                                Text("\(weeks)")
+                                    .font(.headline.weight(.bold))
+                                Text("wks")
+                                    .font(.caption2.weight(.medium))
+                            }
+                            .foregroundStyle(selectedWeeks == weeks ? .white : MVMTheme.secondaryText)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(selectedWeeks == weeks ? MVMTheme.accent : Color.white.opacity(0.06))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay {
+                                if selectedWeeks == weeks {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(MVMTheme.accent.opacity(0.4))
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
+            unitPlanBreakdownPreview
+
             Button {
-                plan = vm.generateUnitPT()
+                plan = vm.generateUnitPT(goal: selectedGoal, weeks: selectedWeeks)
+                addedToCalendar = false
             } label: {
-                Text("Generate Unit PT Plan")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(height: 56)
-                    .frame(maxWidth: .infinity)
-                    .background(MVMTheme.heroGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                HStack(spacing: 10) {
+                    Image(systemName: "bolt.fill")
+                        .font(.subheadline.weight(.bold))
+                    Text("Generate \(selectedWeeks)-Week Plan")
+                        .font(.headline.weight(.bold))
+                }
+                .foregroundStyle(.white)
+                .frame(height: 56)
+                .frame(maxWidth: .infinity)
+                .background(MVMTheme.heroGradient)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
             }
             .buttonStyle(PressScaleButtonStyle())
         }
@@ -99,11 +163,118 @@ struct UnitPTBuilderSheet: View {
         .premiumCard()
     }
 
+    private func unitGoalRow(_ goal: PTGoal) -> some View {
+        let isSelected = selectedGoal == goal
+
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                selectedGoal = goal
+            }
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: goal.icon)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(isSelected ? .white : MVMTheme.accent)
+                    .frame(width: 38, height: 38)
+                    .background(isSelected ? MVMTheme.accent : MVMTheme.accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(goal.rawValue)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text(goal.subtitle)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(MVMTheme.accent)
+                }
+            }
+            .padding(12)
+            .background(isSelected ? MVMTheme.accent.opacity(0.08) : Color.white.opacity(0.03))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(isSelected ? MVMTheme.accent.opacity(0.3) : MVMTheme.border)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var unitPlanBreakdownPreview: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "info.circle.fill")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(MVMTheme.accent)
+                Text("PLAN BREAKDOWN")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.6)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+
+            let focuses = selectedGoal.armyFocuses
+            let uniqueFocuses = Array(Set(focuses))
+
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 8),
+                GridItem(.flexible(), spacing: 8)
+            ], spacing: 8) {
+                ForEach(uniqueFocuses, id: \.rawValue) { focus in
+                    let count = focuses.filter { $0 == focus }.count
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(MVMTheme.accent.opacity(0.6))
+                            .frame(width: 6, height: 6)
+                        Text(focus.rawValue)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                        Spacer(minLength: 0)
+                        Text("×\(count)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(MVMTheme.accent)
+                    }
+                }
+            }
+
+            Text("Week 1 of \(selectedWeeks) · Periodized progression adapts each week")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(MVMTheme.tertiaryText)
+        }
+        .padding(14)
+        .background(MVMTheme.cardSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    // MARK: - Generated Plan Card
+
     private func unitPlanCard(_ plan: UnitPTPlan) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(plan.title)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(MVMTheme.primaryText)
+            HStack(spacing: 10) {
+                Image(systemName: selectedGoal.icon)
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(MVMTheme.accent.opacity(0.3))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(plan.title)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+
+                    Text("\(selectedGoal.rawValue) · \(selectedWeeks)-Week Plan")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(MVMTheme.accent)
+                }
+            }
 
             Text(plan.date.formatted(date: .abbreviated, time: .omitted))
                 .font(.subheadline)
@@ -167,7 +338,7 @@ struct UnitPTBuilderSheet: View {
 
             Button {
                 addedToCalendar = false
-                self.plan = vm.generateUnitPT()
+                self.plan = vm.generateUnitPT(goal: selectedGoal, weeks: selectedWeeks)
             } label: {
                 Text("Regenerate")
                     .font(.subheadline.weight(.semibold))
@@ -178,10 +349,24 @@ struct UnitPTBuilderSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
             }
             .buttonStyle(PressScaleButtonStyle())
+
+            Button {
+                self.plan = nil
+                addedToCalendar = false
+            } label: {
+                Text("New Plan")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(height: 44)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
         }
         .padding(18)
         .premiumCard()
     }
+
+    // MARK: - Calendar
 
     private func addToCalendarCard(_ unitPlan: UnitPTPlan) -> some View {
         VStack(spacing: 14) {

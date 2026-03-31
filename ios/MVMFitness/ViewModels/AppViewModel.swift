@@ -234,8 +234,8 @@ final class AppViewModel {
         )
     }
 
-    func generateUnitPT() -> UnitPTPlan {
-        let plan = WorkoutGenerator.generateUnitPT(focus: currentFocus, level: currentLevel)
+    func generateUnitPT(goal: PTGoal? = nil, weeks: Int = 4) -> UnitPTPlan {
+        let plan = WorkoutGenerator.generateUnitPT(focus: currentFocus, level: currentLevel, goal: goal, weeks: weeks)
         unitPTPlans.insert(plan, at: 0)
         persistAll()
         return plan
