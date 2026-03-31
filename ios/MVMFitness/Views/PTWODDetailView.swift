@@ -432,6 +432,7 @@ struct PTWODDetailView: View {
 struct PTWODShareSheet: View {
     let workout: WorkoutDay
     @Environment(\.dismiss) private var dismiss
+    @State private var renderedImage: UIImage?
     @State private var showSavedToast: Bool = false
 
     var body: some View {
@@ -441,86 +442,76 @@ struct PTWODShareSheet: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        VStack(spacing: 16) {
-                            Image(systemName: "figure.run")
-                                .font(.system(size: 40))
-                                .foregroundStyle(MVMTheme.accent)
-
-                            Text(workout.title)
-                                .font(.title2.weight(.bold))
-                                .foregroundStyle(MVMTheme.primaryText)
-                                .multilineTextAlignment(.center)
-
-                            Text("\(workout.exercises.count) exercises · PT WOD")
-                                .font(.subheadline)
-                                .foregroundStyle(MVMTheme.secondaryText)
+                        if let image = renderedImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .clipShape(RoundedRectangle(cornerRadius: 20))
+                                .shadow(color: .black.opacity(0.5), radius: 20, y: 10)
+                                .padding(.horizontal, 30)
+                        } else {
+                            ProgressView()
+                                .tint(.white)
+                                .frame(height: 300)
                         }
-                        .padding(24)
-                        .premiumCard()
 
-                        VStack(spacing: 12) {
-                            Button {
-                                ShareCardRenderer.presentShareSheet(
-                                    cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
-                                )
-                            } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "photo.on.rectangle.angled")
-                                    Text("Share as Card")
-                                }
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                                .frame(height: 52)
-                                .frame(maxWidth: .infinity)
-                                .background(MVMTheme.heroGradient)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-                            }
-                            .buttonStyle(PressScaleButtonStyle())
-
-                            let shareText = buildShareText()
-                            ShareLink(item: shareText) {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "square.and.arrow.up")
-                                    Text("Share as Text")
-                                }
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(MVMTheme.accent)
-                                .frame(height: 44)
-                                .frame(maxWidth: .infinity)
-                                .background(MVMTheme.accent.opacity(0.12))
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
-                            }
-                            .buttonStyle(PressScaleButtonStyle())
-
-                            Button {
-                                let image = ShareCardRenderer.renderImage(
-                                    cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
-                                )
-                                if let image {
-                                    UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-                                    showSavedToast = true
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                        showSavedToast = false
-                                    }
-                                }
-                            } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "square.and.arrow.down")
-                                    Text("Save to Photos")
-                                }
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(MVMTheme.secondaryText)
-                                .frame(height: 44)
-                                .frame(maxWidth: .infinity)
-                                .background(MVMTheme.cardSoft)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 14).stroke(MVMTheme.border)
+                        Button {
+                            if let image = renderedImage {
+                                UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                                showSavedToast = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    showSavedToast = false
                                 }
                             }
-                            .buttonStyle(PressScaleButtonStyle())
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "photo.on.rectangle.angled")
+                                Text("Save to Photos")
+                            }
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(height: 56)
+                            .frame(maxWidth: .infinity)
+                            .background(MVMTheme.heroGradient)
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                            .shadow(color: MVMTheme.accent.opacity(0.28), radius: 18, y: 10)
                         }
+                        .buttonStyle(PressScaleButtonStyle())
                         .padding(.horizontal, 20)
+                        .disabled(renderedImage == nil)
+
+                        Button {
+                            if let image = renderedImage {
+                                let text = buildShareText()
+                                let activityVC = UIActivityViewController(activityItems: [image, text], applicationActivities: nil)
+                                guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                      let rootVC = windowScene.windows.first?.rootViewController else { return }
+                                var presenter = rootVC
+                                while let presented = presenter.presentedViewController {
+                                    presenter = presented
+                                }
+                                if let popover = activityVC.popoverPresentationController {
+                                    popover.sourceView = presenter.view
+                                    popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+                                    popover.permittedArrowDirections = []
+                                }
+                                presenter.present(activityVC, animated: true)
+                            }
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share")
+                            }
+                            .font(.headline)
+                            .foregroundStyle(MVMTheme.accent)
+                            .frame(height: 56)
+                            .frame(maxWidth: .infinity)
+                            .background(MVMTheme.accent.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
+                        .padding(.horizontal, 20)
+                        .disabled(renderedImage == nil)
                     }
                     .padding(.vertical, 20)
                 }
@@ -555,6 +546,11 @@ struct PTWODShareSheet: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showSavedToast)
                 }
+            }
+            .task {
+                renderedImage = ShareCardRenderer.renderImage(
+                    cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
+                )
             }
         }
     }
