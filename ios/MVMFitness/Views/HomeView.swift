@@ -39,6 +39,9 @@ struct HomeView: View {
     @State private var showCompletionShare: Bool = false
     @State private var completedWorkoutTitle: String = ""
     @State private var completedExerciseCount: Int = 0
+    @State private var showPTWODSheet: Bool = false
+    @State private var navigateToCalendarDay: Bool = false
+    @State private var calendarDayDate: Date = .now
 
     private let calendar = Calendar.current
 
@@ -165,8 +168,14 @@ struct HomeView: View {
                 }
             }
         }
+        .navigationDestination(isPresented: $navigateToCalendarDay) {
+            CalendarDayDetailView(date: calendarDayDate)
+        }
         .sheet(isPresented: $showWODSheet) {
             WODDetailView()
+        }
+        .sheet(isPresented: $showPTWODSheet) {
+            PTWODDetailView()
         }
         .sheet(isPresented: $showWODPlanSheet) {
             WODPlanSheet()
@@ -433,13 +442,13 @@ struct HomeView: View {
 
     private var selectedDayWorkoutCards: some View {
         let workouts = allWorkoutsForSelectedDate
-        let isToday = calendar.isDateInToday(selectedDate)
 
         return VStack(spacing: 0) {
-            if workouts.isEmpty {
-                Button {
-                    showMyPTPlanSheet = true
-                } label: {
+            Button {
+                calendarDayDate = selectedDate
+                navigateToCalendarDay = true
+            } label: {
+                if workouts.isEmpty {
                     HStack(spacing: 12) {
                         Image(systemName: "calendar.badge.plus")
                             .font(.body.weight(.semibold))
@@ -452,7 +461,7 @@ struct HomeView: View {
                             Text("No workouts")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(MVMTheme.primaryText)
-                            Text("Tap to create a PT plan")
+                            Text("Tap to view day details")
                                 .font(.caption)
                                 .foregroundStyle(MVMTheme.tertiaryText)
                         }
@@ -464,81 +473,68 @@ struct HomeView: View {
                             .foregroundStyle(MVMTheme.tertiaryText)
                     }
                     .padding(14)
-                }
-                .buttonStyle(.plain)
-            } else {
-                ForEach(Array(workouts.enumerated()), id: \.element.id) { index, workout in
-                    if index > 0 {
-                        Rectangle()
-                            .fill(MVMTheme.border)
-                            .frame(height: 1)
-                            .padding(.leading, 62)
-                    }
-
-                    Button {
-                        if let plan = vm.currentPlan,
-                           plan.days.contains(where: { $0.id == workout.id }) {
-                            planDetailDayIndex = workout.dayIndex
-                            navigateToPlanDetail = true
-                        } else if vm.scheduledUnitPT.contains(where: { $0.id == workout.id }) {
-                            selectedUnitPTDay = workout
-                            navigateToUnitPTDetail = true
-                        }
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: workout.isRestDay ? "bed.double.fill" : workoutIcon(for: workout))
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(workout.isCompleted ? MVMTheme.success : MVMTheme.accent)
-                                .frame(width: 36, height: 36)
-                                .background((workout.isCompleted ? MVMTheme.success : MVMTheme.accent).opacity(0.12))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(workout.title)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(MVMTheme.primaryText)
-                                    .lineLimit(1)
-
-                                HStack(spacing: 8) {
-                                    if workout.isRestDay {
-                                        Text("Rest Day")
-                                            .font(.caption)
-                                            .foregroundStyle(MVMTheme.tertiaryText)
-                                    } else {
-                                        Text("\(workout.exercises.count) exercises")
-                                            .font(.caption)
-                                            .foregroundStyle(MVMTheme.tertiaryText)
-                                        Text(estimatedDuration(workout))
-                                            .font(.caption)
-                                            .foregroundStyle(MVMTheme.tertiaryText)
-                                    }
-
-                                    if workout.isCompleted {
-                                        HStack(spacing: 3) {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .font(.system(size: 10))
-                                            Text("Done")
-                                                .font(.caption.weight(.semibold))
-                                        }
-                                        .foregroundStyle(MVMTheme.success)
-                                    }
-                                }
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(Array(workouts.enumerated()), id: \.element.id) { index, workout in
+                            if index > 0 {
+                                Rectangle()
+                                    .fill(MVMTheme.border)
+                                    .frame(height: 1)
+                                    .padding(.leading, 62)
                             }
 
-                            Spacer(minLength: 0)
+                            HStack(spacing: 12) {
+                                Image(systemName: workout.isRestDay ? "bed.double.fill" : workoutIcon(for: workout))
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(workout.isCompleted ? MVMTheme.success : MVMTheme.accent)
+                                    .frame(width: 36, height: 36)
+                                    .background((workout.isCompleted ? MVMTheme.success : MVMTheme.accent).opacity(0.12))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
 
-                            if !workout.isRestDay {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(workout.title)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(MVMTheme.primaryText)
+                                        .lineLimit(1)
+
+                                    HStack(spacing: 8) {
+                                        if workout.isRestDay {
+                                            Text("Rest Day")
+                                                .font(.caption)
+                                                .foregroundStyle(MVMTheme.tertiaryText)
+                                        } else {
+                                            Text("\(workout.exercises.count) exercises")
+                                                .font(.caption)
+                                                .foregroundStyle(MVMTheme.tertiaryText)
+                                            Text(estimatedDuration(workout))
+                                                .font(.caption)
+                                                .foregroundStyle(MVMTheme.tertiaryText)
+                                        }
+
+                                        if workout.isCompleted {
+                                            HStack(spacing: 3) {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .font(.system(size: 10))
+                                                Text("Done")
+                                                    .font(.caption.weight(.semibold))
+                                            }
+                                            .foregroundStyle(MVMTheme.success)
+                                        }
+                                    }
+                                }
+
+                                Spacer(minLength: 0)
+
                                 Image(systemName: "chevron.right")
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(MVMTheme.tertiaryText)
                             }
+                            .padding(14)
                         }
-                        .padding(14)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(workout.isRestDay)
                 }
             }
+            .buttonStyle(.plain)
         }
         .background(MVMTheme.card)
         .overlay(alignment: .bottom) {
@@ -604,8 +600,8 @@ struct HomeView: View {
     private var ptWorkoutCard: some View {
         Button {
             toolTapTrigger.toggle()
-            if let ptDay = vm.todayPTWorkout, !ptDay.isRestDay {
-                showWorkoutDetail = true
+            if vm.todayPTWorkout != nil {
+                showPTWODSheet = true
             } else {
                 showMyPTPlanSheet = true
             }

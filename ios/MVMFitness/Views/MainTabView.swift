@@ -24,41 +24,51 @@ nonisolated enum AppTab: Int, CaseIterable, Sendable {
 
 struct MainTabView: View {
     @State private var selectedTab: AppTab = .home
+    @State private var homePath = NavigationPath()
+    @State private var progressPath = NavigationPath()
+    @State private var profilePath = NavigationPath()
 
     var body: some View {
         VStack(spacing: 0) {
-            TabView(selection: $selectedTab) {
-                NavigationStack {
+            ZStack {
+                NavigationStack(path: $homePath) {
                     HomeView()
                 }
-                .tag(AppTab.home)
+                .opacity(selectedTab == .home ? 1 : 0)
+                .zIndex(selectedTab == .home ? 1 : 0)
 
-                NavigationStack {
+                NavigationStack(path: $progressPath) {
                     ProgressViewScreen()
                 }
-                .tag(AppTab.progress)
+                .opacity(selectedTab == .progress ? 1 : 0)
+                .zIndex(selectedTab == .progress ? 1 : 0)
 
-                NavigationStack {
+                NavigationStack(path: $profilePath) {
                     ProfileView()
                 }
-                .tag(AppTab.profile)
+                .opacity(selectedTab == .profile ? 1 : 0)
+                .zIndex(selectedTab == .profile ? 1 : 0)
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .animation(.spring(response: 0.35, dampingFraction: 0.86), value: selectedTab)
 
             customTabBar
         }
         .background(MVMTheme.background.ignoresSafeArea())
     }
 
-
-
     private var customTabBar: some View {
         HStack(spacing: 0) {
             ForEach(AppTab.allCases, id: \.rawValue) { tab in
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        selectedTab = tab
+                    if selectedTab == tab {
+                        switch tab {
+                        case .home: homePath = NavigationPath()
+                        case .progress: progressPath = NavigationPath()
+                        case .profile: profilePath = NavigationPath()
+                        }
+                    } else {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            selectedTab = tab
+                        }
                     }
                 } label: {
                     VStack(spacing: 4) {
