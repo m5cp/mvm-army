@@ -34,11 +34,11 @@ struct WODPlanSheet: View {
                         if showGoalSetup || vm.wodPlan == nil {
                             goalSetupView
                         } else if let plan = vm.wodPlan {
+                            newPlanButton
                             planHeader(plan)
                             planActionsBar
                             weekDaysList(plan)
                             refreshButton
-                            newPlanButton
                         }
                     }
                     .padding(20)

@@ -35,6 +35,7 @@ struct MyPTPlanSheet: View {
                         if showGoalSetup || vm.currentPTGoal == nil {
                             goalSetupView
                         } else if let plan = vm.currentPlan {
+                            newPlanButton
                             planHeaderBadge(plan)
                             weekOverviewHeader(plan)
                             weekProgressBar(plan)
@@ -50,7 +51,6 @@ struct MyPTPlanSheet: View {
                             }
 
                             refreshButton
-                            newPlanButton
                         }
                     }
                     .padding(20)
