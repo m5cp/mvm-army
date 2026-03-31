@@ -48,7 +48,7 @@ struct UnitPTBuilderSheet: View {
                     .padding(.bottom, 36)
                 }
             }
-            .navigationTitle("Unit PT")
+            .navigationTitle("Plan My Unit PT")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

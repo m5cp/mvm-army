@@ -57,7 +57,7 @@ struct MyPTPlanSheet: View {
                     .padding(.bottom, 36)
                 }
             }
-            .navigationTitle("My PT Plan")
+            .navigationTitle("Plan My PT")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

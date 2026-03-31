@@ -199,7 +199,7 @@ struct ProfileView: View {
         if let goal = PTGoal(rawValue: ptGoalRaw) {
             return "\(goal.rawValue) · \(planWeeks)-Week Plan"
         }
-        return "No goal set · Open My PT Plan"
+        return "No goal set · Open Plan My PT"
     }
 
     private func statCell(value: String, label: String) -> some View {
@@ -313,7 +313,7 @@ struct ProfileView: View {
                             Text("No Goal Set")
                                 .font(.subheadline.weight(.bold))
                                 .foregroundStyle(MVMTheme.primaryText)
-                            Text("Open My PT Plan to set your training goal and plan duration")
+                            Text("Open Plan My PT to set your training goal and plan duration")
                                 .font(.caption2.weight(.medium))
                                 .foregroundStyle(MVMTheme.tertiaryText)
                                 .lineLimit(2)

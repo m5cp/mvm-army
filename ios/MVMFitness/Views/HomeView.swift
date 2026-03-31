@@ -8,20 +8,17 @@ struct HomeView: View {
     @State private var animateMetrics: Bool = false
     @State private var showWODSheet: Bool = false
     @State private var showWODPlanSheet: Bool = false
-    @State private var showRandomSheet: Bool = false
     @State private var showWorkoutDetail: Bool = false
     @State private var showActiveSession: Bool = false
     @State private var showUnitPTSheet: Bool = false
     @State private var showMyPTPlanSheet: Bool = false
     @State private var showScanSheet: Bool = false
     @State private var showAFTCalculator: Bool = false
-    @State private var showResources: Bool = false
     @State private var showRecoveryDetail: Bool = false
     @State private var showEditSheet: Bool = false
     @State private var showCalendarSheet: Bool = false
     @State private var showExportAlert: Bool = false
     @State private var exportAlertMessage: String = ""
-    @State private var randomWorkout: WorkoutDay?
     @State private var recoverySession: WorkoutDay?
     @State private var startWorkoutTrigger: Bool = false
     @State private var completeWorkoutTrigger: Bool = false
@@ -169,9 +166,6 @@ struct HomeView: View {
         .navigationDestination(isPresented: $showAFTCalculator) {
             AFTCalculatorView()
         }
-        .navigationDestination(isPresented: $showResources) {
-            ResourcesView()
-        }
         .navigationDestination(isPresented: $navigateToUnitPTDetail) {
             if let unitDay = selectedUnitPTDay {
                 StandaloneWorkoutDetailView(workout: unitDay)
@@ -195,25 +189,6 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showWODPlanSheet) {
             WODPlanSheet()
-        }
-        .sheet(isPresented: $showRandomSheet) {
-            if let workout = randomWorkout {
-                StandaloneWorkoutSheet(workout: workout, sheetTitle: "Random Workout")
-            } else {
-                NavigationStack {
-                    UnavailableFallbackView(title: "Workout Unavailable", message: "Unable to generate a random workout.", action: "Dismiss") {
-                        showRandomSheet = false
-                    }
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("Done") { showRandomSheet = false }
-                                .foregroundStyle(MVMTheme.primaryText)
-                        }
-                    }
-                    .toolbarBackground(MVMTheme.background, for: .navigationBar)
-                    .toolbarColorScheme(.dark, for: .navigationBar)
-                }
-            }
         }
         .sheet(isPresented: $showMyPTPlanSheet) {
             MyPTPlanSheet()
@@ -637,7 +612,7 @@ struct HomeView: View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
                 launcherCard(
-                    title: "My PT Plan",
+                    title: "Plan My PT",
                     subtitle: "Build your week",
                     icon: "figure.strengthtraining.traditional",
                     gradient: [Color(hex: "#3B82F6"), Color(hex: "#2563EB")]
@@ -647,7 +622,7 @@ struct HomeView: View {
                 }
 
                 launcherCard(
-                    title: "WOD Plan",
+                    title: "Plan My Functional Fitness",
                     subtitle: "Functional week",
                     icon: "bolt.heart.fill",
                     gradient: [Color(hex: "#F59E0B"), Color(hex: "#D97706")]
@@ -657,7 +632,7 @@ struct HomeView: View {
                 }
 
                 launcherCard(
-                    title: "Unit PT",
+                    title: "Plan My Unit PT",
                     subtitle: "Team plan",
                     icon: "person.3.fill",
                     gradient: [Color(hex: "#2563EB"), Color(hex: "#1D4ED8")]
@@ -668,8 +643,6 @@ struct HomeView: View {
             }
 
             HStack(spacing: 10) {
-                randomPTCard
-
                 launcherCard(
                     title: "Scan QR",
                     subtitle: "Load shared",
@@ -679,70 +652,10 @@ struct HomeView: View {
                     toolTapTrigger.toggle()
                     showScanSheet = true
                 }
-
-                launcherCard(
-                    title: "Resources",
-                    subtitle: "Army regs",
-                    icon: "book.fill",
-                    gradient: [Color(hex: "#059669"), Color(hex: "#047857")]
-                ) {
-                    toolTapTrigger.toggle()
-                    showResources = true
-                }
             }
         }
         .scaleEffect(animateHero ? 1 : 0.96)
         .opacity(animateHero ? 1 : 0)
-    }
-
-    private var randomPTCard: some View {
-        Button {
-            toolTapTrigger.toggle()
-            randomWorkout = vm.generateRandomWorkout()
-            showRandomSheet = true
-        } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Image(systemName: "shuffle")
-                        .font(.body.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 32, height: 32)
-                        .background(.white.opacity(0.15))
-                        .clipShape(RoundedRectangle(cornerRadius: 9))
-
-                    Spacer(minLength: 0)
-
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.4))
-                }
-
-                Spacer(minLength: 0)
-
-                Text("Random PT")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.white)
-
-                Text("Surprise me")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.5))
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 110)
-            .background {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(hex: "#6366F1"), Color(hex: "#4F46E5")],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-        }
-        .buttonStyle(PressScaleButtonStyle())
     }
 
     private func launcherCard(title: String, subtitle: String, icon: String, gradient: [Color], action: @escaping () -> Void) -> some View {
