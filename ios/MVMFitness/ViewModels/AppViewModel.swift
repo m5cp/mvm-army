@@ -732,8 +732,14 @@ final class AppViewModel {
     // MARK: - WOD Plan
 
     func loadTodayFunctionalWOD() {
-        let lastDate = UserDefaults.standard.double(forKey: "lastFunctionalWODDate")
         let today = Calendar.current.startOfDay(for: .now)
+
+        if let plannedDay = wodPlan?.days.first(where: { Calendar.current.isDate($0.date, inSameDayAs: today) && !$0.isRestDay }) {
+            todayFunctionalWOD = plannedDay.template
+            return
+        }
+
+        let lastDate = UserDefaults.standard.double(forKey: "lastFunctionalWODDate")
         if lastDate > 0, Calendar.current.isDate(Date(timeIntervalSince1970: lastDate), inSameDayAs: today) {
             if let data = UserDefaults.standard.data(forKey: "todayFunctionalWOD"),
                let template = try? JSONDecoder().decode(WODTemplate.self, from: data) {
@@ -829,6 +835,7 @@ final class AppViewModel {
             weekStartDate: startOfWeek,
             heroPreference: heroPreference
         )
+        loadTodayFunctionalWOD()
         persistAll()
     }
 
