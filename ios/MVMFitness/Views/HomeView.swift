@@ -576,7 +576,7 @@ struct HomeView: View {
                 }
                 .padding(.bottom, 10)
 
-                Text("FUNCTIONAL WOD")
+                Text("FUNCTIONAL / HERO WOD")
                     .font(.system(size: 10, weight: .heavy))
                     .tracking(0.6)
                     .foregroundStyle(.white.opacity(0.6))

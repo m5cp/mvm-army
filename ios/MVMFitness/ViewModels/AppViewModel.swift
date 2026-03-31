@@ -832,6 +832,46 @@ final class AppViewModel {
         persistAll()
     }
 
+    var wodPlanShareText: String {
+        guard let plan = wodPlan else { return "" }
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MMM d"
+        let goalLabel = plan.ptGoal.isEmpty ? "WOD Plan" : plan.ptGoal
+
+        var text = "MVM Army — WOD Plan\n"
+        text += "Goal: \(goalLabel) · Week \(plan.currentWeek) of \(plan.totalWeeks)\n"
+        if let first = plan.days.first, let last = plan.days.last {
+            text += "\(dateFormatter.string(from: first.date)) – \(dateFormatter.string(from: last.date))\n"
+        }
+        text += "\n"
+
+        for (index, day) in plan.days.enumerated() {
+            let dayFormatter = DateFormatter()
+            dayFormatter.dateFormat = "EEE"
+            let dayName = dayFormatter.string(from: day.date)
+
+            if day.isRestDay {
+                text += "Day \(index + 1) (\(dayName)): Rest & Recovery\n"
+            } else {
+                let heroTag = HeroWODLibrary.isHeroWOD(day.template) ? " HERO" : ""
+                text += "Day \(index + 1) (\(dayName)): \(day.template.title)\(heroTag)\n"
+                text += "  \(day.template.format.rawValue) · ~\(day.template.durationMinutes) min\n"
+                for movement in day.template.movements {
+                    let detail = movement.reps ?? movement.duration ?? ""
+                    text += "  • \(movement.name)\(detail.isEmpty ? "" : " — \(detail)")\n"
+                }
+            }
+            text += "\n"
+        }
+
+        text += "#MVMArmy"
+        return text
+    }
+
+    func saveWODPlanSnapshot() {
+        persistAll()
+    }
+
     func refreshWODPlan() {
         guard let plan = wodPlan else { return }
         let goal = PTGoal(rawValue: plan.ptGoal) ?? .aftScoreImprovement

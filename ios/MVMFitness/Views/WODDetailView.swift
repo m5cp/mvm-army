@@ -36,7 +36,7 @@ struct WODDetailView: View {
                     unavailableState
                 }
             }
-            .navigationTitle("Workout of the Day")
+            .navigationTitle("Functional / Hero WOD")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -102,7 +102,7 @@ struct WODDetailView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(MVMTheme.accent.opacity(0.5))
 
-            Text("Workout of the Day Unavailable")
+            Text("Functional / Hero WOD Unavailable")
                 .font(.title3.weight(.bold))
                 .foregroundStyle(MVMTheme.primaryText)
 
@@ -449,7 +449,7 @@ struct WODDetailView: View {
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
-                Text("Add this Functional WOD to your iOS Calendar.")
+                Text("Add this Functional / Hero WOD to your iOS Calendar.")
                     .font(.subheadline)
                     .foregroundStyle(MVMTheme.secondaryText)
                     .multilineTextAlignment(.center)
