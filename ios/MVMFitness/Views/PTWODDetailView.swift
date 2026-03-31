@@ -265,6 +265,9 @@ struct PTWODDetailView: View {
             if !didComplete {
                 Button {
                     completeTrigger.toggle()
+                    var ptWorkout = workout
+                    ptWorkout.source = .individual
+                    vm.completeStandaloneWorkout(ptWorkout)
                     vm.markDayCompleted(dayIndex: workout.dayIndex)
                     didComplete = true
                 } label: {
@@ -319,6 +322,22 @@ struct PTWODDetailView: View {
                     }
                 }
                 .sensoryFeedback(.impact(weight: .medium), trigger: generateTrigger)
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    showCalendarSync = true
+                } label: {
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+                        .frame(width: 44, height: 44)
+                        .background(MVMTheme.cardSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(MVMTheme.border)
+                        }
+                }
                 .buttonStyle(PressScaleButtonStyle())
 
                 Button {
