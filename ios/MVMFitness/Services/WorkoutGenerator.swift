@@ -239,6 +239,190 @@ enum WorkoutGenerator {
         return fallbackUnitPTPlan(focus: focus)
     }
 
+    static func generateUnitPTFullPlan(
+        focus: TrainingFocus,
+        level: FitnessLevel,
+        goal: PTGoal,
+        weeks: Int,
+        daysPerWeek: Int = 5,
+        startDate: Date = .now
+    ) -> UnitPTFullPlan {
+        let calendar = Calendar.current
+        let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: startDate)) ?? calendar.startOfDay(for: startDate)
+
+        var weekPlans: [UnitPTWeekPlan] = []
+        var usedTitles: Set<String> = []
+
+        for weekIdx in 0..<weeks {
+            guard let weekStart = calendar.date(byAdding: .weekOfYear, value: weekIdx, to: startOfWeek) else { continue }
+
+            let baseFocuses = goal.armyFocuses
+            let progressionFocuses = applyWeeklyProgression(
+                baseFocuses: baseFocuses,
+                currentWeek: weekIdx + 1,
+                totalWeeks: weeks,
+                goal: goal
+            )
+
+            var dayPlans: [UnitPTDayPlan] = []
+            let ptDayOffsets = unitPTDayOffsets(daysPerWeek: daysPerWeek)
+
+            for (dayIdx, dayOffset) in ptDayOffsets.enumerated() {
+                guard let dayDate = calendar.date(byAdding: .day, value: dayOffset, to: weekStart) else { continue }
+
+                let focusForDay = progressionFocuses[dayIdx % progressionFocuses.count]
+
+                let unitTemplates = ArmyTemplateLibrary.templates.filter {
+                    $0.mode == .unitPT && $0.focus == focusForDay && !usedTitles.contains($0.title)
+                }
+                let allUnit = ArmyTemplateLibrary.templates.filter {
+                    $0.mode == .unitPT && !usedTitles.contains($0.title)
+                }
+                let fallbackUnit = ArmyTemplateLibrary.templates.filter { $0.mode == .unitPT }
+                let template = unitTemplates.randomElement() ?? allUnit.randomElement() ?? fallbackUnit.randomElement()
+
+                let dayPlan: UnitPTDayPlan
+                if let template {
+                    usedTitles.insert(template.title)
+                    if usedTitles.count > fallbackUnit.count / 2 {
+                        usedTitles.removeAll()
+                    }
+                    dayPlan = convertTemplateToUnitPTDay(
+                        template: template,
+                        date: dayDate,
+                        dayIndex: dayIdx,
+                        weekIndex: weekIdx,
+                        weekNum: weekIdx + 1,
+                        totalWeeks: weeks,
+                        goal: goal
+                    )
+                } else {
+                    dayPlan = fallbackUnitPTDay(
+                        focus: focus,
+                        date: dayDate,
+                        dayIndex: dayIdx,
+                        weekIndex: weekIdx,
+                        goal: goal
+                    )
+                }
+                dayPlans.append(dayPlan)
+            }
+
+            weekPlans.append(UnitPTWeekPlan(
+                weekIndex: weekIdx,
+                days: dayPlans,
+                weekStartDate: weekStart
+            ))
+        }
+
+        return UnitPTFullPlan(
+            goal: goal.rawValue,
+            totalWeeks: weeks,
+            daysPerWeek: daysPerWeek,
+            weeks: weekPlans,
+            planStartDate: startOfWeek
+        )
+    }
+
+    private static func unitPTDayOffsets(daysPerWeek: Int) -> [Int] {
+        switch daysPerWeek {
+        case 1: return [0]
+        case 2: return [0, 2]
+        case 3: return [0, 2, 4]
+        case 4: return [0, 1, 3, 4]
+        case 5: return [0, 1, 2, 3, 4]
+        case 6: return [0, 1, 2, 3, 4, 5]
+        case 7: return [0, 1, 2, 3, 4, 5, 6]
+        default: return [0, 1, 2, 3, 4]
+        }
+    }
+
+    private static func convertTemplateToUnitPTDay(
+        template: ArmyWorkoutTemplate,
+        date: Date,
+        dayIndex: Int,
+        weekIndex: Int,
+        weekNum: Int,
+        totalWeeks: Int,
+        goal: PTGoal
+    ) -> UnitPTDayPlan {
+        let warmupText = template.warmup.map { ex in
+            "\(ex.name)\(ex.reps.map { " — \($0)" } ?? "")\(ex.duration.map { " — \($0)" } ?? "")"
+        }.joined(separator: "\n")
+
+        let cooldownText = template.cooldown.map { ex in
+            "\(ex.name)\(ex.duration.map { " — \($0)" } ?? "")"
+        }.joined(separator: "\n")
+
+        let blocks = template.mainEffort.map { ex in
+            var desc = ex.name
+            if let sets = ex.sets { desc += " — \(sets) sets" }
+            if let reps = ex.reps { desc += " x \(reps)" }
+            if let dur = ex.duration { desc += " (\(dur))" }
+            if let notes = ex.notes, !notes.isEmpty { desc += ". \(notes)" }
+            return UnitPTBlock(desc)
+        }
+
+        let equipmentText = template.equipment.map(\.rawValue).joined(separator: ", ")
+
+        let phaseLabel: String
+        let progress = Double(weekNum - 1) / Double(max(totalWeeks - 1, 1))
+        if progress < 0.33 { phaseLabel = "Foundation Phase" }
+        else if progress < 0.66 { phaseLabel = "Build Phase" }
+        else { phaseLabel = "Peak Phase" }
+
+        let taskText = "Conduct Unit PRT session focused on \(template.focus.rawValue.lowercased()) to support \(goal.rawValue.lowercased()) (Week \(weekNum) — \(phaseLabel))."
+        let conditionText = "Given standard PRT equipment, a designated training area, and supervision by a qualified PRT leader, Soldiers will execute the prescribed session IAW FM 7-22."
+        let standardText = "All Soldiers complete warm-up, main effort, and cool-down with proper form. Leaders correct unsafe movement patterns. Session completed within the allocated time window."
+
+        return UnitPTDayPlan(
+            date: date,
+            dayIndex: dayIndex,
+            weekIndex: weekIndex,
+            title: template.title,
+            objective: template.objective,
+            formationNotes: "Form up by squad in extended rectangular formation. Conduct accountability, safety brief, and session overview. Designate lane NCOs for station-based work.",
+            equipment: equipmentText.isEmpty ? "Cones, timer, water source" : "Cones, timer, water source. \(equipmentText) as available.",
+            warmup: warmupText.isEmpty ? "Preparation Drill (PD): 10 exercises, 5 reps each" : warmupText,
+            mainEffort: blocks,
+            cooldown: cooldownText.isEmpty ? "Recovery Drill (RD): Full sequence" : cooldownText,
+            leaderNotes: template.leaderNotes ?? "Maintain lane assignments and keep transitions tight. Monitor form on all lifts. Adjust intensity for ability groups as needed.",
+            task: taskText,
+            condition: conditionText,
+            standard: standardText
+        )
+    }
+
+    private static func fallbackUnitPTDay(
+        focus: TrainingFocus,
+        date: Date,
+        dayIndex: Int,
+        weekIndex: Int,
+        goal: PTGoal
+    ) -> UnitPTDayPlan {
+        UnitPTDayPlan(
+            date: date,
+            dayIndex: dayIndex,
+            weekIndex: weekIndex,
+            title: "Unit PRT — \(focus.rawValue)",
+            objective: "Conduct a structured PRT session aligned to \(focus.rawValue.lowercased()).",
+            formationNotes: "Form up by squad in extended rectangular formation. Conduct accountability, safety brief, and session overview.",
+            equipment: "Cones, timer, water source. Optional: hex bar, sandbag, kettlebell, pull-up bar.",
+            warmup: "Preparation Drill (PD): Bend and Reach, Rear Lunge, High Jumper, Rower, Squat Bender, Windmill, Forward Lunge, Prone Row, Bent-Leg Body Twist, Push-Up — 5-10 reps each.",
+            mainEffort: [
+                UnitPTBlock("Push-Pull Superset: Push-up variation and row — 3 rounds x 10-15 reps. 60 sec rest."),
+                UnitPTBlock("Lower Body: Squat and lunge circuit — 3 rounds x 12 each."),
+                UnitPTBlock("Core: Plank variations 3 x 45 sec, flutter kicks 3 x 20."),
+                UnitPTBlock("Conditioning Finisher: 4 x 200m effort with walk-back recovery.")
+            ],
+            cooldown: "Recovery Drill (RD): Overhead Arm Pull, Rear Lunge, Extend and Flex, Thigh Stretch, Single-Leg Over — 20-30 sec each.",
+            leaderNotes: "Maintain lane assignments and keep transitions tight. Monitor form. Adjust intensity for ability groups.",
+            task: "Conduct Unit PRT session focused on \(focus.rawValue.lowercased()) to support \(goal.rawValue.lowercased()).",
+            condition: "Given standard PRT equipment, a designated training area, and supervision by a qualified PRT leader, Soldiers will execute the prescribed session IAW FM 7-22.",
+            standard: "All Soldiers complete warm-up, main effort, and cool-down with proper form. Leaders correct unsafe movement patterns. Session completed within the allocated time window."
+        )
+    }
+
     // MARK: - Private
 
     static func buildModeTags(ptMode: PTMode, dutyType: DutyType, focus: TrainingFocus) -> [String] {

@@ -9,6 +9,7 @@ final class AppViewModel {
     var pedometer = PedometerManager()
     var lastWorkoutTag: String = ""
     var unitPTPlans: [UnitPTPlan] = []
+    var unitPTFullPlan: UnitPTFullPlan?
     var scheduledUnitPT: [WorkoutDay] = []
     var importedWorkouts: [WorkoutDay] = []
     var aftScores: [AFTScoreRecord] = []
@@ -28,6 +29,7 @@ final class AppViewModel {
         stepHistory = LocalStore.load([StepDay].self, forKey: "stepHistory", fallback: [])
         lastWorkoutTag = UserDefaults.standard.string(forKey: "lastWorkoutTag") ?? ""
         unitPTPlans = LocalStore.load([UnitPTPlan].self, forKey: "unitPTPlans", fallback: [])
+        unitPTFullPlan = LocalStore.load(UnitPTFullPlan?.self, forKey: "unitPTFullPlan", fallback: nil)
         scheduledUnitPT = LocalStore.load([WorkoutDay].self, forKey: "scheduledUnitPT", fallback: [])
         importedWorkouts = LocalStore.load([WorkoutDay].self, forKey: "importedWorkouts", fallback: [])
         aftScores = LocalStore.load([AFTScoreRecord].self, forKey: "aftScores", fallback: [])
@@ -42,6 +44,7 @@ final class AppViewModel {
         LocalStore.save(stepHistory, forKey: "stepHistory")
         UserDefaults.standard.set(lastWorkoutTag, forKey: "lastWorkoutTag")
         LocalStore.save(unitPTPlans, forKey: "unitPTPlans")
+        LocalStore.save(unitPTFullPlan, forKey: "unitPTFullPlan")
         LocalStore.save(scheduledUnitPT, forKey: "scheduledUnitPT")
         LocalStore.save(importedWorkouts, forKey: "importedWorkouts")
         LocalStore.save(aftScores, forKey: "aftScores")
@@ -239,6 +242,146 @@ final class AppViewModel {
         unitPTPlans.insert(plan, at: 0)
         persistAll()
         return plan
+    }
+
+    func generateUnitPTFullPlan(goal: PTGoal, weeks: Int, daysPerWeek: Int = 5) -> UnitPTFullPlan {
+        let plan = WorkoutGenerator.generateUnitPTFullPlan(
+            focus: currentFocus,
+            level: currentLevel,
+            goal: goal,
+            weeks: weeks,
+            daysPerWeek: daysPerWeek
+        )
+        unitPTFullPlan = plan
+        persistAll()
+        return plan
+    }
+
+    func regenerateUnitPTDay(weekIndex: Int, dayIndex: Int) {
+        guard var plan = unitPTFullPlan else { return }
+        guard weekIndex < plan.weeks.count, dayIndex < plan.weeks[weekIndex].days.count else { return }
+        let existingDay = plan.weeks[weekIndex].days[dayIndex]
+        let goal = PTGoal(rawValue: plan.goal) ?? .aftScoreImprovement
+
+        let armyFocuses = goal.armyFocuses
+        let focusForDay = armyFocuses[dayIndex % armyFocuses.count]
+        let currentTitle = existingDay.title
+
+        let unitTemplates = ArmyTemplateLibrary.templates.filter {
+            $0.mode == .unitPT && $0.focus == focusForDay && $0.title != currentTitle
+        }
+        let allUnit = ArmyTemplateLibrary.templates.filter {
+            $0.mode == .unitPT && $0.title != currentTitle
+        }
+        let fallbackUnit = ArmyTemplateLibrary.templates.filter { $0.mode == .unitPT }
+        guard let template = unitTemplates.randomElement() ?? allUnit.randomElement() ?? fallbackUnit.randomElement() else { return }
+
+        let warmupText = template.warmup.map { ex in
+            "\(ex.name)\(ex.reps.map { " \u{2014} \($0)" } ?? "")\(ex.duration.map { " \u{2014} \($0)" } ?? "")"
+        }.joined(separator: "\n")
+
+        let cooldownText = template.cooldown.map { ex in
+            "\(ex.name)\(ex.duration.map { " \u{2014} \($0)" } ?? "")"
+        }.joined(separator: "\n")
+
+        let blocks = template.mainEffort.map { ex in
+            var desc = ex.name
+            if let sets = ex.sets { desc += " \u{2014} \(sets) sets" }
+            if let reps = ex.reps { desc += " x \(reps)" }
+            if let dur = ex.duration { desc += " (\(dur))" }
+            if let notes = ex.notes, !notes.isEmpty { desc += ". \(notes)" }
+            return UnitPTBlock(desc)
+        }
+
+        let equipmentText = template.equipment.map(\.rawValue).joined(separator: ", ")
+
+        let phaseLabel: String
+        let progress = Double(weekIndex) / Double(max(plan.totalWeeks - 1, 1))
+        if progress < 0.33 { phaseLabel = "Foundation Phase" }
+        else if progress < 0.66 { phaseLabel = "Build Phase" }
+        else { phaseLabel = "Peak Phase" }
+
+        plan.weeks[weekIndex].days[dayIndex] = UnitPTDayPlan(
+            date: existingDay.date,
+            dayIndex: dayIndex,
+            weekIndex: weekIndex,
+            title: template.title,
+            objective: template.objective,
+            formationNotes: "Form up by squad in extended rectangular formation. Conduct accountability, safety brief, and session overview. Designate lane NCOs for station-based work.",
+            equipment: equipmentText.isEmpty ? "Cones, timer, water source" : "Cones, timer, water source. \(equipmentText) as available.",
+            warmup: warmupText.isEmpty ? "Preparation Drill (PD): 10 exercises, 5 reps each" : warmupText,
+            mainEffort: blocks,
+            cooldown: cooldownText.isEmpty ? "Recovery Drill (RD): Full sequence" : cooldownText,
+            leaderNotes: template.leaderNotes ?? "Maintain lane assignments and keep transitions tight. Monitor form on all lifts. Adjust intensity for ability groups as needed.",
+            task: "Conduct Unit PRT session focused on \(template.focus.rawValue.lowercased()) to support \(goal.rawValue.lowercased()) (Week \(weekIndex + 1) \u{2014} \(phaseLabel)).",
+            condition: "Given standard PRT equipment, a designated training area, and supervision by a qualified PRT leader, Soldiers will execute the prescribed session IAW FM 7-22.",
+            standard: "All Soldiers complete warm-up, main effort, and cool-down with proper form. Leaders correct unsafe movement patterns. Session completed within the allocated time window."
+        )
+        unitPTFullPlan = plan
+        persistAll()
+    }
+
+    func updateUnitPTDay(weekIndex: Int, dayIndex: Int, updatedDay: UnitPTDayPlan) {
+        guard var plan = unitPTFullPlan else { return }
+        guard weekIndex < plan.weeks.count, dayIndex < plan.weeks[weekIndex].days.count else { return }
+        plan.weeks[weekIndex].days[dayIndex] = updatedDay
+        unitPTFullPlan = plan
+        persistAll()
+    }
+
+    func addFullUnitPTToCalendar(startTime: Date, endTime: Date) {
+        guard let plan = unitPTFullPlan else { return }
+        scheduledUnitPT.removeAll { $0.templateTag == "unit_pt_full" }
+
+        for week in plan.weeks {
+            for day in week.days {
+                var exercises: [WorkoutExercise] = []
+
+                exercises.append(WorkoutExercise(
+                    name: "Warm-Up", sets: 1, durationSeconds: 600,
+                    notes: day.warmup, category: .timed
+                ))
+
+                for (index, block) in day.mainEffort.enumerated() {
+                    exercises.append(WorkoutExercise(
+                        name: "Main Effort \(index + 1)", sets: 1,
+                        notes: block.description, category: .timed
+                    ))
+                }
+
+                exercises.append(WorkoutExercise(
+                    name: "Cool-Down", sets: 1, durationSeconds: 300,
+                    notes: day.cooldown, category: .timed
+                ))
+
+                let cal = Calendar.current
+                let dayStart = cal.date(bySettingHour: cal.component(.hour, from: startTime),
+                                        minute: cal.component(.minute, from: startTime),
+                                        second: 0, of: day.date) ?? day.date
+                let dayEnd = cal.date(bySettingHour: cal.component(.hour, from: endTime),
+                                      minute: cal.component(.minute, from: endTime),
+                                      second: 0, of: day.date) ?? day.date
+
+                let unitDay = WorkoutDay(
+                    dayIndex: 100 + scheduledUnitPT.count,
+                    date: cal.startOfDay(for: day.date),
+                    title: day.title,
+                    exercises: exercises,
+                    templateTag: "unit_pt_full",
+                    tags: ["Unit PT", day.objective],
+                    source: .unit,
+                    startTime: dayStart,
+                    endTime: dayEnd
+                )
+                scheduledUnitPT.append(unitDay)
+            }
+        }
+        persistAll()
+    }
+
+    func clearUnitPTFullPlan() {
+        unitPTFullPlan = nil
+        persistAll()
     }
 
     func addUnitPTToCalendar(_ unitPlan: UnitPTPlan, on date: Date, startTime: Date? = nil, endTime: Date? = nil) {
@@ -1007,6 +1150,7 @@ final class AppViewModel {
         stepHistory = []
         lastWorkoutTag = ""
         unitPTPlans = []
+        unitPTFullPlan = nil
         scheduledUnitPT = []
         importedWorkouts = []
         aftScores = []
