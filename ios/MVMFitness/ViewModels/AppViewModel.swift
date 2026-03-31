@@ -833,6 +833,107 @@ final class AppViewModel {
         }
     }
 
+    // MARK: - Unified Calendar Data
+
+    nonisolated enum CalendarWorkoutStatus: Sendable {
+        case planned
+        case completed
+        case missed
+    }
+
+    struct CalendarWorkoutEntry: Identifiable {
+        let id: UUID
+        let title: String
+        let date: Date
+        let type: String
+        let duration: Int
+        let status: CalendarWorkoutStatus
+        let source: WorkoutSource
+        let exerciseCount: Int
+    }
+
+    func allCalendarEntriesForDate(_ date: Date) -> [CalendarWorkoutEntry] {
+        let cal = Calendar.current
+        var entries: [CalendarWorkoutEntry] = []
+        let isPast = cal.startOfDay(for: date) < cal.startOfDay(for: .now)
+        let isToday = cal.isDateInToday(date)
+
+        if let plan = currentPlan {
+            for day in plan.days where cal.isDate(day.date, inSameDayAs: date) && !day.isRestDay {
+                let status: CalendarWorkoutStatus
+                if day.isCompleted { status = .completed }
+                else if isPast && !isToday { status = .missed }
+                else { status = .planned }
+                entries.append(CalendarWorkoutEntry(
+                    id: day.id, title: day.title, date: day.date,
+                    type: "PT", duration: max(day.exercises.count * 4, 15),
+                    status: status, source: day.source, exerciseCount: day.exercises.count
+                ))
+            }
+        }
+
+        for unitDay in scheduledUnitPT where cal.isDate(unitDay.date, inSameDayAs: date) {
+            let status: CalendarWorkoutStatus
+            if unitDay.isCompleted { status = .completed }
+            else if isPast && !isToday { status = .missed }
+            else { status = .planned }
+            entries.append(CalendarWorkoutEntry(
+                id: unitDay.id, title: unitDay.title, date: unitDay.date,
+                type: "Unit PT", duration: max(unitDay.exercises.count * 4, 15),
+                status: status, source: .unit, exerciseCount: unitDay.exercises.count
+            ))
+        }
+
+        if let wPlan = wodPlan {
+            for wDay in wPlan.days where cal.isDate(wDay.date, inSameDayAs: date) && !wDay.isRestDay {
+                let status: CalendarWorkoutStatus
+                if wDay.isCompleted { status = .completed }
+                else if isPast && !isToday { status = .missed }
+                else { status = .planned }
+                entries.append(CalendarWorkoutEntry(
+                    id: wDay.id, title: wDay.template.title, date: wDay.date,
+                    type: "CrossFit", duration: wDay.template.durationMinutes,
+                    status: status, source: .wod, exerciseCount: wDay.template.movements.count
+                ))
+            }
+        }
+
+        for record in completedRecords where cal.isDate(record.date, inSameDayAs: date) {
+            let alreadyTracked = entries.contains { $0.title == record.title && $0.status == .completed }
+            if !alreadyTracked {
+                entries.append(CalendarWorkoutEntry(
+                    id: record.id, title: record.title, date: record.date,
+                    type: record.source.rawValue, duration: max(record.exerciseCount * 4, 15),
+                    status: .completed, source: record.source, exerciseCount: record.exerciseCount
+                ))
+            }
+        }
+
+        return entries
+    }
+
+    func calendarDateStatus(_ date: Date) -> CalendarWorkoutStatus? {
+        let entries = allCalendarEntriesForDate(date)
+        if entries.isEmpty { return nil }
+        if entries.allSatisfy({ $0.status == .completed }) { return .completed }
+        if entries.contains(where: { $0.status == .planned }) { return .planned }
+        if entries.contains(where: { $0.status == .completed }) { return .completed }
+        return .missed
+    }
+
+    var todayCalendarEntryCount: Int {
+        allCalendarEntriesForDate(Calendar.current.startOfDay(for: .now)).count
+    }
+
+    // MARK: - Calendar Sync Preference
+
+    var isCalendarSyncEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: "calendarSyncEnabled") }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "calendarSyncEnabled")
+        }
+    }
+
     func resetAllData() {
         currentPlan = nil
         completedRecords = []

@@ -13,6 +13,7 @@ struct ProgressViewScreen: View {
     @State private var showDayWorkouts: Bool = false
     @State private var selectedDayRecord: CompletedWorkoutRecord?
     @State private var showDayDetail: Bool = false
+    @State private var showTrainingCalendar: Bool = false
 
     var body: some View {
         ZStack {
@@ -22,7 +23,7 @@ struct ProgressViewScreen: View {
                 VStack(spacing: 20) {
                     if disclaimerAccepted {
                         thisWeekHero
-                        weekStrip
+                        interactiveWeekStrip
                         weeklyFrequencyChart
                     }
                     aftCard
@@ -62,6 +63,9 @@ struct ProgressViewScreen: View {
             if let record = selectedDayRecord {
                 CompletedWorkoutDetailView(record: record)
             }
+        }
+        .navigationDestination(isPresented: $showTrainingCalendar) {
+            TrainingCalendarView()
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
@@ -174,58 +178,98 @@ struct ProgressViewScreen: View {
         return "\(vm.workoutsThisWeek)"
     }
 
-    // MARK: - 7-Day Strip
+    // MARK: - Interactive 7-Day Strip
 
-    private var weekStrip: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Last 7 Days")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(MVMTheme.secondaryText)
+    private var interactiveWeekStrip: some View {
+        Button {
+            showTrainingCalendar = true
+        } label: {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    Text("This Week")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.secondaryText)
 
-            if let plan = vm.currentPlan {
-                HStack(spacing: 8) {
-                    ForEach(plan.days, id: \.dayIndex) { day in
-                        Button {
-                            let records = vm.completedRecordsForDate(day.date)
-                            if let record = records.first {
-                                selectedDayRecord = record
-                                showDayDetail = true
-                            }
-                        } label: {
-                            dayDot(
-                                label: dayAbbrev(day.date),
-                                isToday: Calendar.current.isDateInToday(day.date),
-                                isCompleted: day.isCompleted,
-                                isRest: day.isRestDay
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!day.isCompleted)
+                    Spacer()
+
+                    HStack(spacing: 4) {
+                        Text("Full Calendar")
+                            .font(.caption.weight(.semibold))
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.weight(.bold))
                     }
+                    .foregroundStyle(MVMTheme.accent)
                 }
-            } else {
-                VStack(spacing: 12) {
-                    HStack(spacing: 8) {
-                        ForEach(0..<7, id: \.self) { i in
-                            dayDot(
-                                label: weekdayAbbrev(offset: i),
-                                isToday: false,
-                                isCompleted: false,
-                                isRest: false
-                            )
-                        }
-                    }
 
-                    Text("Build a plan to start tracking your week.")
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                HStack(spacing: 6) {
+                    ForEach(weekDates, id: \.self) { date in
+                        let status = vm.calendarDateStatus(date)
+                        let isToday = Calendar.current.isDateInToday(date)
+
+                        VStack(spacing: 6) {
+                            Text(dayAbbrev(date))
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(isToday ? MVMTheme.accent : MVMTheme.tertiaryText)
+
+                            ZStack {
+                                Circle()
+                                    .fill(weekDotFill(status: status, isToday: isToday))
+                                    .frame(width: 32, height: 32)
+
+                                weekDotIcon(status: status, isToday: isToday)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
                 }
             }
+            .padding(18)
+            .premiumCard()
         }
-        .padding(18)
-        .premiumCard()
+        .buttonStyle(.plain)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
+    }
+
+    private var weekDates: [Date] {
+        let cal = Calendar.current
+        let start = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: .now)) ?? .now
+        return (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: start) }
+    }
+
+    private func weekDotFill(status: AppViewModel.CalendarWorkoutStatus?, isToday: Bool) -> Color {
+        switch status {
+        case .completed: return MVMTheme.success
+        case .planned: return isToday ? MVMTheme.accent.opacity(0.25) : MVMTheme.accent.opacity(0.15)
+        case .missed: return MVMTheme.tertiaryText.opacity(0.15)
+        case nil: return isToday ? MVMTheme.accent.opacity(0.12) : MVMTheme.cardSoft
+        }
+    }
+
+    @ViewBuilder
+    private func weekDotIcon(status: AppViewModel.CalendarWorkoutStatus?, isToday: Bool) -> some View {
+        switch status {
+        case .completed:
+            Image(systemName: "checkmark")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.white)
+        case .planned:
+            Circle()
+                .fill(MVMTheme.accent)
+                .frame(width: 6, height: 6)
+        case .missed:
+            Image(systemName: "minus")
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(MVMTheme.tertiaryText)
+        case nil:
+            if isToday {
+                Circle()
+                    .fill(MVMTheme.accent)
+                    .frame(width: 6, height: 6)
+            } else {
+                EmptyView()
+            }
+        }
     }
 
     private func dayDot(label: String, isToday: Bool, isCompleted: Bool, isRest: Bool) -> some View {

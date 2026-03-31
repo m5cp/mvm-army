@@ -42,19 +42,20 @@ struct HomeView: View {
     @State private var showPTWODSheet: Bool = false
     @State private var navigateToCalendarDay: Bool = false
     @State private var calendarDayDate: Date = .now
+    @State private var navigateToTrainingCalendar: Bool = false
 
     private let calendar = Calendar.current
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                if disclaimerAccepted {
-                    weekCalendarStrip
-                    selectedDayWorkoutCards
-                }
-
                 VStack(spacing: 20) {
                     greetingHeader
+
+                    if disclaimerAccepted {
+                        trainingCalendarCard
+                    }
+
                     aftCalculatorHero
 
                     if disclaimerAccepted {
@@ -86,23 +87,35 @@ struct HomeView: View {
                     .foregroundStyle(MVMTheme.secondaryText)
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    if vm.currentPlan != nil {
+                HStack(spacing: 12) {
+                    if disclaimerAccepted {
                         Button {
-                            vm.generateWeeklyPlan()
+                            navigateToTrainingCalendar = true
                         } label: {
-                            Label("Regenerate Week", systemImage: "arrow.clockwise")
-                        }
-                        Button {
-                            showCalendarSheet = true
-                        } label: {
-                            Label("Export to Calendar", systemImage: "calendar.badge.plus")
+                            Image(systemName: "calendar")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(MVMTheme.secondaryText)
                         }
                     }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(MVMTheme.secondaryText)
+
+                    Menu {
+                        if vm.currentPlan != nil {
+                            Button {
+                                vm.generateWeeklyPlan()
+                            } label: {
+                                Label("Regenerate Week", systemImage: "arrow.clockwise")
+                            }
+                            Button {
+                                showCalendarSheet = true
+                            } label: {
+                                Label("Export to Calendar", systemImage: "calendar.badge.plus")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
                 }
             }
         }
@@ -170,6 +183,9 @@ struct HomeView: View {
         }
         .navigationDestination(isPresented: $navigateToCalendarDay) {
             CalendarDayDetailView(date: calendarDayDate)
+        }
+        .navigationDestination(isPresented: $navigateToTrainingCalendar) {
+            TrainingCalendarView()
         }
         .sheet(isPresented: $showWODSheet) {
             WODDetailView()
@@ -340,210 +356,6 @@ struct HomeView: View {
         .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 
-    // MARK: - Week Calendar Strip
-
-    private var weekCalendarStrip: some View {
-        let weekDates = currentWeekDates
-
-        return VStack(spacing: 12) {
-            HStack {
-                Text(monthYearString)
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
-
-                Spacer()
-
-                Text(weekRangeString)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(MVMTheme.tertiaryText)
-            }
-            .padding(.horizontal, 20)
-
-            HStack(spacing: 0) {
-                ForEach(weekDates, id: \.self) { date in
-                    let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-                    let isToday = calendar.isDateInToday(date)
-                    let dayData = workoutDay(for: date)
-                    let hasWorkout = dayData != nil && !(dayData?.isRestDay ?? true)
-                    let isCompleted = dayData?.isCompleted ?? false
-                    let hasUnit = hasUnitPT(for: date)
-
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            selectedDate = date
-                        }
-                    } label: {
-                        VStack(spacing: 6) {
-                            Text(shortDayName(date))
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(
-                                    isSelected ? .white :
-                                    isToday ? MVMTheme.accent :
-                                    MVMTheme.tertiaryText
-                                )
-
-                            Text(dayNumber(date))
-                                .font(.system(size: 17, weight: .bold, design: .rounded))
-                                .foregroundStyle(
-                                    isSelected ? .white :
-                                    isCompleted ? MVMTheme.success :
-                                    isToday ? MVMTheme.accent :
-                                    MVMTheme.primaryText
-                                )
-
-                            HStack(spacing: 3) {
-                                Circle()
-                                    .fill(
-                                        isCompleted ? MVMTheme.success :
-                                        hasWorkout ? MVMTheme.accent.opacity(0.6) :
-                                        Color.clear
-                                    )
-                                    .frame(width: 5, height: 5)
-                                if hasUnit {
-                                    Circle()
-                                        .fill(Color(hex: "#2563EB").opacity(0.8))
-                                        .frame(width: 5, height: 5)
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background {
-                            if isSelected {
-                                RoundedRectangle(cornerRadius: 14)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [MVMTheme.accent, MVMTheme.accent2],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                                    .shadow(color: MVMTheme.accent.opacity(0.3), radius: 8, y: 4)
-                            } else if isToday {
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(MVMTheme.accent.opacity(0.3), lineWidth: 1)
-                            }
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 12)
-        }
-        .padding(.vertical, 12)
-        .background(MVMTheme.card)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(MVMTheme.border)
-                .frame(height: 1)
-        }
-    }
-
-    // MARK: - Selected Day Workout Cards
-
-    private var selectedDayWorkoutCards: some View {
-        let workouts = allWorkoutsForSelectedDate
-
-        return VStack(spacing: 0) {
-            Button {
-                calendarDayDate = selectedDate
-                navigateToCalendarDay = true
-            } label: {
-                if workouts.isEmpty {
-                    HStack(spacing: 12) {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(MVMTheme.accent)
-                            .frame(width: 36, height: 36)
-                            .background(MVMTheme.accent.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("No workouts")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(MVMTheme.primaryText)
-                            Text("Tap to view day details")
-                                .font(.caption)
-                                .foregroundStyle(MVMTheme.tertiaryText)
-                        }
-
-                        Spacer(minLength: 0)
-
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(MVMTheme.tertiaryText)
-                    }
-                    .padding(14)
-                } else {
-                    VStack(spacing: 0) {
-                        ForEach(Array(workouts.enumerated()), id: \.element.id) { index, workout in
-                            if index > 0 {
-                                Rectangle()
-                                    .fill(MVMTheme.border)
-                                    .frame(height: 1)
-                                    .padding(.leading, 62)
-                            }
-
-                            HStack(spacing: 12) {
-                                Image(systemName: workout.isRestDay ? "bed.double.fill" : workoutIcon(for: workout))
-                                    .font(.body.weight(.semibold))
-                                    .foregroundStyle(workout.isCompleted ? MVMTheme.success : MVMTheme.accent)
-                                    .frame(width: 36, height: 36)
-                                    .background((workout.isCompleted ? MVMTheme.success : MVMTheme.accent).opacity(0.12))
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(workout.title)
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(MVMTheme.primaryText)
-                                        .lineLimit(1)
-
-                                    HStack(spacing: 8) {
-                                        if workout.isRestDay {
-                                            Text("Rest Day")
-                                                .font(.caption)
-                                                .foregroundStyle(MVMTheme.tertiaryText)
-                                        } else {
-                                            Text("\(workout.exercises.count) exercises")
-                                                .font(.caption)
-                                                .foregroundStyle(MVMTheme.tertiaryText)
-                                            Text(estimatedDuration(workout))
-                                                .font(.caption)
-                                                .foregroundStyle(MVMTheme.tertiaryText)
-                                        }
-
-                                        if workout.isCompleted {
-                                            HStack(spacing: 3) {
-                                                Image(systemName: "checkmark.circle.fill")
-                                                    .font(.system(size: 10))
-                                                Text("Done")
-                                                    .font(.caption.weight(.semibold))
-                                            }
-                                            .foregroundStyle(MVMTheme.success)
-                                        }
-                                    }
-                                }
-
-                                Spacer(minLength: 0)
-
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(MVMTheme.tertiaryText)
-                            }
-                            .padding(14)
-                        }
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-        }
-        .background(MVMTheme.card)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(MVMTheme.border)
-                .frame(height: 1)
-        }
-    }
-
     private func workoutIcon(for workout: WorkoutDay) -> String {
         let title = workout.title.lowercased()
         if title.contains("run") || title.contains("cardio") || title.contains("endurance") { return "figure.run" }
@@ -561,7 +373,7 @@ struct HomeView: View {
                 .font(.title2.weight(.bold))
                 .foregroundStyle(MVMTheme.primaryText)
 
-            Text(selectedDaySubtitle)
+            Text(todaySubtitle)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(MVMTheme.tertiaryText)
         }
@@ -570,20 +382,60 @@ struct HomeView: View {
         .offset(y: animateHero ? 0 : 8)
     }
 
-    private var selectedDaySubtitle: String {
-        let allWorkouts = allWorkoutsForSelectedDate
-        if allWorkouts.isEmpty { return "No workouts scheduled" }
-        let count = allWorkouts.count
-        return "\(count) workout\(count == 1 ? "" : "s") scheduled"
+    private var todaySubtitle: String {
+        let count = vm.todayCalendarEntryCount
+        if count == 0 { return "No workouts scheduled today" }
+        return "\(count) workout\(count == 1 ? "" : "s") today"
     }
 
-    private var selectedDayWorkout: WorkoutDay? {
-        guard let plan = vm.currentPlan else { return nil }
-        return plan.days.first { calendar.isDate($0.date, inSameDayAs: selectedDate) }
+    // MARK: - Training Calendar Card
+
+    private var trainingCalendarCard: some View {
+        Button {
+            navigateToTrainingCalendar = true
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "calendar")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        LinearGradient(
+                            colors: [MVMTheme.accent, MVMTheme.accent2],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Training Calendar")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+
+                    Text(calendarCardSubtitle)
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+            .padding(16)
+            .premiumCard()
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .opacity(animateHero ? 1 : 0)
+        .offset(y: animateHero ? 0 : 8)
     }
 
-    private var allWorkoutsForSelectedDate: [WorkoutDay] {
-        vm.allWorkoutsForDate(selectedDate)
+    private var calendarCardSubtitle: String {
+        let count = vm.todayCalendarEntryCount
+        if count == 0 { return "No workouts scheduled today" }
+        return "\(count) workout\(count == 1 ? "" : "s") scheduled today"
     }
 
     // MARK: - Dual WOD Cards (CrossFit WOD + PT Workout of the Day)
@@ -1173,52 +1025,6 @@ struct HomeView: View {
         let steps = vm.pedometer.todaySteps
         if steps >= 1000 { return String(format: "%.1fk", Double(steps) / 1000) }
         return "\(steps)"
-    }
-
-    private var currentWeekDates: [Date] {
-        guard let plan = vm.currentPlan else {
-            let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: .now)) ?? .now
-            return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: startOfWeek) }
-        }
-        return plan.days.map { calendar.startOfDay(for: $0.date) }
-    }
-
-    private func workoutDay(for date: Date) -> WorkoutDay? {
-        vm.currentPlan?.days.first { calendar.isDate($0.date, inSameDayAs: date) }
-    }
-
-    private func unitPTForDate(_ date: Date) -> [WorkoutDay] {
-        vm.scheduledUnitPT.filter { calendar.isDate($0.date, inSameDayAs: date) }
-    }
-
-    private func hasUnitPT(for date: Date) -> Bool {
-        !unitPTForDate(date).isEmpty
-    }
-
-    private var monthYearString: String {
-        let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
-        return f.string(from: selectedDate)
-    }
-
-    private var weekRangeString: String {
-        let dates = currentWeekDates
-        guard let first = dates.first, let last = dates.last else { return "This Week" }
-        let f = DateFormatter()
-        f.dateFormat = "MMM d"
-        return "\(f.string(from: first)) – \(f.string(from: last))"
-    }
-
-    private func shortDayName(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "EEE"
-        return f.string(from: date).uppercased()
-    }
-
-    private func dayNumber(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "d"
-        return f.string(from: date)
     }
 
     private func estimatedDuration(_ workout: WorkoutDay) -> String {
