@@ -49,7 +49,8 @@ struct WODPlanSheet: View {
                     selectedGoal = goal
                 }
                 selectedWeeks = vm.currentPlanWeeks
-                if vm.wodPlan != nil {
+                if let plan = vm.wodPlan {
+                    selectedHeroPreference = plan.heroPreference
                     showGoalSetup = false
                 } else {
                     showGoalSetup = true

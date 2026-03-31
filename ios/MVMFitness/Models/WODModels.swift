@@ -1,18 +1,16 @@
 import Foundation
 
 nonisolated enum WODHeroPreference: String, Codable, CaseIterable, Sendable, Identifiable {
-    case regular = "Regular WODs"
-    case mixed = "Mix of Both"
-    case majorityHero = "Majority Hero"
-    case heroOnly = "Hero WODs Only"
+    case regular = "Functional WOD Plan"
+    case mixed = "Mix of Hero"
+    case heroOnly = "Full Hero Plan"
 
     var id: String { rawValue }
 
     var subtitle: String {
         switch self {
         case .regular: return "Standard functional workouts"
-        case .mixed: return "Alternate hero and regular WODs"
-        case .majorityHero: return "Mostly hero WODs with some regular"
+        case .mixed: return "Blend of hero and regular WODs"
         case .heroOnly: return "All hero WODs honoring fallen heroes"
         }
     }
@@ -21,7 +19,6 @@ nonisolated enum WODHeroPreference: String, Codable, CaseIterable, Sendable, Ide
         switch self {
         case .regular: return "flame.fill"
         case .mixed: return "shuffle"
-        case .majorityHero: return "star.fill"
         case .heroOnly: return "medal.fill"
         }
     }
@@ -107,13 +104,15 @@ nonisolated struct WODPlan: Codable, Identifiable, Hashable, Sendable {
     var totalWeeks: Int
     var currentWeek: Int
     var weekStartDate: Date
+    var heroPreference: WODHeroPreference
 
     init(
         days: [WODPlanDay],
         ptGoal: String = "",
         totalWeeks: Int = 4,
         currentWeek: Int = 1,
-        weekStartDate: Date = .now
+        weekStartDate: Date = .now,
+        heroPreference: WODHeroPreference = .regular
     ) {
         self.id = UUID()
         self.days = days
@@ -121,6 +120,7 @@ nonisolated struct WODPlan: Codable, Identifiable, Hashable, Sendable {
         self.totalWeeks = totalWeeks
         self.currentWeek = currentWeek
         self.weekStartDate = weekStartDate
+        self.heroPreference = heroPreference
     }
 
     init(from decoder: Decoder) throws {
@@ -131,6 +131,7 @@ nonisolated struct WODPlan: Codable, Identifiable, Hashable, Sendable {
         totalWeeks = try container.decodeIfPresent(Int.self, forKey: .totalWeeks) ?? 4
         currentWeek = try container.decodeIfPresent(Int.self, forKey: .currentWeek) ?? 1
         weekStartDate = try container.decodeIfPresent(Date.self, forKey: .weekStartDate) ?? .now
+        heroPreference = try container.decodeIfPresent(WODHeroPreference.self, forKey: .heroPreference) ?? .regular
     }
 }
 

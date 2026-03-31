@@ -808,8 +808,6 @@ final class AppViewModel {
                     useHero = false
                 case .heroOnly:
                     useHero = true
-                case .majorityHero:
-                    useHero = workoutIndex < max(workoutDayCount - 1, 1)
                 case .mixed:
                     useHero = workoutIndex % 2 == 0
                 }
@@ -828,7 +826,8 @@ final class AppViewModel {
             ptGoal: goal.rawValue,
             totalWeeks: weeks,
             currentWeek: 1,
-            weekStartDate: startOfWeek
+            weekStartDate: startOfWeek,
+            heroPreference: heroPreference
         )
         persistAll()
     }
@@ -836,7 +835,7 @@ final class AppViewModel {
     func refreshWODPlan() {
         guard let plan = wodPlan else { return }
         let goal = PTGoal(rawValue: plan.ptGoal) ?? .aftScoreImprovement
-        generateWODPlan(goal: goal, weeks: plan.totalWeeks)
+        generateWODPlan(goal: goal, weeks: plan.totalWeeks, heroPreference: plan.heroPreference)
     }
 
     func regenerateWODDay(dayId: UUID, heroOnly: Bool = false) {
