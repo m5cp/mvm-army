@@ -31,7 +31,7 @@ Privacy Policy
 
 Last updated: March 2026
 
-MVM Army ("the App") is designed to help users organize, track, and plan Army fitness training. Your privacy matters, and this policy explains how the App handles your information.
+MVM Fitness ("the App") is designed to help users organize, track, and plan fitness training. Your privacy matters, and this policy explains how the App handles your information.
 
 Data Storage
 All data — including workout plans, completed records, AFT scores, step history, and user preferences — is stored locally on your device. The App does not transmit, upload, or share your data with any external server, database, or third party unless you explicitly choose to export or share content.
@@ -39,11 +39,16 @@ All data — including workout plans, completed records, AFT scores, step histor
 No Accounts Required
 The App does not require user accounts, login credentials, or personal identification to function. There is no registration process.
 
+Apple Health (HealthKit)
+The App integrates with Apple Health to read step count and active energy data, and to save completed workout sessions. This integration is optional and requires your explicit permission. Health data accessed through HealthKit is used solely to display your fitness activity within the App. Health data is never sold, shared with third parties, used for advertising, or transferred outside the App. Health data remains on your device and under your control at all times.
+
 Device Features
 The App may access certain device features to provide its functionality:
-• Pedometer / Motion Data — Used to track daily step counts. This data remains on your device.
-• Camera — Used only for QR code scanning to import Unit PT plans. Camera access is requested only when you initiate a scan.
-• Calendar — Used only when you choose to export workouts to your iOS Calendar. Calendar access is requested only when you initiate an export.
+• Apple Health — Used to read steps and active calories, and to save workout sessions. Requires your explicit permission.
+• Pedometer / Motion Data — Used to count your daily steps and display step totals on the home screen and progress charts. This data remains on your device.
+• Camera — Used only for QR code scanning to import shared PT plans. Camera access is requested only when you initiate a scan.
+• Calendar — Used only when you choose to sync workouts to your iOS Calendar. Calendar access is requested only when you enable sync. You control this via an on/off toggle.
+• Photo Library — Used only when you choose to save share cards or score images. Access is requested at time of save.
 • Notifications — Used only for optional daily training reminders that you configure.
 
 No feature accesses data without your action or permission.
@@ -64,26 +69,44 @@ Contact
 If you have questions about this policy, contact the developer through the App Store listing.
 """
 
-    static let appleEULA = """
-Apple Licensed Application End User License Agreement
+    static let termsOfUse = """
+Terms of Use
 
-This application is licensed to you under the terms of the Apple Licensed Application End User License Agreement (EULA), which is available at:
+Last updated: March 2026
+
+By downloading, installing, or using MVM Fitness ("the App"), you agree to these Terms of Use and Apple's standard Licensed Application End User License Agreement (EULA) available at:
 
 https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 
-By downloading, installing, or using MVM Army, you agree to the terms of Apple's standard EULA.
+Fitness Disclaimer
+The App is a fitness planning and accountability tool. It generates workout templates based on publicly available exercise formats and user preferences. It does not provide personalized fitness prescriptions, medical advice, or clinical recommendations.
 
-The App is provided "as is" without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement.
+Non-Medical Disclaimer
+The App does not diagnose, treat, cure, or prevent any medical condition. Nothing in the App should be interpreted as medical guidance. Always consult a qualified medical professional before starting any exercise program.
 
+HealthKit Data
+If you grant Apple Health access, the App reads step count and active energy data to display your activity, and saves completed workout sessions to Apple Health. This data is never sold, shared with advertisers, or used for purposes beyond displaying your fitness information within the App.
+
+User Responsibility
+You are solely responsible for assessing your own physical readiness and using proper form during all exercises. Stop immediately if you experience pain, dizziness, or other warning signs.
+
+Limitation of Liability
+The App is provided "as is" without warranty of any kind, express or implied. The developer is not liable for any injury, loss, or damage arising from the use of the App or any workout performed using information from the App.
+
+Intellectual Property
+All content, design, and code within the App are the property of the developer. Workout formats are based on publicly available fitness standards.
+
+Termination
 The developer reserves the right to modify, update, or discontinue the App at any time without prior notice.
 
-For additional terms specific to this application, please refer to the Disclaimer and Risks sections within the App.
+Contact
+If you have questions about these terms, contact the developer through the App Store listing.
 """
 
     static let disclaimer = """
 Disclaimer
 
-MVM Army provides example workout structures, planning tools, and accountability tracking for Army fitness workflows. It is not a personalized workout plan, not a prescription for exercise, and not a recommendation to begin a new exercise program. It is intended for organization, tracking, and administrative support only.
+MVM Fitness provides example workout structures, planning tools, and accountability tracking for fitness workflows. It is not a personalized workout plan, not a prescription for exercise, and not a recommendation to begin a new exercise program. It is intended for organization, tracking, and administrative support only.
 
 Workout Content
 Workouts displayed in the App are examples based on stored templates, Army fitness test structures, H2F drill categories, and general fitness formats. They are generated from a library of predefined templates combined with user-selected preferences such as focus area, equipment, and duration.
@@ -103,13 +126,44 @@ General
 The developer makes no representations or warranties regarding the accuracy, completeness, or suitability of any content in the App. Use of the App is at your own risk.
 """
 
+    static let accessibilityStatement = """
+Accessibility Statement
+
+Last updated: March 2026
+
+MVM Fitness is committed to providing an accessible experience for all users.
+
+Supported Accessibility Features
+
+VoiceOver
+All interactive controls, buttons, and navigation elements include accessibility labels and hints so VoiceOver users can navigate the App effectively.
+
+Dynamic Type
+The App supports Dynamic Type. Text scales according to your preferred text size set in iOS Settings, ensuring readability at all sizes.
+
+Dark Mode
+The App uses a dark-first design with high-contrast text. Both light and dark color schemes are supported and respect your system appearance setting.
+
+Touch Targets
+All interactive elements meet the minimum 44x44 point touch target size recommended by Apple Human Interface Guidelines.
+
+Reduce Motion
+The App respects the Reduce Motion accessibility setting where applicable to minimize animations.
+
+Color Contrast
+Text and interactive elements maintain sufficient contrast ratios against their backgrounds in both light and dark modes.
+
+Feedback
+If you encounter any accessibility barriers while using MVM Fitness, please contact the developer through the App Store listing. We welcome feedback to improve accessibility.
+"""
+
     static let risks = """
 Risks
 
-Physical training involves inherent risk. Please read the following carefully before using MVM Army.
+Physical training involves inherent risk. Please read the following carefully before using MVM Fitness.
 
 Exercise Risk
-Users should consult with a doctor or other qualified medical professional before starting any workout or exercise program. MVM Army is an accountability tracker and planning tool only. It does not determine whether a workout is appropriate for any individual.
+Users should consult with a doctor or other qualified medical professional before starting any workout or exercise program. MVM Fitness is an accountability tracker and planning tool only. It does not determine whether a workout is appropriate for any individual.
 
 Potential risks associated with physical exercise include but are not limited to:
 • Muscle strains, sprains, and tears
@@ -131,6 +185,6 @@ Users are solely responsible for:
 Not a Substitute for Professional Advice
 The App is not a substitute for professional medical advice, military medical screening, or guidance from qualified fitness professionals. Always prioritize your health and safety over any workout plan or training goal.
 
-By using MVM Army, you acknowledge that you understand these risks and accept full responsibility for your participation in any physical activity guided by or tracked within the App.
+By using MVM Fitness, you acknowledge that you understand these risks and accept full responsibility for your participation in any physical activity guided by or tracked within the App.
 """
 }

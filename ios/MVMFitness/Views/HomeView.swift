@@ -792,7 +792,7 @@ struct HomeView: View {
             metricPill(
                 icon: "figure.walk",
                 value: formattedSteps,
-                label: "Steps",
+                label: "Steps Today",
                 color: MVMTheme.accent
             )
 
@@ -847,6 +847,8 @@ struct HomeView: View {
                 .foregroundStyle(MVMTheme.tertiaryText)
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(value)")
     }
 
     // MARK: - AFT Calculator Hero

@@ -428,14 +428,16 @@ struct ProfileView: View {
             } label: {
                 settingsRow(icon: "lock.shield", title: "Privacy Policy", color: MVMTheme.accent, showChevron: true)
             }
+            .accessibilityHint("View the app privacy policy")
 
             sectionDivider
 
             NavigationLink {
-                LegalTextView(title: "Apple EULA", content: LegalContent.appleEULA)
+                LegalTextView(title: "Terms of Use", content: LegalContent.termsOfUse)
             } label: {
-                settingsRow(icon: "doc.plaintext", title: "Apple EULA", color: MVMTheme.accent, showChevron: true)
+                settingsRow(icon: "doc.plaintext", title: "Terms of Use", color: MVMTheme.accent, showChevron: true)
             }
+            .accessibilityHint("View the terms of use")
 
             sectionDivider
 
@@ -444,6 +446,7 @@ struct ProfileView: View {
             } label: {
                 settingsRow(icon: "exclamationmark.triangle", title: "Disclaimer", color: MVMTheme.warning, showChevron: true)
             }
+            .accessibilityHint("View the fitness disclaimer")
 
             sectionDivider
 
@@ -452,6 +455,16 @@ struct ProfileView: View {
             } label: {
                 settingsRow(icon: "heart.text.square", title: "Risks", color: MVMTheme.danger, showChevron: true)
             }
+            .accessibilityHint("View exercise risk information")
+
+            sectionDivider
+
+            NavigationLink {
+                LegalTextView(title: "Accessibility", content: LegalContent.accessibilityStatement)
+            } label: {
+                settingsRow(icon: "accessibility", title: "Accessibility", color: MVMTheme.accent, showChevron: true)
+            }
+            .accessibilityHint("View the accessibility statement")
         }
     }
 

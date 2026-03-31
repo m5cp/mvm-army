@@ -699,7 +699,24 @@ struct ProgressViewScreen: View {
                     .foregroundStyle(MVMTheme.primaryText)
             }
 
-            if vm.pedometer.todaySteps == 0 && vm.weeklyStepAverage == 0 {
+            if vm.pedometer.permissionDenied {
+                VStack(spacing: 12) {
+                    Image(systemName: "figure.walk")
+                        .font(.system(size: 32))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+
+                    Text("Motion Access Needed")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+
+                    Text("Enable Motion & Fitness in Settings to track your daily steps.")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            } else if vm.pedometer.todaySteps == 0 && vm.weeklyStepAverage == 0 {
                 VStack(spacing: 12) {
                     Image(systemName: "figure.walk")
                         .font(.system(size: 32))

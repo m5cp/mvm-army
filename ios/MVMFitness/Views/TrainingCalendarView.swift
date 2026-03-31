@@ -72,10 +72,11 @@ struct TrainingCalendarView: View {
             Toggle("", isOn: Binding(
                 get: { vm.isCalendarSyncEnabled },
                 set: { newValue in
-                    vm.isCalendarSyncEnabled = newValue
-                    syncTrigger.toggle()
                     if newValue {
-                        syncAllWorkouts()
+                        showCalendarPermissionSheet = true
+                    } else {
+                        vm.isCalendarSyncEnabled = false
+                        syncTrigger.toggle()
                     }
                 }
             ))
@@ -84,6 +85,72 @@ struct TrainingCalendarView: View {
         }
         .padding(16)
         .premiumCard()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Sync to Phone Calendar")
+        .accessibilityValue(vm.isCalendarSyncEnabled ? "On" : "Off")
+        .sheet(isPresented: $showCalendarPermissionSheet) {
+            calendarPermissionExplanation
+        }
+    }
+
+    @State private var showCalendarPermissionSheet: Bool = false
+
+    private var calendarPermissionExplanation: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 12) {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.system(size: 44))
+                    .foregroundStyle(MVMTheme.accent)
+                    .padding(.top, 8)
+
+                Text("Calendar Access")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Text("MVM Fitness will add your scheduled PT workouts to your iOS Calendar so they appear alongside your other events.\n\nYou can turn this off at any time.")
+                    .font(.subheadline)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+                    .padding(.horizontal)
+            }
+
+            VStack(spacing: 12) {
+                Button {
+                    vm.isCalendarSyncEnabled = true
+                    syncTrigger.toggle()
+                    syncAllWorkouts()
+                    showCalendarPermissionSheet = false
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.subheadline.weight(.bold))
+                        Text("Enable Calendar Sync")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(MVMTheme.heroGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    showCalendarPermissionSheet = false
+                } label: {
+                    Text("Not Now")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                .padding(.top, 4)
+            }
+            .padding(.horizontal, 20)
+        }
+        .padding(.vertical, 20)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(MVMTheme.background)
     }
 
     // MARK: - Month Grid
