@@ -949,9 +949,10 @@ final class AppViewModel {
                 if wDay.isCompleted { status = .completed }
                 else if isPast && !isToday { status = .missed }
                 else { status = .planned }
+                let typeLabel = HeroWODLibrary.isMemorialWorkout(wDay.template) ? "Memorial" : "Functional"
                 entries.append(CalendarWorkoutEntry(
                     id: wDay.id, title: wDay.template.title, date: wDay.date,
-                    type: "Functional", duration: wDay.template.durationMinutes,
+                    type: typeLabel, duration: wDay.template.durationMinutes,
                     status: status, source: .wod, exerciseCount: wDay.template.movements.count
                 ))
             }

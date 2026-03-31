@@ -11,6 +11,10 @@ struct TrainingCalendarView: View {
     @State private var exportAlertMessage: String = ""
     @State private var syncTrigger: Bool = false
     @State private var navigateToCalendarDay: Bool = false
+    @State private var selectedWorkoutEntry: AppViewModel.CalendarWorkoutEntry?
+    @State private var showWorkoutDetail: Bool = false
+    @State private var selectedWODTemplate: WODTemplate?
+    @State private var selectedCompletedRecord: CompletedWorkoutRecord?
 
     private let calendar = Calendar.current
     private let daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
@@ -37,6 +41,34 @@ struct TrainingCalendarView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationDestination(isPresented: $navigateToCalendarDay) {
             CalendarDayDetailView(date: selectedDate)
+        }
+        .navigationDestination(isPresented: $showWorkoutDetail) {
+            if let record = selectedCompletedRecord {
+                CompletedWorkoutDetailView(record: record)
+            } else if let template = selectedWODTemplate {
+                WODDetailView(template: template)
+            } else {
+                CalendarDayDetailView(date: selectedDate)
+            }
+        }
+        .onChange(of: selectedWorkoutEntry?.id) { _, newValue in
+            guard let entry = selectedWorkoutEntry else { return }
+            selectedCompletedRecord = nil
+            selectedWODTemplate = nil
+            if entry.status == .completed {
+                if let record = vm.completedRecordsForDate(entry.date).first(where: { $0.title == entry.title }) {
+                    selectedCompletedRecord = record
+                } else if entry.source == .wod, let wPlan = vm.wodPlan {
+                    if let wDay = wPlan.days.first(where: { $0.id == entry.id }) {
+                        selectedWODTemplate = wDay.template
+                    }
+                }
+            } else if entry.source == .wod, let wPlan = vm.wodPlan {
+                if let wDay = wPlan.days.first(where: { $0.id == entry.id }) {
+                    selectedWODTemplate = wDay.template
+                }
+            }
+            showWorkoutDetail = true
         }
         .sensoryFeedback(.selection, trigger: syncTrigger)
         .alert("Calendar", isPresented: $showExportAlert) {
@@ -337,7 +369,12 @@ struct TrainingCalendarView: View {
                 emptyDateState
             } else {
                 ForEach(entries) { entry in
-                    workoutEntryCard(entry)
+                    Button {
+                        selectedWorkoutEntry = entry
+                    } label: {
+                        workoutEntryCard(entry)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -358,7 +395,7 @@ struct TrainingCalendarView: View {
                     .foregroundStyle(entry.status == .missed ? MVMTheme.tertiaryText : MVMTheme.primaryText)
                     .lineLimit(1)
 
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Text(entry.type)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(sourceColor(entry.source))
@@ -366,22 +403,32 @@ struct TrainingCalendarView: View {
                         .padding(.vertical, 2)
                         .background(sourceColor(entry.source).opacity(0.12))
                         .clipShape(Capsule())
+                        .lineLimit(1)
+                        .fixedSize()
 
                     if entry.duration > 0 {
                         Text("~\(entry.duration) min")
                             .font(.caption2.weight(.medium))
                             .foregroundStyle(MVMTheme.tertiaryText)
+                            .lineLimit(1)
                     }
 
-                    Text("\(entry.exerciseCount) exercises")
+                    Text("\(entry.exerciseCount) ex.")
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(MVMTheme.tertiaryText)
+                        .lineLimit(1)
                 }
+                .lineLimit(1)
             }
 
             Spacer(minLength: 0)
 
-            statusBadge(entry.status)
+            HStack(spacing: 6) {
+                statusBadge(entry.status)
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
         }
         .padding(14)
         .background(MVMTheme.cardSoft)

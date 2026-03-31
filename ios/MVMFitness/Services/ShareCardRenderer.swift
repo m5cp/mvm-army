@@ -77,8 +77,15 @@ enum ShareCardRenderer {
         case .completion(let title, let count, let duration):
             return "MVM Fitness — Completed: \(title)\n\(count) exercises · \(duration)\n#MVMFitness"
         case .completedWorkout(let record):
-            let prefix = record.source == .wod ? "Functional: " : ""
-            return "MVM Fitness — \(prefix)\(record.title)\n\(record.exerciseCount) exercises\n#MVMFitness"
+            let isMemorial = record.source == .wod && HeroWODLibrary.tributeFor(record.title) != nil
+            let prefix = isMemorial ? "Memorial Workout: " : (record.source == .wod ? "Functional: " : "")
+            let tributeText: String
+            if isMemorial, let tribute = HeroWODLibrary.tributeFor(record.title) {
+                tributeText = "\nIn honor of \(tribute.displayName) — \(tribute.serviceBranch)"
+            } else {
+                tributeText = ""
+            }
+            return "MVM Fitness — \(prefix)\(record.title)\(tributeText)\n\(record.exerciseCount) exercises\n#MVMFitness"
         }
     }
 }
@@ -293,16 +300,26 @@ enum CompletionCardCGRenderer {
 
 @MainActor
 enum CompletedWorkoutCGRenderer {
+    private static let heroGold = UIColor(red: 0.769, green: 0.639, blue: 0.353, alpha: 1.0)
+
     static func render(record: CompletedWorkoutRecord, date: Date) -> UIImage? {
         let w = ShareCardCGHelpers.width
         let exerciseRows = min(record.exercises.count, 6)
         let hasExercises = !record.exercises.isEmpty
-        let h: CGFloat = hasExercises ? CGFloat(900 + exerciseRows * 55 + 40) : 900
+        let isMemorial = record.source == .wod && HeroWODLibrary.tributeFor(record.title) != nil
+        let tribute = isMemorial ? HeroWODLibrary.tributeFor(record.title) : nil
+        let tributeHeight: CGFloat = isMemorial ? 180 : 0
+        let h: CGFloat = hasExercises ? CGFloat(900 + exerciseRows * 55 + 40) + tributeHeight : 900 + tributeHeight
         let renderer = ShareCardCGHelpers.makeRenderer(width: w, height: h)
 
         return renderer.image { ctx in
             let context = ctx.cgContext
-            ShareCardCGHelpers.drawBackground(context: context, width: w, height: h)
+
+            if isMemorial {
+                drawMemorialBackground(context: context, width: w, height: h)
+            } else {
+                ShareCardCGHelpers.drawBackground(context: context, width: w, height: h)
+            }
             ShareCardCGHelpers.drawHeader(context: context, width: w, date: date)
 
             let badgeCY: CGFloat = 260
@@ -318,15 +335,18 @@ enum CompletedWorkoutCGRenderer {
             missionStr.draw(at: CGPoint(x: (w - missionSize.width) / 2, y: 345))
 
             if record.source == .wod {
+                let badgeText = isMemorial ? "MEMORIAL WORKOUT" : "FUNCTIONAL"
+                let badgeColor = isMemorial ? heroGold : ShareCardCGHelpers.warningAmber
                 let wodAttrs: [NSAttributedString.Key: Any] = [
                     .font: UIFont.systemFont(ofSize: 20, weight: .bold),
-                    .foregroundColor: ShareCardCGHelpers.warningAmber
+                    .foregroundColor: badgeColor
                 ]
-                let wodStr = NSAttributedString(string: "FUNCTIONAL", attributes: wodAttrs)
+                let badgeIcon = isMemorial ? "🎖  " : ""
+                let wodStr = NSAttributedString(string: "\(badgeIcon)\(badgeText)", attributes: wodAttrs)
                 let wodSize = wodStr.size()
                 let pillRect = CGRect(x: (w - wodSize.width - 24) / 2, y: 380, width: wodSize.width + 24, height: 32)
                 let pillPath = UIBezierPath(roundedRect: pillRect, cornerRadius: 16)
-                context.setFillColor(ShareCardCGHelpers.warningAmber.withAlphaComponent(0.15).cgColor)
+                context.setFillColor(badgeColor.withAlphaComponent(0.15).cgColor)
                 context.addPath(pillPath.cgPath)
                 context.fillPath()
                 wodStr.draw(at: CGPoint(x: pillRect.midX - wodSize.width / 2, y: pillRect.midY - wodSize.height / 2))
@@ -342,20 +362,28 @@ enum CompletedWorkoutCGRenderer {
             let titleX = (w - titleBounds.width) / 2
             titleStr.draw(with: CGRect(x: titleX, y: titleY, width: titleBounds.width, height: 110), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
 
-            let statsY = titleY + 120
+            var currentY = titleY + 120
+
+            if isMemorial, let tribute {
+                currentY = drawMemorialTribute(context: context, tribute: tribute, width: w, startY: currentY)
+            }
+
+            let statsY = currentY
             let boxWidth = (w - 140) / 2
             let boxHeight: CGFloat = 100
             ShareCardCGHelpers.drawStatBox(context: context, x: 60, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(record.exerciseCount)", label: "Exercises", valueColor: ShareCardCGHelpers.accentBlue)
 
-            let sourceLabel: String
-            switch record.source {
-            case .wod: sourceLabel = "Functional"
-            case .unit: sourceLabel = "Unit PT"
-            case .individual: sourceLabel = "Individual"
-            case .random: sourceLabel = "Random"
-            case .imported: sourceLabel = "Imported"
-            }
-            ShareCardCGHelpers.drawStatBox(context: context, x: 60 + boxWidth + 20, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: sourceLabel, label: "Type", valueColor: ShareCardCGHelpers.accentPurple)
+            let sourceLabel = isMemorial ? "Memorial" : {
+                switch record.source {
+                case .wod: return "Functional"
+                case .unit: return "Unit PT"
+                case .individual: return "Individual"
+                case .random: return "Random"
+                case .imported: return "Imported"
+                }
+            }()
+            let typeColor = isMemorial ? heroGold : ShareCardCGHelpers.accentPurple
+            ShareCardCGHelpers.drawStatBox(context: context, x: 60 + boxWidth + 20, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: sourceLabel, label: "Type", valueColor: typeColor)
 
             if hasExercises {
                 var rowY = statsY + boxHeight + 40
@@ -402,6 +430,72 @@ enum CompletedWorkoutCGRenderer {
 
             ShareCardCGHelpers.drawFooter(context: context, width: w, height: h)
         }
+    }
+
+    private static func drawMemorialBackground(context: CGContext, width: CGFloat, height: CGFloat) {
+        context.setFillColor(ShareCardCGHelpers.bgColor.cgColor)
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+
+        let colors = [
+            heroGold.withAlphaComponent(0.14).cgColor,
+            UIColor(red: 0.55, green: 0.37, blue: 0.14, alpha: 0.06).cgColor,
+            UIColor.clear.cgColor
+        ] as CFArray
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0, 0.5, 1.0]) {
+            context.drawRadialGradient(gradient,
+                                       startCenter: CGPoint(x: width / 2, y: 200),
+                                       startRadius: 0,
+                                       endCenter: CGPoint(x: width / 2, y: 200),
+                                       endRadius: 600,
+                                       options: [])
+        }
+    }
+
+    private static func drawMemorialTribute(context: CGContext, tribute: HeroWODInfo, width: CGFloat, startY: CGFloat) -> CGFloat {
+        var y = startY
+
+        let honorAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 16, weight: .heavy),
+            .foregroundColor: heroGold,
+            .kern: 2.0
+        ]
+        let honorStr = NSAttributedString(string: "IN HONOR OF", attributes: honorAttrs)
+        honorStr.draw(at: CGPoint(x: 60, y: y))
+        y += 28
+
+        let nameAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 26, weight: .bold),
+            .foregroundColor: UIColor.white
+        ]
+        let nameStr = NSAttributedString(string: tribute.displayName, attributes: nameAttrs)
+        nameStr.draw(with: CGRect(x: 60, y: y, width: width - 120, height: 36), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
+        y += 36
+
+        let tributeAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 18, weight: .regular),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.5)
+        ]
+        let serviceStr = NSAttributedString(string: "\(tribute.serviceBranch) · \(tribute.dateOfDeath) — \(tribute.location)", attributes: tributeAttrs)
+        serviceStr.draw(with: CGRect(x: 60, y: y, width: width - 120, height: 60), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
+        y += 40
+
+        let footerAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 14, weight: .regular),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.3)
+        ]
+        let footerStr = NSAttributedString(string: "Memorial workout tribute", attributes: footerAttrs)
+        footerStr.draw(at: CGPoint(x: 60, y: y))
+        y += 22
+
+        context.setStrokeColor(heroGold.withAlphaComponent(0.15).cgColor)
+        context.setLineWidth(1)
+        context.move(to: CGPoint(x: 60, y: y))
+        context.addLine(to: CGPoint(x: width - 60, y: y))
+        context.strokePath()
+        y += 16
+
+        return y
     }
 }
 
