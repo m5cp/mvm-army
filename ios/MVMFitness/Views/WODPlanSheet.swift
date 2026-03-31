@@ -88,6 +88,7 @@ struct WODPlanSheet: View {
                 if let plan = vm.wodPlan {
                     selectedHeroPreference = plan.heroPreference
                     showGoalSetup = false
+                    isPlanApproved = true
                 } else {
                     showGoalSetup = true
                 }
@@ -100,20 +101,68 @@ struct WODPlanSheet: View {
 
     // MARK: - Plan Actions Bar
 
+    @State private var isPlanApproved: Bool = false
+    @State private var approveCalendarTrigger: Bool = false
+
     private var planActionsBar: some View {
         VStack(spacing: 12) {
-            HStack(spacing: 10) {
-                wodActionButton(icon: "square.and.arrow.down", label: "Save") {
-                    actionTrigger.toggle()
+            if !isPlanApproved {
+                Button {
+                    approveCalendarTrigger.toggle()
                     vm.saveWODPlanSnapshot()
-                    savedAlertMessage = "Fitness plan saved successfully."
-                    showSavedAlert = true
+                    isPlanApproved = true
+                    if let plan = vm.wodPlan {
+                        Task {
+                            let result = await calendarService.exportWODPlan(plan)
+                            handleExportResult(result)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        if calendarService.isExporting {
+                            ProgressView().tint(.white)
+                        } else {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.subheadline.weight(.bold))
+                        }
+                        Text("Approve & Sync to Calendar")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706")],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: Color(hex: "#F59E0B").opacity(0.28), radius: 14, y: 8)
                 }
-
-                wodActionButton(icon: "calendar.badge.plus", label: "Calendar") {
-                    showCalendarSheet = true
+                .disabled(calendarService.isExporting)
+                .sensoryFeedback(.success, trigger: approveCalendarTrigger)
+                .buttonStyle(PressScaleButtonStyle())
+            } else {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundStyle(MVMTheme.success)
+                    Text("Plan Approved & Synced")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.success)
                 }
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(MVMTheme.success.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(MVMTheme.success.opacity(0.3))
+                }
+            }
 
+            HStack(spacing: 10) {
                 wodActionButton(icon: "square.and.arrow.up", label: "Share") {
                     showShareSheet = true
                 }
@@ -298,6 +347,7 @@ struct WODPlanSheet: View {
             Button {
                 vm.generateWODPlan(goal: selectedGoal, weeks: selectedWeeks, heroPreference: selectedHeroPreference)
                 showGoalSetup = false
+                isPlanApproved = false
                 animateCards = false
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) {
                     animateCards = true

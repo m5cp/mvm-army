@@ -40,6 +40,11 @@ struct HomeView: View {
     @State private var navigateToCalendarDay: Bool = false
     @State private var calendarDayDate: Date = .now
     @State private var navigateToTrainingCalendar: Bool = false
+    @State private var showTodayShareSheet: Bool = false
+    @State private var showTodayQRSheet: Bool = false
+    @State private var showTodaySavedToast: Bool = false
+    @State private var todayCompleteTrigger: Bool = false
+    @State private var showFunctionalWODSheet: Bool = false
 
     private let calendar = Calendar.current
 
@@ -53,6 +58,7 @@ struct HomeView: View {
 
                     if disclaimerAccepted {
                         todayWorkoutSection
+                        todayFunctionalSection
                         planningSection
                         dailyActivitySection
                     } else {
@@ -241,6 +247,47 @@ struct HomeView: View {
                 title: completedWorkoutTitle,
                 exerciseCount: completedExerciseCount
             )
+        }
+        .sheet(isPresented: $showFunctionalWODSheet) {
+            if let template = vm.todayFunctionalWOD {
+                WODDetailView(template: template)
+            } else {
+                WODDetailView()
+            }
+        }
+        .sheet(isPresented: $showTodayShareSheet) {
+            if let today = vm.todayWorkout {
+                PTWODShareSheet(workout: today)
+            }
+        }
+        .sheet(isPresented: $showTodayQRSheet) {
+            if let today = vm.todayWorkout {
+                WorkoutQRSheet(workout: today, workoutType: "Individual PT")
+            } else if let template = vm.todayFunctionalWOD {
+                let workout = WODService.convertToWorkoutDay(template)
+                WorkoutQRSheet(workout: workout, workoutType: "Functional")
+            }
+        }
+        .overlay {
+            if showTodaySavedToast {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(MVMTheme.success)
+                        Text("Saved to Photos")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .padding(.bottom, 40)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showTodaySavedToast)
+            }
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
@@ -461,7 +508,7 @@ struct HomeView: View {
 
     private var todayWorkoutSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("TODAY")
+            Text("TODAY'S INDIVIDUAL PT")
                 .font(.caption.weight(.heavy))
                 .tracking(1.2)
                 .foregroundStyle(MVMTheme.tertiaryText)
@@ -469,6 +516,7 @@ struct HomeView: View {
 
             if let today = vm.todayWorkout, !today.isRestDay {
                 todayWorkoutCard(today)
+                todayWorkoutActions(today)
             } else {
                 todayEmptyCard
             }
@@ -542,6 +590,326 @@ struct HomeView: View {
             .shadow(color: Color(hex: "#2E5A7C").opacity(0.2), radius: 16, y: 10)
         }
         .buttonStyle(PressScaleButtonStyle())
+    }
+
+    private func todayWorkoutActions(_ workout: WorkoutDay) -> some View {
+        HStack(spacing: 8) {
+            if !workout.isCompleted {
+                Button {
+                    todayCompleteTrigger.toggle()
+                    vm.markDayCompleted(dayIndex: workout.dayIndex)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption.weight(.bold))
+                        Text("Log Complete")
+                            .font(.caption.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .background(MVMTheme.heroGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .sensoryFeedback(.success, trigger: todayCompleteTrigger)
+                .buttonStyle(PressScaleButtonStyle())
+            } else {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption2)
+                    Text("Logged")
+                        .font(.caption.weight(.bold))
+                }
+                .foregroundStyle(MVMTheme.success)
+                .frame(maxWidth: .infinity)
+                .frame(height: 40)
+                .background(MVMTheme.success.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(MVMTheme.success.opacity(0.3))
+                }
+            }
+
+            Button {
+                ShareCardRenderer.presentShareSheet(
+                    cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
+                )
+            } label: {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(width: 40, height: 40)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(MVMTheme.border)
+                    }
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            Button {
+                let saved = ShareCardRenderer.saveToPhotos(
+                    cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
+                )
+                if saved {
+                    showTodaySavedToast = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        showTodaySavedToast = false
+                    }
+                }
+            } label: {
+                Image(systemName: "photo.on.rectangle.angled")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(width: 40, height: 40)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(MVMTheme.border)
+                    }
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            Button {
+                showTodayQRSheet = true
+            } label: {
+                Image(systemName: "qrcode")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(width: 40, height: 40)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(MVMTheme.border)
+                    }
+            }
+            .buttonStyle(PressScaleButtonStyle())
+        }
+    }
+
+    // MARK: - Today Functional Section
+
+    private var todayFunctionalSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("TODAY'S FUNCTIONAL FITNESS")
+                .font(.caption.weight(.heavy))
+                .tracking(1.2)
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .padding(.leading, 4)
+
+            if let template = vm.todayFunctionalWOD {
+                todayFunctionalCard(template)
+            } else {
+                Button {
+                    showFunctionalWODSheet = true
+                } label: {
+                    HStack(spacing: 14) {
+                        Image(systemName: "bolt.heart.fill")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(MVMTheme.heroAmber)
+                            .frame(width: 44, height: 44)
+                            .background(MVMTheme.heroAmber.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Generate Functional Workout")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(MVMTheme.primaryText)
+                            Text("Get a functional fitness session")
+                                .font(.caption)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
+
+                        Spacer(minLength: 0)
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
+                    .padding(16)
+                    .premiumCard()
+                }
+                .buttonStyle(PressScaleButtonStyle())
+            }
+        }
+        .opacity(animateHero ? 1 : 0)
+        .offset(y: animateHero ? 0 : 8)
+    }
+
+    private func todayFunctionalCard(_ template: WODTemplate) -> some View {
+        let isHero = HeroWODLibrary.isHeroWorkout(template)
+
+        return VStack(spacing: 8) {
+            Button {
+                showFunctionalWODSheet = true
+            } label: {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            Image(systemName: isHero ? "medal.fill" : "bolt.heart.fill")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 28, height: 28)
+                                .background(.white.opacity(0.15))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                            Text(isHero ? "MEMORIAL" : "FUNCTIONAL")
+                                .font(.caption2.weight(.heavy))
+                                .tracking(0.8)
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+
+                        Text(template.title)
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+
+                        HStack(spacing: 8) {
+                            Label("\(template.movements.count) movements", systemImage: "list.bullet")
+                            Label("~\(template.durationMinutes) min", systemImage: "clock")
+                        }
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                    }
+
+                    Spacer(minLength: 0)
+
+                    VStack(spacing: 6) {
+                        Image(systemName: "play.fill")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 48, height: 48)
+                            .background(.white.opacity(0.15))
+                            .clipShape(Circle())
+
+                        Text("View")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                }
+                .padding(18)
+                .background {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(
+                            isHero ?
+                            LinearGradient(
+                                colors: [Color(hex: "#8B5E34"), Color(hex: "#6B4423").opacity(0.95)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ) :
+                            LinearGradient(
+                                colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706").opacity(0.95)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .shadow(color: Color(hex: "#F59E0B").opacity(0.2), radius: 16, y: 10)
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            todayFunctionalActions(template)
+        }
+    }
+
+    private func todayFunctionalActions(_ template: WODTemplate) -> some View {
+        let workout = WODService.convertToWorkoutDay(template)
+
+        return HStack(spacing: 8) {
+            Button {
+                todayCompleteTrigger.toggle()
+                var wodWorkout = workout
+                wodWorkout.source = .wod
+                vm.completeStandaloneWorkout(wodWorkout)
+                completedWorkoutTitle = workout.title
+                completedExerciseCount = workout.exercises.count
+                showCompletionShare = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption.weight(.bold))
+                    Text("Log Complete")
+                        .font(.caption.weight(.bold))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 40)
+                .background(
+                    LinearGradient(
+                        colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706")],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .sensoryFeedback(.success, trigger: todayCompleteTrigger)
+            .buttonStyle(PressScaleButtonStyle())
+
+            Button {
+                ShareCardRenderer.presentShareSheet(
+                    cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
+                )
+            } label: {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(width: 40, height: 40)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(MVMTheme.border)
+                    }
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            Button {
+                let saved = ShareCardRenderer.saveToPhotos(
+                    cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
+                )
+                if saved {
+                    showTodaySavedToast = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        showTodaySavedToast = false
+                    }
+                }
+            } label: {
+                Image(systemName: "photo.on.rectangle.angled")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(width: 40, height: 40)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(MVMTheme.border)
+                    }
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            Button {
+                showTodayQRSheet = true
+            } label: {
+                Image(systemName: "qrcode")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(width: 40, height: 40)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(MVMTheme.border)
+                    }
+            }
+            .buttonStyle(PressScaleButtonStyle())
+        }
     }
 
     private var todayEmptyCard: some View {

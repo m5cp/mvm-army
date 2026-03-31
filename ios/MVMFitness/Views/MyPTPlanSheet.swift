@@ -101,6 +101,7 @@ struct MyPTPlanSheet: View {
                     showGoalSetup = true
                 }
                 selectedWeeks = vm.currentPlanWeeks
+                isPlanApproved = vm.currentPlan != nil && vm.currentPTGoal != nil
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.15)) {
                     animateCards = true
                 }
@@ -110,20 +111,60 @@ struct MyPTPlanSheet: View {
 
     // MARK: - Plan Actions Bar
 
+    @State private var isPlanApproved: Bool = false
+    @State private var approveCalendarTrigger: Bool = false
+
     private var planActionsBar: some View {
         VStack(spacing: 12) {
-            HStack(spacing: 10) {
-                planActionButton(icon: "square.and.arrow.down", label: "Save") {
-                    actionTrigger.toggle()
+            if !isPlanApproved {
+                Button {
+                    approveCalendarTrigger.toggle()
                     vm.savePlanSnapshot()
-                    savedAlertMessage = "Plan saved successfully."
-                    showSavedAlert = true
+                    isPlanApproved = true
+                    Task {
+                        let result = await calendarService.exportWeeklyPlan(vm.currentPlan!)
+                        handleExportResult(result)
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        if calendarService.isExporting {
+                            ProgressView().tint(.white)
+                        } else {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.subheadline.weight(.bold))
+                        }
+                        Text("Approve & Sync to Calendar")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(MVMTheme.heroGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: MVMTheme.accent.opacity(0.28), radius: 14, y: 8)
                 }
-
-                planActionButton(icon: "calendar.badge.plus", label: "Calendar") {
-                    showCalendarSheet = true
+                .disabled(calendarService.isExporting)
+                .sensoryFeedback(.success, trigger: approveCalendarTrigger)
+                .buttonStyle(PressScaleButtonStyle())
+            } else {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundStyle(MVMTheme.success)
+                    Text("Plan Approved & Synced")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.success)
                 }
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(MVMTheme.success.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(MVMTheme.success.opacity(0.3))
+                }
+            }
 
+            HStack(spacing: 10) {
                 planActionButton(icon: "qrcode", label: "Share") {
                     showShareQRSheet = true
                 }
@@ -308,6 +349,7 @@ struct MyPTPlanSheet: View {
                 vm.generateGoalPlan(goal: selectedGoal, weeks: selectedWeeks)
                 hasGenerated = true
                 showGoalSetup = false
+                isPlanApproved = false
                 animateCards = false
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) {
                     animateCards = true
