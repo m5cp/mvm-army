@@ -6,7 +6,6 @@ struct CompletedWorkoutsListView: View {
     @State private var selectedRecord: CompletedWorkoutRecord?
     @State private var showDetail: Bool = false
     @State private var shareRecord: CompletedWorkoutRecord?
-    @State private var showShareSheet: Bool = false
 
 
     private var groupedRecords: [(String, [CompletedWorkoutRecord])] {
@@ -78,10 +77,8 @@ struct CompletedWorkoutsListView: View {
                 CompletedWorkoutDetailView(record: record)
             }
         }
-        .sheet(isPresented: $showShareSheet) {
-            if let record = shareRecord {
-                CompletedWorkoutShareSheet(record: record)
-            }
+        .sheet(item: $shareRecord) { record in
+            CompletedWorkoutShareSheet(record: record)
         }
     }
 
@@ -112,7 +109,6 @@ struct CompletedWorkoutsListView: View {
 
             Button {
                 shareRecord = record
-                showShareSheet = true
             } label: {
                 Image(systemName: "square.and.arrow.up")
                     .font(.caption.weight(.bold))

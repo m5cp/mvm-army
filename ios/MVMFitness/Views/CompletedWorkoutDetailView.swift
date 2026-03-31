@@ -10,7 +10,7 @@ struct CompletedWorkoutDetailView: View {
     @State private var editingExerciseID: UUID?
     @State private var hasChanges: Bool = false
     @State private var saveTrigger: Bool = false
-    @State private var showShareSheet: Bool = false
+    @State private var shareItem: CompletedWorkoutRecord?
 
 
     var body: some View {
@@ -62,7 +62,13 @@ struct CompletedWorkoutDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
                     Button {
-                        showShareSheet = true
+                        shareItem = CompletedWorkoutRecord(
+                            date: record.date,
+                            title: record.title,
+                            exerciseCount: exercises.count,
+                            exercises: exercises,
+                            source: record.source
+                        )
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .font(.body.weight(.semibold))
@@ -82,14 +88,8 @@ struct CompletedWorkoutDetailView: View {
         .onAppear {
             exercises = record.exercises
         }
-        .sheet(isPresented: $showShareSheet) {
-            CompletedWorkoutShareSheet(record: CompletedWorkoutRecord(
-                date: record.date,
-                title: record.title,
-                exerciseCount: exercises.count,
-                exercises: exercises,
-                source: record.source
-            ))
+        .sheet(item: $shareItem) { item in
+            CompletedWorkoutShareSheet(record: item)
         }
     }
 
