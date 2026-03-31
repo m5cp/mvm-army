@@ -10,7 +10,7 @@ nonisolated enum WODHeroPreference: String, Codable, CaseIterable, Sendable, Ide
 
     var subtitle: String {
         switch self {
-        case .regular: return "Standard CrossFit workouts"
+        case .regular: return "Standard functional workouts"
         case .mixed: return "Alternate hero and regular WODs"
         case .majorityHero: return "Mostly hero WODs with some regular"
         case .heroOnly: return "All hero WODs honoring fallen heroes"
@@ -39,7 +39,7 @@ nonisolated enum WODFormat: String, Codable, CaseIterable, Sendable {
 }
 
 nonisolated enum WODCategory: String, Codable, CaseIterable, Sendable {
-    case crossfit = "CrossFit-Style"
+    case crossfit = "Functional"
     case aftStyle = "AFT-Style"
     case tactical = "Tactical"
     case bodyweight = "Bodyweight"

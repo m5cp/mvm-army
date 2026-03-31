@@ -128,27 +128,123 @@ struct WODShareSheet: View {
 
 @MainActor
 enum WODCardRenderer {
+    private static let heroGold = UIColor(red: 0.769, green: 0.639, blue: 0.353, alpha: 1.0)
+
     static func render(template: WODTemplate) -> UIImage? {
+        let isHero = HeroWODLibrary.isHeroWOD(template)
+        let tribute = HeroWODLibrary.tributeFor(template.title)
         let w: CGFloat = 1080
         let movementRows = min(template.movements.count, 6)
-        let h: CGFloat = CGFloat(820 + movementRows * 60)
+        let tributeHeight: CGFloat = (isHero && tribute != nil) ? 220 : 0
+        let h: CGFloat = CGFloat(820 + movementRows * 60) + tributeHeight
         let renderer = ShareCardCGHelpers.makeRenderer(width: w, height: h)
 
         return renderer.image { ctx in
             let context = ctx.cgContext
 
-            ShareCardCGHelpers.drawBackground(context: context, width: w, height: h)
+            if isHero {
+                drawHeroBackground(context: context, width: w, height: h)
+            } else {
+                ShareCardCGHelpers.drawBackground(context: context, width: w, height: h)
+            }
             ShareCardCGHelpers.drawHeader(context: context, width: w, date: .now)
 
-            drawWODBadge(context: context, width: w)
+            if isHero {
+                drawHeroBadge(context: context, width: w)
+            } else {
+                drawWODBadge(context: context, width: w)
+            }
             drawFormatPill(context: context, format: template.format.rawValue, width: w)
             drawTitle(context: context, title: template.title, width: w)
-            drawDescription(context: context, desc: template.workoutDescription, width: w)
-            drawStats(context: context, template: template, width: w)
-            drawMovements(context: context, movements: template.movements, width: w)
+
+            var currentY: CGFloat = 310
+
+            if isHero, let tribute {
+                currentY = drawHeroTribute(context: context, tribute: tribute, width: w, startY: 190 + 80)
+            } else {
+                drawDescription(context: context, desc: template.workoutDescription, width: w, startY: currentY)
+                currentY = 400
+            }
+
+            drawStats(context: context, template: template, width: w, startY: currentY)
+            drawMovements(context: context, movements: template.movements, width: w, startY: currentY + 130)
 
             ShareCardCGHelpers.drawFooter(context: context, width: w, height: h)
         }
+    }
+
+    private static func drawHeroBackground(context: CGContext, width: CGFloat, height: CGFloat) {
+        context.setFillColor(ShareCardCGHelpers.bgColor.cgColor)
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+
+        let colors = [
+            heroGold.withAlphaComponent(0.14).cgColor,
+            UIColor(red: 0.55, green: 0.37, blue: 0.14, alpha: 0.06).cgColor,
+            UIColor.clear.cgColor
+        ] as CFArray
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0, 0.5, 1.0]) {
+            context.drawRadialGradient(gradient,
+                                       startCenter: CGPoint(x: width / 2, y: 200),
+                                       startRadius: 0,
+                                       endCenter: CGPoint(x: width / 2, y: 200),
+                                       endRadius: 600,
+                                       options: [])
+        }
+    }
+
+    private static func drawHeroBadge(context: CGContext, width: CGFloat) {
+        let badgeAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 20, weight: .heavy),
+            .foregroundColor: heroGold
+        ]
+        let badgeStr = NSAttributedString(string: "🎖  HERO WOD", attributes: badgeAttrs)
+        let badgeSize = badgeStr.size()
+        let pillRect = CGRect(x: 60, y: 130, width: badgeSize.width + 28, height: 36)
+        let pillPath = UIBezierPath(roundedRect: pillRect, cornerRadius: 18)
+        context.setFillColor(heroGold.withAlphaComponent(0.15).cgColor)
+        context.addPath(pillPath.cgPath)
+        context.fillPath()
+        badgeStr.draw(at: CGPoint(x: pillRect.midX - badgeSize.width / 2, y: pillRect.midY - badgeSize.height / 2))
+    }
+
+    private static func drawHeroTribute(context: CGContext, tribute: HeroWODInfo, width: CGFloat, startY: CGFloat) -> CGFloat {
+        var y = startY
+
+        let honorAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 16, weight: .heavy),
+            .foregroundColor: heroGold,
+            .kern: 2.0
+        ]
+        let honorStr = NSAttributedString(string: "IN HONOR OF", attributes: honorAttrs)
+        honorStr.draw(at: CGPoint(x: 60, y: y))
+        y += 30
+
+        let nameAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 28, weight: .bold),
+            .foregroundColor: UIColor.white
+        ]
+        let nameStr = NSAttributedString(string: tribute.name, attributes: nameAttrs)
+        nameStr.draw(with: CGRect(x: 60, y: y, width: width - 120, height: 40), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
+        y += 44
+
+        let tributeAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 20, weight: .regular),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.55)
+        ]
+        let tributeStr = NSAttributedString(string: tribute.tribute, attributes: tributeAttrs)
+        let tributeBounds = tributeStr.boundingRect(with: CGSize(width: width - 120, height: 120), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
+        tributeStr.draw(with: CGRect(x: 60, y: y, width: width - 120, height: 120), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
+        y += min(tributeBounds.height, 120) + 16
+
+        context.setStrokeColor(heroGold.withAlphaComponent(0.15).cgColor)
+        context.setLineWidth(1)
+        context.move(to: CGPoint(x: 60, y: y))
+        context.addLine(to: CGPoint(x: width - 60, y: y))
+        context.strokePath()
+        y += 16
+
+        return y
     }
 
     private static func drawWODBadge(context: CGContext, width: CGFloat) {
@@ -190,27 +286,26 @@ enum WODCardRenderer {
         titleStr.draw(with: CGRect(x: 60, y: 190, width: width - 120, height: 130), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
     }
 
-    private static func drawDescription(context: CGContext, desc: String, width: CGFloat) {
+    private static func drawDescription(context: CGContext, desc: String, width: CGFloat, startY: CGFloat) {
         let descAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 24, weight: .regular),
             .foregroundColor: UIColor.white.withAlphaComponent(0.55)
         ]
         let descStr = NSAttributedString(string: desc, attributes: descAttrs)
-        descStr.draw(with: CGRect(x: 60, y: 310, width: width - 120, height: 70), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
+        descStr.draw(with: CGRect(x: 60, y: startY, width: width - 120, height: 70), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
     }
 
-    private static func drawStats(context: CGContext, template: WODTemplate, width: CGFloat) {
-        let statsY: CGFloat = 400
+    private static func drawStats(context: CGContext, template: WODTemplate, width: CGFloat, startY: CGFloat) {
         let boxWidth = (width - 160) / 3
         let boxHeight: CGFloat = 100
 
-        ShareCardCGHelpers.drawStatBox(context: context, x: 60, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "~\(template.durationMinutes)m", label: "Duration", valueColor: ShareCardCGHelpers.accentBlue)
-        ShareCardCGHelpers.drawStatBox(context: context, x: 60 + boxWidth + 20, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: template.category.rawValue, label: "Type", valueColor: ShareCardCGHelpers.warningAmber)
-        ShareCardCGHelpers.drawStatBox(context: context, x: 60 + (boxWidth + 20) * 2, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(template.movements.count)", label: "Movements", valueColor: ShareCardCGHelpers.successGreen)
+        ShareCardCGHelpers.drawStatBox(context: context, x: 60, y: startY, boxWidth: boxWidth, boxHeight: boxHeight, value: "~\(template.durationMinutes)m", label: "Duration", valueColor: ShareCardCGHelpers.accentBlue)
+        ShareCardCGHelpers.drawStatBox(context: context, x: 60 + boxWidth + 20, y: startY, boxWidth: boxWidth, boxHeight: boxHeight, value: template.category.rawValue, label: "Type", valueColor: ShareCardCGHelpers.warningAmber)
+        ShareCardCGHelpers.drawStatBox(context: context, x: 60 + (boxWidth + 20) * 2, y: startY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(template.movements.count)", label: "Movements", valueColor: ShareCardCGHelpers.successGreen)
     }
 
-    private static func drawMovements(context: CGContext, movements: [WODMovement], width: CGFloat) {
-        var rowY: CGFloat = 530
+    private static func drawMovements(context: CGContext, movements: [WODMovement], width: CGFloat, startY: CGFloat) {
+        var rowY = startY
 
         let sectionAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 20, weight: .heavy),

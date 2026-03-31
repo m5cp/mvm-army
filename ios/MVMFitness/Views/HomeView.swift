@@ -438,12 +438,12 @@ struct HomeView: View {
         return "\(count) workout\(count == 1 ? "" : "s") scheduled today"
     }
 
-    // MARK: - Dual WOD Cards (CrossFit WOD + PT Workout of the Day)
+    // MARK: - Dual WOD Cards (Functional WOD + PT Workout of the Day)
 
     private var wodDualCards: some View {
         HStack(spacing: 10) {
             ptWorkoutCard
-            crossfitWODCard
+            functionalWODCard
         }
         .opacity(animateHero ? 1 : 0)
         .offset(y: animateHero ? 0 : 8)
@@ -545,7 +545,7 @@ struct HomeView: View {
         .buttonStyle(PressScaleButtonStyle())
     }
 
-    private var crossfitWODCard: some View {
+    private var functionalWODCard: some View {
         Button {
             toolTapTrigger.toggle()
             showWODSheet = true
@@ -563,7 +563,7 @@ struct HomeView: View {
 
                     Button {
                         toolTapTrigger.toggle()
-                        vm.regenerateCrossFitWOD()
+                        vm.regenerateFunctionalWOD()
                     } label: {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 10, weight: .bold))
@@ -576,13 +576,13 @@ struct HomeView: View {
                 }
                 .padding(.bottom, 10)
 
-                Text("CROSSFIT WOD")
+                Text("FUNCTIONAL WOD")
                     .font(.system(size: 10, weight: .heavy))
                     .tracking(0.6)
                     .foregroundStyle(.white.opacity(0.6))
                     .padding(.bottom, 4)
 
-                if let wod = vm.todayCrossFitWOD {
+                if let wod = vm.todayFunctionalWOD {
                     Text(wod.title)
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.white)
@@ -648,7 +648,7 @@ struct HomeView: View {
 
                 launcherCard(
                     title: "WOD Plan",
-                    subtitle: "CrossFit week",
+                    subtitle: "Functional week",
                     icon: "bolt.heart.fill",
                     gradient: [Color(hex: "#F59E0B"), Color(hex: "#D97706")]
                 ) {

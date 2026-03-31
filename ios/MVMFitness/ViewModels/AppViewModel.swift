@@ -14,7 +14,7 @@ final class AppViewModel {
     var aftScores: [AFTScoreRecord] = []
     var aftCalculatorResults: [AFTCalculatorResult] = []
     var wodPlan: WODPlan?
-    var todayCrossFitWOD: WODTemplate?
+    var todayFunctionalWOD: WODTemplate?
 
     init() {
         loadLocalData()
@@ -33,7 +33,7 @@ final class AppViewModel {
         aftScores = LocalStore.load([AFTScoreRecord].self, forKey: "aftScores", fallback: [])
         aftCalculatorResults = LocalStore.load([AFTCalculatorResult].self, forKey: "aftCalculatorResults", fallback: [])
         wodPlan = LocalStore.load(WODPlan?.self, forKey: "wodPlan", fallback: nil)
-        loadTodayCrossFitWOD()
+        loadTodayFunctionalWOD()
     }
 
     func persistAll() {
@@ -731,29 +731,29 @@ final class AppViewModel {
 
     // MARK: - WOD Plan
 
-    func loadTodayCrossFitWOD() {
-        let lastDate = UserDefaults.standard.double(forKey: "lastCrossFitWODDate")
+    func loadTodayFunctionalWOD() {
+        let lastDate = UserDefaults.standard.double(forKey: "lastFunctionalWODDate")
         let today = Calendar.current.startOfDay(for: .now)
         if lastDate > 0, Calendar.current.isDate(Date(timeIntervalSince1970: lastDate), inSameDayAs: today) {
-            if let data = UserDefaults.standard.data(forKey: "todayCrossFitWOD"),
+            if let data = UserDefaults.standard.data(forKey: "todayFunctionalWOD"),
                let template = try? JSONDecoder().decode(WODTemplate.self, from: data) {
-                todayCrossFitWOD = template
+                todayFunctionalWOD = template
                 return
             }
         }
-        regenerateCrossFitWOD()
+        regenerateFunctionalWOD()
     }
 
-    func regenerateCrossFitWOD() {
+    func regenerateFunctionalWOD() {
         let template = WODService.generateWOD(
             equipment: currentEquipment,
             dutyType: currentDutyType
         )
-        todayCrossFitWOD = template
+        todayFunctionalWOD = template
         if let data = try? JSONEncoder().encode(template) {
-            UserDefaults.standard.set(data, forKey: "todayCrossFitWOD")
+            UserDefaults.standard.set(data, forKey: "todayFunctionalWOD")
         }
-        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastCrossFitWODDate")
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastFunctionalWODDate")
     }
 
     var todayPTWorkout: WorkoutDay? {
@@ -912,7 +912,7 @@ final class AppViewModel {
                 else { status = .planned }
                 entries.append(CalendarWorkoutEntry(
                     id: wDay.id, title: wDay.template.title, date: wDay.date,
-                    type: "CrossFit", duration: wDay.template.durationMinutes,
+                    type: "Functional", duration: wDay.template.durationMinutes,
                     status: status, source: .wod, exerciseCount: wDay.template.movements.count
                 ))
             }
@@ -965,7 +965,7 @@ final class AppViewModel {
         aftScores = []
         aftCalculatorResults = []
         wodPlan = nil
-        todayCrossFitWOD = nil
+        todayFunctionalWOD = nil
         persistAll()
     }
 }

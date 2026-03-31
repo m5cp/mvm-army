@@ -2,7 +2,7 @@ import Foundation
 
 enum WODTemplateLibrary {
 
-    static let crossfitWODs: [WODTemplate] = [
+    static let functionalWODs: [WODTemplate] = [
         WODTemplate(
             title: "Murph Light",
             category: .crossfit,
@@ -127,7 +127,7 @@ enum WODTemplateLibrary {
                 WODMovement(name: "Air Squats", reps: "15")
             ],
             workoutDescription: "AMRAP 20 minutes: 5 pull-ups, 10 push-ups, 15 air squats. Scale pull-ups to ring rows.",
-            notes: "Classic CrossFit benchmark"
+            notes: "Classic functional benchmark"
         ),
         WODTemplate(
             title: "Ascending Ladder",
@@ -625,11 +625,11 @@ enum WODTemplateLibrary {
     ]
 
     static var allTemplates: [WODTemplate] {
-        crossfitWODs + aftWODs
+        functionalWODs + aftWODs
     }
 
     static var regularWODs: [WODTemplate] {
-        crossfitWODs + aftWODs
+        functionalWODs + aftWODs
     }
 
     static var heroWODs: [WODTemplate] {
@@ -637,6 +637,6 @@ enum WODTemplateLibrary {
     }
 
     static var allIncludingHero: [WODTemplate] {
-        crossfitWODs + aftWODs + HeroWODLibrary.heroWODs
+        functionalWODs + aftWODs + HeroWODLibrary.heroWODs
     }
 }

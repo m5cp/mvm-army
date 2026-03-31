@@ -75,7 +75,7 @@ struct WODPlanSheet: View {
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
-                Text("Generate a CrossFit-style weekly plan tailored to your goals. Uses the same goal as your PT plan.")
+                Text("Generate a functional fitness weekly plan tailored to your goals. Uses the same goal as your PT plan.")
                     .font(.caption)
                     .foregroundStyle(MVMTheme.secondaryText)
                     .multilineTextAlignment(.center)

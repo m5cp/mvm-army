@@ -449,7 +449,7 @@ struct WODDetailView: View {
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
-                Text("Add this CrossFit WOD to your iOS Calendar.")
+                Text("Add this Functional WOD to your iOS Calendar.")
                     .font(.subheadline)
                     .foregroundStyle(MVMTheme.secondaryText)
                     .multilineTextAlignment(.center)
