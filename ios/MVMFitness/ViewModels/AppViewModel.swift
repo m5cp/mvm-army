@@ -633,7 +633,7 @@ final class AppViewModel {
         dateFormatter.dateFormat = "MMM d"
         let goalLabel = plan.ptGoal.isEmpty ? "General" : plan.ptGoal
 
-        var text = "MVM Army — PT Plan\n"
+        var text = "MVM Fitness — Individual PT Plan\n"
         text += "Goal: \(goalLabel) · Week \(plan.currentWeek) of \(plan.totalWeeks)\n"
         if let first = plan.days.first, let last = plan.days.last {
             text += "\(dateFormatter.string(from: first.date)) – \(dateFormatter.string(from: last.date))\n"
@@ -656,7 +656,7 @@ final class AppViewModel {
             text += "\n"
         }
 
-        text += "#MVMArmy"
+        text += "#MVMFitness"
         return text
     }
 
@@ -838,7 +838,7 @@ final class AppViewModel {
         dateFormatter.dateFormat = "MMM d"
         let goalLabel = plan.ptGoal.isEmpty ? "Functional Fitness Plan" : plan.ptGoal
 
-        var text = "MVM Army — Functional Fitness Plan\n"
+        var text = "MVM Fitness — Functional Fitness Plan\n"
         text += "Goal: \(goalLabel) · Week \(plan.currentWeek) of \(plan.totalWeeks)\n"
         if let first = plan.days.first, let last = plan.days.last {
             text += "\(dateFormatter.string(from: first.date)) – \(dateFormatter.string(from: last.date))\n"
@@ -864,7 +864,7 @@ final class AppViewModel {
             text += "\n"
         }
 
-        text += "#MVMArmy"
+        text += "#MVMFitness"
         return text
     }
 

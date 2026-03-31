@@ -83,7 +83,7 @@ struct WorkoutQRSheet: View {
                     .foregroundStyle(MVMTheme.secondaryText)
             }
 
-            Text("Scan with MVM Army to import this workout")
+            Text("Scan with MVM Fitness to import this workout")
                 .font(.caption)
                 .foregroundStyle(MVMTheme.tertiaryText)
                 .multilineTextAlignment(.center)

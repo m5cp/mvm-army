@@ -14,7 +14,11 @@ struct WorkoutDetailView: View {
     @State private var saveTrigger: Bool = false
     @State private var completeTrigger: Bool = false
     @State private var showQRSheet = false
-
+    @State private var showCalendarSync: Bool = false
+    @State private var calendarService = CalendarExportService()
+    @State private var showExportAlert: Bool = false
+    @State private var exportAlertMessage: String = ""
+    @State private var showSavedToast: Bool = false
 
     private var workout: WorkoutDay? {
         if isStandalone { return nil }
@@ -72,6 +76,26 @@ struct WorkoutDetailView: View {
                         } label: {
                             Label("Share Card", systemImage: "square.and.arrow.up")
                         }
+                        Button {
+                            if let w = workout {
+                                let saved = ShareCardRenderer.saveToPhotos(
+                                    cardType: .workout(title: w.title, exercises: w.exercises, tags: w.tags)
+                                )
+                                if saved {
+                                    showSavedToast = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                        showSavedToast = false
+                                    }
+                                }
+                            }
+                        } label: {
+                            Label("Save Image", systemImage: "photo.on.rectangle.angled")
+                        }
+                        Button {
+                            showCalendarSync = true
+                        } label: {
+                            Label("Sync to Calendar", systemImage: "calendar.badge.plus")
+                        }
                     } label: {
                         Image(systemName: "ellipsis.circle")
                             .font(.body.weight(.semibold))
@@ -83,6 +107,35 @@ struct WorkoutDetailView: View {
         .sheet(isPresented: $showQRSheet) {
             if let w = workout {
                 WorkoutQRSheet(workout: w, workoutType: "Individual PT")
+            }
+        }
+        .sheet(isPresented: $showCalendarSync) {
+            workoutCalendarSheet
+        }
+        .alert("Calendar", isPresented: $showExportAlert) {
+            Button("OK") {}
+        } message: {
+            Text(exportAlertMessage)
+        }
+        .overlay {
+            if showSavedToast {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(MVMTheme.success)
+                        Text("Saved to Photos")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .padding(.bottom, 40)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showSavedToast)
             }
         }
         .onAppear {
@@ -620,6 +673,80 @@ struct WorkoutDetailView: View {
                 .frame(maxWidth: .infinity)
             }
         }
+    }
+
+    private var workoutCalendarSheet: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 8) {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.system(size: 40))
+                    .foregroundStyle(MVMTheme.accent)
+                    .padding(.top, 8)
+
+                Text("Sync to Calendar")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Text("Add this workout to your iOS Calendar.")
+                    .font(.subheadline)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+            }
+
+            VStack(spacing: 12) {
+                if let w = workout {
+                    Button {
+                        Task {
+                            let result = await calendarService.exportWorkout(w)
+                            switch result {
+                            case .success(let count):
+                                exportAlertMessage = "\(count) workout\(count == 1 ? "" : "s") synced."
+                            case .partial(let exported, let failed):
+                                exportAlertMessage = "\(exported) exported, \(failed) failed."
+                            case .denied:
+                                exportAlertMessage = "Calendar access denied. Go to Settings to enable."
+                            case .error(let message):
+                                exportAlertMessage = "Sync failed: \(message)"
+                            }
+                            showExportAlert = true
+                            showCalendarSync = false
+                        }
+                    } label: {
+                        HStack(spacing: 10) {
+                            if calendarService.isExporting {
+                                ProgressView().tint(.white)
+                            } else {
+                                Image(systemName: "calendar.badge.plus")
+                                    .font(.subheadline.weight(.bold))
+                            }
+                            Text("Sync to Calendar")
+                                .font(.headline.weight(.bold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(MVMTheme.heroGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .disabled(calendarService.isExporting)
+                    .buttonStyle(PressScaleButtonStyle())
+                }
+
+                Button {
+                    showCalendarSync = false
+                } label: {
+                    Text("Cancel")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                .padding(.top, 4)
+            }
+            .padding(.horizontal, 20)
+        }
+        .padding(.vertical, 20)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(MVMTheme.background)
     }
 
     private func saveChanges() {

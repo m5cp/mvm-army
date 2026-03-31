@@ -57,7 +57,7 @@ struct MyPTPlanSheet: View {
                     .padding(.bottom, 36)
                 }
             }
-            .navigationTitle("Plan My PT")
+            .navigationTitle("Plan My Individual PT")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -244,7 +244,7 @@ struct MyPTPlanSheet: View {
                     .background(MVMTheme.accent.opacity(0.12))
                     .clipShape(Circle())
 
-                Text("Set Your Goal")
+                Text("Plan My Individual PT")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
@@ -854,7 +854,7 @@ struct PlanShareSheet: View {
                                     .foregroundStyle(MVMTheme.secondaryText)
                             }
 
-                            Text("Scan with MVM Army to import this plan")
+                            Text("Scan with MVM Fitness to import this plan")
                                 .font(.caption)
                                 .foregroundStyle(MVMTheme.tertiaryText)
                                 .multilineTextAlignment(.center)

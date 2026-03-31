@@ -11,6 +11,12 @@ struct CompletedWorkoutDetailView: View {
     @State private var hasChanges: Bool = false
     @State private var saveTrigger: Bool = false
     @State private var shareItem: CompletedWorkoutRecord?
+    @State private var showQRSheet: Bool = false
+    @State private var showCalendarSync: Bool = false
+    @State private var calendarService = CalendarExportService()
+    @State private var showExportAlert: Bool = false
+    @State private var exportAlertMessage: String = ""
+    @State private var showSavedToast: Bool = false
 
 
     var body: some View {
@@ -91,10 +97,47 @@ struct CompletedWorkoutDetailView: View {
         .sheet(item: $shareItem) { item in
             CompletedWorkoutShareSheet(record: item)
         }
+        .sheet(isPresented: $showQRSheet) {
+            let workout = WorkoutDay(
+                dayIndex: -1,
+                date: record.date,
+                title: record.title,
+                exercises: record.exercises,
+                isCompleted: true,
+                source: record.source
+            )
+            WorkoutQRSheet(workout: workout, workoutType: record.source.rawValue)
+        }
+        .alert("Calendar", isPresented: $showExportAlert) {
+            Button("OK") {}
+        } message: {
+            Text(exportAlertMessage)
+        }
+        .overlay {
+            if showSavedToast {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(MVMTheme.success)
+                        Text("Saved to Photos")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .padding(.bottom, 40)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showSavedToast)
+            }
+        }
     }
 
     private var headerCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(record.title)
@@ -103,7 +146,7 @@ struct CompletedWorkoutDetailView: View {
 
                     HStack(spacing: 8) {
                         Label(record.source.rawValue, systemImage: sourceIcon)
-                        Text("·")
+                        Text("\u{00b7}")
                         Text(formatDate(record.date))
                     }
                     .font(.caption.weight(.medium))
@@ -116,9 +159,93 @@ struct CompletedWorkoutDetailView: View {
                     .font(.title2)
                     .foregroundStyle(MVMTheme.success)
             }
+
+            unifiedActionRow
         }
         .padding(18)
         .premiumCard()
+    }
+
+    private var unifiedActionRow: some View {
+        HStack(spacing: 8) {
+            actionButton(icon: "square.and.arrow.up", label: "Share") {
+                shareItem = CompletedWorkoutRecord(
+                    date: record.date,
+                    title: record.title,
+                    exerciseCount: exercises.count,
+                    exercises: exercises,
+                    source: record.source
+                )
+            }
+
+            actionButton(icon: "photo.on.rectangle.angled", label: "Save") {
+                let saved = ShareCardRenderer.saveToPhotos(
+                    cardType: .completedWorkout(record: CompletedWorkoutRecord(
+                        date: record.date,
+                        title: record.title,
+                        exerciseCount: exercises.count,
+                        exercises: exercises,
+                        source: record.source
+                    ))
+                )
+                if saved {
+                    showSavedToast = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        showSavedToast = false
+                    }
+                }
+            }
+
+            actionButton(icon: "qrcode", label: "QR") {
+                showQRSheet = true
+            }
+
+            actionButton(icon: "calendar.badge.plus", label: "Calendar") {
+                let workout = WorkoutDay(
+                    dayIndex: -1,
+                    date: record.date,
+                    title: record.title,
+                    exercises: record.exercises,
+                    isCompleted: true,
+                    source: record.source
+                )
+                Task {
+                    let result = await calendarService.exportWorkout(workout)
+                    switch result {
+                    case .success(let count):
+                        exportAlertMessage = "\(count) workout\(count == 1 ? "" : "s") synced."
+                    case .partial(let exported, let failed):
+                        exportAlertMessage = "\(exported) exported, \(failed) failed."
+                    case .denied:
+                        exportAlertMessage = "Calendar access denied. Go to Settings to enable."
+                    case .error(let message):
+                        exportAlertMessage = "Sync failed: \(message)"
+                    }
+                    showExportAlert = true
+                }
+            }
+        }
+    }
+
+    private func actionButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button {
+            action()
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 36, height: 36)
+                    .background(MVMTheme.accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                Text(label)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(PressScaleButtonStyle())
     }
 
     private var sourceIcon: String {

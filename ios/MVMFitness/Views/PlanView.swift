@@ -50,7 +50,7 @@ struct PlanView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("MVM ARMY")
+                Text("MVM FITNESS")
                     .font(.caption.weight(.heavy))
                     .tracking(2.4)
                     .foregroundStyle(MVMTheme.secondaryText)

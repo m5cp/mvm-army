@@ -556,12 +556,12 @@ struct PTWODShareSheet: View {
     }
 
     private func buildShareText() -> String {
-        var text = "MVM Army — PT WOD: \(workout.title)\n"
+        var text = "MVM Fitness — PT WOD: \(workout.title)\n"
         text += "\(workout.exercises.count) exercises\n\n"
         for exercise in workout.exercises {
             text += "• \(exercise.name) — \(exercise.displayDetail)\n"
         }
-        text += "\n#MVMArmy #ArmyFitness"
+        text += "\n#MVMFitness #ArmyFitness"
         return text
     }
 }

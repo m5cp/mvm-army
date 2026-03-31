@@ -49,7 +49,7 @@ final class CalendarExportService {
                 notes += " (\(exercise.notes))"
             }
         }
-        notes += "\n\nExported from MVM Army"
+        notes += "\n\nExported from MVM Fitness"
         event.notes = notes
         event.calendar = store.defaultCalendarForNewEvents
 
@@ -88,7 +88,7 @@ final class CalendarExportService {
             for exercise in day.exercises {
                 notes += "\n• \(exercise.name) — \(exercise.displayDetail)"
             }
-            notes += "\n\nExported from MVM Army"
+            notes += "\n\nExported from MVM Fitness"
             event.notes = notes
             event.calendar = store.defaultCalendarForNewEvents
 
@@ -134,7 +134,7 @@ final class CalendarExportService {
                     notes += "\n• \(movement.name)\(detail.isEmpty ? "" : " — \(detail)")"
                 }
             }
-            notes += "\n\nExported from MVM Army"
+            notes += "\n\nExported from MVM Fitness"
             event.notes = notes
             event.calendar = store.defaultCalendarForNewEvents
 
@@ -176,7 +176,7 @@ final class CalendarExportService {
                 notes += "\n• \(movement.name)\(detail.isEmpty ? "" : " — \(detail)")"
             }
         }
-        notes += "\n\nExported from MVM Army"
+        notes += "\n\nExported from MVM Fitness"
         event.notes = notes
         event.calendar = store.defaultCalendarForNewEvents
 

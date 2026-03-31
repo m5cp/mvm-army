@@ -67,18 +67,18 @@ enum ShareCardRenderer {
     static func fallbackText(cardType: ShareCardType) -> String {
         switch cardType {
         case .workout(let title, let exercises, _):
-            return "MVM Army — \(title)\n\(exercises.count) exercises\n#MVMArmy"
+            return "MVM Fitness — \(title)\n\(exercises.count) exercises\n#MVMFitness"
         case .progress(let completed, let planned, let streak, let steps):
-            return "MVM Army — Weekly Progress\n\(completed)/\(planned) PT done · \(streak) day streak · \(steps) steps\n#MVMArmy"
+            return "MVM Fitness — Weekly Progress\n\(completed)/\(planned) PT done · \(streak) day streak · \(steps) steps\n#MVMFitness"
         case .aft(let score, _):
-            return "MVM Army — AFT Score: \(score.totalScore)\n#MVMArmy"
+            return "MVM Fitness — AFT Score: \(score.totalScore)\n#MVMFitness"
         case .unitPT(let plan):
-            return "MVM Army — \(plan.title)\n\(plan.objective)\n#MVMArmy"
+            return "MVM Fitness — \(plan.title)\n\(plan.objective)\n#MVMFitness"
         case .completion(let title, let count, let duration):
-            return "MVM Army — Completed: \(title)\n\(count) exercises · \(duration)\n#MVMArmy"
+            return "MVM Fitness — Completed: \(title)\n\(count) exercises · \(duration)\n#MVMFitness"
         case .completedWorkout(let record):
             let prefix = record.source == .wod ? "WOD: " : ""
-            return "MVM Army — \(prefix)\(record.title)\n\(record.exerciseCount) exercises\n#MVMArmy"
+            return "MVM Fitness — \(prefix)\(record.title)\n\(record.exerciseCount) exercises\n#MVMFitness"
         }
     }
 }
@@ -86,19 +86,19 @@ enum ShareCardRenderer {
 @MainActor
 enum ShareCardCGHelpers {
     static let width: CGFloat = 1080
-    static let bgColor = UIColor(red: 0.035, green: 0.035, blue: 0.047, alpha: 1.0)
-    static let accentBlue = UIColor(red: 0.31, green: 0.55, blue: 1.0, alpha: 1.0)
-    static let accentPurple = UIColor(red: 0.486, green: 0.36, blue: 1.0, alpha: 1.0)
+    static let bgColor = UIColor(red: 0.047, green: 0.059, blue: 0.055, alpha: 1.0)
+    static let accentBlue = UIColor(red: 0.18, green: 0.49, blue: 0.32, alpha: 1.0)
+    static let accentPurple = UIColor(red: 0.29, green: 0.49, blue: 0.42, alpha: 1.0)
     static let successGreen = UIColor(red: 0.133, green: 0.773, blue: 0.369, alpha: 1.0)
-    static let warningAmber = UIColor(red: 0.961, green: 0.62, blue: 0.043, alpha: 1.0)
+    static let warningAmber = UIColor(red: 0.769, green: 0.514, blue: 0.231, alpha: 1.0)
 
     static func drawBackground(context: CGContext, width: CGFloat, height: CGFloat) {
         context.setFillColor(bgColor.cgColor)
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))
 
         let colors = [
-            UIColor(red: 0.31, green: 0.55, blue: 1.0, alpha: 0.12).cgColor,
-            UIColor(red: 0.49, green: 0.36, blue: 1.0, alpha: 0.06).cgColor,
+            UIColor(red: 0.106, green: 0.369, blue: 0.231, alpha: 0.14).cgColor,
+            UIColor(red: 0.18, green: 0.49, blue: 0.32, alpha: 0.06).cgColor,
             UIColor.clear.cgColor
         ] as CFArray
         let colorSpace = CGColorSpaceCreateDeviceRGB()
@@ -125,7 +125,7 @@ enum ShareCardCGHelpers {
             .foregroundColor: UIColor.white.withAlphaComponent(0.7),
             .kern: 3.0
         ]
-        let titleStr = NSAttributedString(string: "MVM ARMY", attributes: titleAttrs)
+        let titleStr = NSAttributedString(string: "MVM FITNESS", attributes: titleAttrs)
         titleStr.draw(at: CGPoint(x: 100, y: 54))
 
         let dateFormatter = DateFormatter()
@@ -159,14 +159,14 @@ enum ShareCardCGHelpers {
             .font: UIFont.systemFont(ofSize: 20, weight: .semibold),
             .foregroundColor: UIColor.white.withAlphaComponent(0.25)
         ]
-        let leftStr = NSAttributedString(string: "Me vs Me", attributes: leftAttrs)
+        let leftStr = NSAttributedString(string: "MVM Fitness", attributes: leftAttrs)
         leftStr.draw(at: CGPoint(x: 60, y: y + 20))
 
         let rightAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 20, weight: .medium),
             .foregroundColor: UIColor.white.withAlphaComponent(0.2)
         ]
-        let rightStr = NSAttributedString(string: "#MVMArmy", attributes: rightAttrs)
+        let rightStr = NSAttributedString(string: "#MVMFitness", attributes: rightAttrs)
         let rightSize = rightStr.size()
         rightStr.draw(at: CGPoint(x: width - 60 - rightSize.width, y: y + 20))
     }

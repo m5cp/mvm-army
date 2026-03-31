@@ -54,7 +54,7 @@ struct WODShareSheet: View {
 
                         Button {
                             if let image = renderedImage {
-                                let text = "MVM Army — WOD: \(template.title)\n#MVMArmy #ArmyFitness"
+                                let text = "MVM Fitness — WOD: \(template.title)\n#MVMFitness #ArmyFitness"
                                 let activityVC = UIActivityViewController(activityItems: [image, text], applicationActivities: nil)
                                 guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                                       let rootVC = windowScene.windows.first?.rootViewController else { return }

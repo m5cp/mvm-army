@@ -46,19 +46,16 @@ struct HomeView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                VStack(spacing: 20) {
+                VStack(spacing: 24) {
                     greetingHeader
-
-                    if disclaimerAccepted {
-                        trainingCalendarCard
-                    }
 
                     aftCalculatorHero
 
                     if disclaimerAccepted {
-                        wodDualCards
-                        quickActionsGrid
-                        metricsStrip
+                        todayWorkoutSection
+                        quickStartSection
+                        planningSection
+                        dailyActivitySection
                     } else {
                         disclaimerBanner
                     }
@@ -78,7 +75,7 @@ struct HomeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("MVM ARMY")
+                Text("MVM FITNESS")
                     .font(.caption.weight(.heavy))
                     .tracking(2.4)
                     .foregroundStyle(MVMTheme.secondaryText)
@@ -90,6 +87,15 @@ struct HomeView: View {
                             navigateToTrainingCalendar = true
                         } label: {
                             Image(systemName: "calendar")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(MVMTheme.secondaryText)
+                        }
+
+                        Button {
+                            toolTapTrigger.toggle()
+                            showScanSheet = true
+                        } label: {
+                            Image(systemName: "qrcode.viewfinder")
                                 .font(.body.weight(.semibold))
                                 .foregroundStyle(MVMTheme.secondaryText)
                         }
@@ -260,7 +266,7 @@ struct HomeView: View {
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [MVMTheme.accent.opacity(0.08), .clear],
+                        colors: [MVMTheme.brandGreen.opacity(0.1), .clear],
                         center: .center,
                         startRadius: 0,
                         endRadius: 300
@@ -273,7 +279,7 @@ struct HomeView: View {
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [MVMTheme.accent2.opacity(0.05), .clear],
+                        colors: [MVMTheme.slateAccent.opacity(0.04), .clear],
                         center: .center,
                         startRadius: 0,
                         endRadius: 200
@@ -363,32 +369,199 @@ struct HomeView: View {
         return "\(count) workout\(count == 1 ? "" : "s") today"
     }
 
-    // MARK: - Training Calendar Card
+    // MARK: - AFT Calculator Hero (PRIORITY 1)
 
-    private var trainingCalendarCard: some View {
+    private var aftCalculatorHero: some View {
         Button {
-            navigateToTrainingCalendar = true
+            toolTapTrigger.toggle()
+            showAFTCalculator = true
+        } label: {
+            VStack(spacing: 18) {
+                HStack(spacing: 0) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("AFT CALCULATOR")
+                            .font(.caption.weight(.heavy))
+                            .tracking(1.4)
+                            .foregroundStyle(.white.opacity(0.7))
+
+                        Text("Score Your\nFitness Test")
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .lineSpacing(2)
+
+                        Text("Fast scoring for graders and test takers")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+
+                    Spacer(minLength: 0)
+
+                    ZStack {
+                        Circle()
+                            .fill(.white.opacity(0.08))
+                            .frame(width: 80, height: 80)
+                        Circle()
+                            .fill(.white.opacity(0.06))
+                            .frame(width: 60, height: 60)
+                        Image(systemName: "shield.checkered")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                }
+
+                HStack(spacing: 10) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.caption.weight(.bold))
+                        Text("Start / Continue Test")
+                            .font(.subheadline.weight(.bold))
+                    }
+                    .foregroundStyle(Color(hex: "#0C0F0E"))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                    HStack(spacing: 6) {
+                        Image(systemName: "pencil.line")
+                            .font(.caption.weight(.bold))
+                        Text("Quick Score")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(.white.opacity(0.9))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(.white.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .padding(22)
+            .background {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(MVMTheme.aftGradient)
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(
+                            LinearGradient(
+                                colors: [.clear, .white.opacity(0.04), .clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .shadow(color: MVMTheme.brandGreen.opacity(0.3), radius: 24, y: 14)
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .scaleEffect(animateHero ? 1 : 0.96)
+        .opacity(animateHero ? 1 : 0)
+    }
+
+    // MARK: - Today Workout Section (PRIORITY 2)
+
+    private var todayWorkoutSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("TODAY")
+                .font(.caption.weight(.heavy))
+                .tracking(1.2)
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .padding(.leading, 4)
+
+            if let today = vm.todayWorkout, !today.isRestDay {
+                todayWorkoutCard(today)
+            } else {
+                todayEmptyCard
+            }
+        }
+        .opacity(animateHero ? 1 : 0)
+        .offset(y: animateHero ? 0 : 8)
+    }
+
+    private func todayWorkoutCard(_ workout: WorkoutDay) -> some View {
+        Button {
+            startWorkoutTrigger.toggle()
+            showActiveSession = true
+        } label: {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: workoutIcon(for: workout))
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 28, height: 28)
+                            .background(.white.opacity(0.15))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                        if workout.isCompleted {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.caption2)
+                                Text("DONE")
+                                    .font(.caption2.weight(.heavy))
+                                    .tracking(0.5)
+                            }
+                            .foregroundStyle(MVMTheme.success)
+                        }
+                    }
+
+                    Text(workout.title)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+
+                    HStack(spacing: 8) {
+                        Label("\(workout.exercises.count) exercises", systemImage: "list.bullet")
+                        Label(estimatedDuration(workout), systemImage: "clock")
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.6))
+                }
+
+                Spacer(minLength: 0)
+
+                VStack(spacing: 6) {
+                    Image(systemName: "play.fill")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 48, height: 48)
+                        .background(.white.opacity(0.15))
+                        .clipShape(Circle())
+
+                    Text("Start")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+            }
+            .padding(18)
+            .background {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(MVMTheme.ptGradient)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: Color(hex: "#2E5A7C").opacity(0.2), radius: 16, y: 10)
+        }
+        .buttonStyle(PressScaleButtonStyle())
+    }
+
+    private var todayEmptyCard: some View {
+        Button {
+            showMyPTPlanSheet = true
         } label: {
             HStack(spacing: 14) {
-                Image(systemName: "calendar")
+                Image(systemName: "calendar.badge.plus")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(MVMTheme.accent)
                     .frame(width: 44, height: 44)
-                    .background(
-                        LinearGradient(
-                            colors: [MVMTheme.accent, MVMTheme.accent2],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .background(MVMTheme.accent.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Training Calendar")
-                        .font(.subheadline.weight(.bold))
+                    Text("No Workout Scheduled")
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(MVMTheme.primaryText)
-
-                    Text(calendarCardSubtitle)
+                    Text("Create a plan to get started")
                         .font(.caption)
                         .foregroundStyle(MVMTheme.tertiaryText)
                 }
@@ -403,254 +576,125 @@ struct HomeView: View {
             .premiumCard()
         }
         .buttonStyle(PressScaleButtonStyle())
-        .opacity(animateHero ? 1 : 0)
-        .offset(y: animateHero ? 0 : 8)
     }
 
-    private var calendarCardSubtitle: String {
-        let count = vm.todayCalendarEntryCount
-        if count == 0 { return "No workouts scheduled today" }
-        return "\(count) workout\(count == 1 ? "" : "s") scheduled today"
-    }
+    // MARK: - Quick Start Section (PRIORITY 3)
 
-    // MARK: - Dual WOD Cards (Functional WOD + PT Workout of the Day)
+    private var quickStartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("QUICK START")
+                .font(.caption.weight(.heavy))
+                .tracking(1.2)
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .padding(.leading, 4)
 
-    private var wodDualCards: some View {
-        HStack(spacing: 10) {
-            ptWorkoutCard
-            functionalWODCard
-        }
-        .opacity(animateHero ? 1 : 0)
-        .offset(y: animateHero ? 0 : 8)
-    }
-
-    private var ptWorkoutCard: some View {
-        Button {
-            toolTapTrigger.toggle()
-            if vm.todayPTWorkout != nil {
-                showPTWODSheet = true
-            } else {
-                showMyPTPlanSheet = true
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 6) {
-                    Image(systemName: "figure.run")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
-                        .background(.white.opacity(0.15))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                    Spacer(minLength: 0)
-
-                    Button {
-                        toolTapTrigger.toggle()
-                        if vm.currentPlan != nil {
-                            if let today = vm.todayWorkout {
-                                vm.regenerateSingleDay(dayIndex: today.dayIndex)
-                            }
-                        } else {
-                            vm.generateWeeklyPlan()
-                        }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.5))
-                            .frame(width: 24, height: 24)
-                            .background(.white.opacity(0.1))
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.bottom, 10)
-
-                Text("PT WOD")
-                    .font(.system(size: 10, weight: .heavy))
-                    .tracking(0.6)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .padding(.bottom, 4)
-
-                if let ptDay = vm.todayPTWorkout, !ptDay.isRestDay {
-                    Text(ptDay.title)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Spacer(minLength: 4)
-
-                    HStack(spacing: 6) {
-                        Label("\(ptDay.exercises.count)", systemImage: "list.bullet")
-                        Label(estimatedDuration(ptDay), systemImage: "clock")
-                    }
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.5))
-                } else {
-                    Text("No PT Plan")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
-
-                    Spacer(minLength: 4)
-
-                    Text("Tap to create")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
-                }
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 150)
-            .background {
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(hex: "#3B6DE0"),
-                                Color(hex: "#5B4DC7").opacity(0.95)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .shadow(color: MVMTheme.accent.opacity(0.15), radius: 12, y: 8)
-        }
-        .buttonStyle(PressScaleButtonStyle())
-    }
-
-    private var functionalWODCard: some View {
-        Button {
-            toolTapTrigger.toggle()
-            showWODSheet = true
-        } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 6) {
-                    Image(systemName: "bolt.fill")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
-                        .background(.white.opacity(0.15))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                    Spacer(minLength: 0)
-
-                    Button {
-                        toolTapTrigger.toggle()
-                        vm.regenerateFunctionalWOD()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.5))
-                            .frame(width: 24, height: 24)
-                            .background(.white.opacity(0.1))
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.bottom, 10)
-
-                Text("FUNCTIONAL / HERO WOD")
-                    .font(.system(size: 10, weight: .heavy))
-                    .tracking(0.6)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .padding(.bottom, 4)
-
-                if let wod = vm.todayFunctionalWOD {
-                    Text(wod.title)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Spacer(minLength: 4)
-
-                    HStack(spacing: 6) {
-                        Text(wod.format.rawValue)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 2)
-                            .background(.white.opacity(0.12))
-                            .clipShape(Capsule())
-                        Text("~\(wod.durationMinutes) min")
-                    }
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.5))
-                } else {
-                    Text("Generating...")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
-
-                    Spacer(minLength: 4)
-                }
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 150)
-            .background {
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(hex: "#F59E0B"),
-                                Color(hex: "#D97706").opacity(0.95)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .shadow(color: Color(hex: "#F59E0B").opacity(0.15), radius: 12, y: 8)
-        }
-        .buttonStyle(PressScaleButtonStyle())
-    }
-
-    // MARK: - Quick Actions Grid (3x2)
-
-    private var quickActionsGrid: some View {
-        VStack(spacing: 10) {
             HStack(spacing: 10) {
-                launcherCard(
-                    title: "Plan My PT",
-                    subtitle: "Build your week",
+                quickStartCard(
+                    title: "PT WOD",
+                    subtitle: "Today's PT session",
+                    icon: "figure.run",
+                    gradient: MVMTheme.ptGradient
+                ) {
+                    toolTapTrigger.toggle()
+                    if vm.todayPTWorkout != nil {
+                        showPTWODSheet = true
+                    } else {
+                        showMyPTPlanSheet = true
+                    }
+                }
+
+                quickStartCard(
+                    title: "Functional / Hero",
+                    subtitle: "WOD of the day",
+                    icon: "bolt.fill",
+                    gradient: MVMTheme.functionalGradient
+                ) {
+                    toolTapTrigger.toggle()
+                    showWODSheet = true
+                }
+            }
+        }
+        .opacity(animateHero ? 1 : 0)
+        .offset(y: animateHero ? 0 : 8)
+    }
+
+    private func quickStartCard(title: String, subtitle: String, icon: String, gradient: LinearGradient, action: @escaping () -> Void) -> some View {
+        Button {
+            action()
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: icon)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(.white.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                    Spacer(minLength: 0)
+                }
+
+                Spacer(minLength: 0)
+
+                Text(title)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.white)
+
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 120)
+            .background {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(gradient)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(PressScaleButtonStyle())
+    }
+
+    // MARK: - Planning Section (PRIORITY 4)
+
+    private var planningSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("PLANNING")
+                .font(.caption.weight(.heavy))
+                .tracking(1.2)
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .padding(.leading, 4)
+
+            VStack(spacing: 8) {
+                planRow(
+                    title: "Plan My Individual PT",
+                    subtitle: "Build your personal week",
                     icon: "figure.strengthtraining.traditional",
-                    gradient: [Color(hex: "#3B82F6"), Color(hex: "#2563EB")]
+                    color: MVMTheme.slateAccent
                 ) {
                     toolTapTrigger.toggle()
                     showMyPTPlanSheet = true
                 }
 
-                launcherCard(
+                planRow(
                     title: "Plan My Functional Fitness",
-                    subtitle: "Functional week",
+                    subtitle: "Functional & Hero WODs",
                     icon: "bolt.heart.fill",
-                    gradient: [Color(hex: "#F59E0B"), Color(hex: "#D97706")]
+                    color: MVMTheme.heroAmber
                 ) {
                     toolTapTrigger.toggle()
                     showWODPlanSheet = true
                 }
 
-                launcherCard(
+                planRow(
                     title: "Plan My Unit PT",
-                    subtitle: "Team plan",
+                    subtitle: "Formation-level sessions",
                     icon: "person.3.fill",
-                    gradient: [Color(hex: "#2563EB"), Color(hex: "#1D4ED8")]
+                    color: MVMTheme.accent
                 ) {
                     toolTapTrigger.toggle()
                     showUnitPTSheet = true
-                }
-            }
-
-            HStack(spacing: 10) {
-                launcherCard(
-                    title: "Scan QR",
-                    subtitle: "Load shared",
-                    icon: "qrcode.viewfinder",
-                    gradient: [Color(hex: "#7C3AED"), Color(hex: "#6D28D9")]
-                ) {
-                    toolTapTrigger.toggle()
-                    showScanSheet = true
                 }
             }
         }
@@ -658,82 +702,88 @@ struct HomeView: View {
         .opacity(animateHero ? 1 : 0)
     }
 
-    private func launcherCard(title: String, subtitle: String, icon: String, gradient: [Color], action: @escaping () -> Void) -> some View {
+    private func planRow(title: String, subtitle: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
         Button {
             action()
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 14) {
                 Image(systemName: icon)
-                    .font(.body.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 32, height: 32)
-                    .background(.white.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 9))
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(color)
+                    .frame(width: 40, height: 40)
+                    .background(color.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text(subtitle)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
 
                 Spacer(minLength: 0)
 
-                Text(title)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.white)
-
-                Text(subtitle)
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.5))
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 110)
-            .background {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(
-                        LinearGradient(
-                            colors: gradient,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+            .padding(14)
+            .background(MVMTheme.card)
+            .overlay {
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(MVMTheme.border)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(PressScaleButtonStyle())
     }
 
-    // MARK: - Metrics Strip
+    // MARK: - Daily Activity Section (PRIORITY 5)
 
-    private var metricsStrip: some View {
-        HStack(spacing: 0) {
-            metricPill(
-                icon: "figure.walk",
-                value: formattedSteps,
-                label: "Steps Today",
-                color: MVMTheme.accent
-            )
+    private var dailyActivitySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("DAILY ACTIVITY")
+                .font(.caption.weight(.heavy))
+                .tracking(1.2)
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .padding(.leading, 4)
 
-            metricDivider
+            HStack(spacing: 0) {
+                metricPill(
+                    icon: "figure.walk",
+                    value: formattedSteps,
+                    label: "Steps Today",
+                    color: MVMTheme.accent
+                )
 
-            metricPill(
-                icon: "checkmark.circle.fill",
-                value: "\(vm.weeklyCompletedCount)/\(vm.weeklyTotalDays)",
-                label: "This Week",
-                color: MVMTheme.success
-            )
+                metricDivider
 
-            metricDivider
+                metricPill(
+                    icon: "checkmark.circle.fill",
+                    value: "\(vm.weeklyCompletedCount)/\(vm.weeklyTotalDays)",
+                    label: "This Week",
+                    color: MVMTheme.success
+                )
 
-            metricPill(
-                icon: "flame.fill",
-                value: "\(vm.streak)",
-                label: vm.streak == 1 ? "Day" : "Days",
-                color: MVMTheme.warning
-            )
+                metricDivider
+
+                metricPill(
+                    icon: "flame.fill",
+                    value: "\(vm.streak)",
+                    label: vm.streak == 1 ? "Day" : "Days",
+                    color: MVMTheme.warning
+                )
+            }
+            .padding(.vertical, 18)
+            .background(MVMTheme.card)
+            .overlay {
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(MVMTheme.border)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 20))
         }
-        .padding(.vertical, 18)
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
         .opacity(animateMetrics ? 1 : 0)
         .offset(y: animateMetrics ? 0 : 12)
     }
@@ -762,93 +812,6 @@ struct HomeView: View {
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label): \(value)")
-    }
-
-    // MARK: - AFT Calculator Hero
-
-    private var aftCalculatorHero: some View {
-        Button {
-            toolTapTrigger.toggle()
-            showAFTCalculator = true
-        } label: {
-            VStack(spacing: 16) {
-                HStack(spacing: 0) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("ACFT CALCULATOR")
-                            .font(.caption.weight(.heavy))
-                            .tracking(1.2)
-                            .foregroundStyle(.white.opacity(0.7))
-
-                        Text("Score Your\nFitness Test")
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(.white)
-                            .lineSpacing(2)
-
-                        Text("Full scoring with DA 705 export")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.white.opacity(0.55))
-                    }
-
-                    Spacer(minLength: 0)
-
-                    ZStack {
-                        Circle()
-                            .fill(.white.opacity(0.08))
-                            .frame(width: 80, height: 80)
-                        Circle()
-                            .fill(.white.opacity(0.06))
-                            .frame(width: 60, height: 60)
-                        Image(systemName: "shield.checkered")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
-                }
-
-                HStack(spacing: 10) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.right.circle.fill")
-                            .font(.caption.weight(.bold))
-                        Text("Calculate Score")
-                            .font(.subheadline.weight(.bold))
-                    }
-                    .foregroundStyle(Color(hex: "#1A1A2E"))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 42)
-                    .background(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-            }
-            .padding(20)
-            .background {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 24)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(hex: "#059669"),
-                                    Color(hex: "#047857"),
-                                    Color(hex: "#065F46")
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    RoundedRectangle(cornerRadius: 24)
-                        .fill(
-                            LinearGradient(
-                                colors: [.clear, .white.opacity(0.05), .clear],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 24))
-            .shadow(color: Color(hex: "#059669").opacity(0.25), radius: 24, y: 14)
-        }
-        .buttonStyle(PressScaleButtonStyle())
-        .scaleEffect(animateHero ? 1 : 0.96)
-        .opacity(animateHero ? 1 : 0)
     }
 
     // MARK: - Calendar Export Sheet
@@ -895,13 +858,7 @@ struct HomeView: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(
-                            LinearGradient(
-                                colors: [MVMTheme.accent, MVMTheme.accent2],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+                        .background(MVMTheme.heroGradient)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                     .disabled(calendarService.isExporting)
@@ -954,7 +911,7 @@ struct HomeView: View {
         case .partial(let exported, let failed):
             exportAlertMessage = "\(exported) exported, \(failed) failed. Try again for remaining."
         case .denied:
-            exportAlertMessage = "Calendar access denied. Go to Settings → MVM Army → Calendars to enable."
+            exportAlertMessage = "Calendar access denied. Go to Settings → MVM Fitness → Calendars to enable."
         case .error(let message):
             exportAlertMessage = "Export failed: \(message)"
         }
