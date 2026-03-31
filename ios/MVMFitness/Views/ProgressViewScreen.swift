@@ -15,6 +15,7 @@ struct ProgressViewScreen: View {
     @State private var showDayDetail: Bool = false
     @State private var showTrainingCalendar: Bool = false
     @State private var showAllActivities: Bool = false
+    @AppStorage("hasRequestedHealthKit") private var hasRequestedHealthKit: Bool = false
 
     var body: some View {
         ZStack {
@@ -76,10 +77,6 @@ struct ProgressViewScreen: View {
             Task {
                 try? await Task.sleep(for: .milliseconds(400))
                 vm.syncTodaySteps()
-                await vm.healthKit.fetchTodaySteps()
-                await vm.healthKit.fetchWeeklyAvgSteps()
-                await vm.healthKit.fetchTodayActiveCalories()
-                await vm.healthKit.fetchAllActivities()
             }
             withAnimation(.easeOut(duration: 0.5).delay(0.1)) {
                 appeared = true
@@ -723,7 +720,45 @@ struct ProgressViewScreen: View {
                 }
             }
 
-            if vm.healthKit.permissionDenied && vm.pedometer.permissionDenied {
+            if !hasRequestedHealthKit {
+                VStack(spacing: 14) {
+                    Image(systemName: "heart.text.square")
+                        .font(.system(size: 32))
+                        .foregroundStyle(MVMTheme.accent)
+
+                    Text("Track Your Activity")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+
+                    Text("Connect to Apple Health to see your steps, calories, and workout activities.")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(2)
+
+                    Button {
+                        Task {
+                            hasRequestedHealthKit = true
+                            await vm.healthKit.refreshAll()
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "heart.fill")
+                                .font(.subheadline.weight(.bold))
+                            Text("Enable Activity Tracking")
+                                .font(.subheadline.weight(.bold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(MVMTheme.heroGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            } else if vm.healthKit.permissionDenied && vm.pedometer.permissionDenied {
                 VStack(spacing: 12) {
                     Image(systemName: "heart.text.square")
                         .font(.system(size: 32))

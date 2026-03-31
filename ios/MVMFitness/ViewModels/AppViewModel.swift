@@ -22,9 +22,6 @@ final class AppViewModel {
         loadLocalData()
         pedometer.refreshTodaySteps()
         syncTodaySteps()
-        Task {
-            await healthKit.refreshAll()
-        }
     }
 
     func loadLocalData() {
