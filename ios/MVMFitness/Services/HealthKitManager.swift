@@ -41,9 +41,7 @@ final class HealthKitManager {
         [stepType, activeEnergyType, distanceWalkRunType, distanceCyclingType, workoutType]
     }
 
-    var writeTypes: Set<HKSampleType> {
-        [workoutType, activeEnergyType]
-    }
+
 
     private let trackedActivityTypes: [(HKWorkoutActivityType, String, String)] = [
         (.running, "Running", "figure.run"),
@@ -70,7 +68,7 @@ final class HealthKitManager {
         }
 
         do {
-            try await store.requestAuthorization(toShare: writeTypes, read: readTypes)
+            try await store.requestAuthorization(toShare: [], read: readTypes)
             hasRequestedAuthorization = true
             authorizationStatus = store.authorizationStatus(for: stepType)
             if authorizationStatus == .sharingDenied {
@@ -267,33 +265,7 @@ final class HealthKitManager {
         return max(uniqueDays.count, 1)
     }
 
-    func saveWorkout(title: String, duration: TimeInterval, calories: Double?) async {
-        guard isAvailable else { return }
 
-        let config = HKWorkoutConfiguration()
-        config.activityType = .functionalStrengthTraining
-        config.locationType = .unknown
-
-        let builder = HKWorkoutBuilder(healthStore: store, configuration: config, device: .local())
-
-        do {
-            try await builder.beginCollection(at: Date().addingTimeInterval(-duration))
-
-            if let cal = calories, cal > 0 {
-                let energySample = HKQuantitySample(
-                    type: activeEnergyType,
-                    quantity: HKQuantity(unit: HKUnit.kilocalorie(), doubleValue: cal),
-                    start: Date().addingTimeInterval(-duration),
-                    end: .now
-                )
-                try await builder.addSamples([energySample])
-            }
-
-            try await builder.endCollection(at: .now)
-            try await builder.finishWorkout()
-        } catch {
-        }
-    }
 
     func refreshAll() async {
         _ = await requestAuthorization()
