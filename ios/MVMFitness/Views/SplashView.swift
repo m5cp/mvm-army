@@ -66,26 +66,12 @@ struct SplashView: View {
                         .scaleEffect(pulseScale)
                         .opacity(ringOpacity * 0.6)
 
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 24)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color(hex: "#4F8CFF"),
-                                        Color(hex: "#6366F1"),
-                                        Color(hex: "#7C5CFF")
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 90, height: 90)
-                            .shadow(color: MVMTheme.accent.opacity(0.5), radius: 20, y: 5)
-
-                        Image(systemName: "figure.strengthtraining.traditional")
-                            .font(.system(size: 40, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
+                    Image("AppLogo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 90, height: 90)
+                        .clipShape(RoundedRectangle(cornerRadius: 22))
+                        .shadow(color: MVMTheme.accent.opacity(0.5), radius: 20, y: 5)
                     .scaleEffect(iconScale)
                     .opacity(iconOpacity)
                     .rotationEffect(.degrees(iconRotation))
