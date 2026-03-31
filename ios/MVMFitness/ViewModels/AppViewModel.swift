@@ -7,6 +7,7 @@ final class AppViewModel {
     var completedRecords: [CompletedWorkoutRecord] = []
     var stepHistory: [StepDay] = []
     var pedometer = PedometerManager()
+    var healthKit = HealthKitManager()
     var lastWorkoutTag: String = ""
     var unitPTPlans: [UnitPTPlan] = []
     var unitPTFullPlan: UnitPTFullPlan?
@@ -21,6 +22,9 @@ final class AppViewModel {
         loadLocalData()
         pedometer.refreshTodaySteps()
         syncTodaySteps()
+        Task {
+            await healthKit.refreshAll()
+        }
     }
 
     func loadLocalData() {

@@ -14,6 +14,7 @@ struct ProgressViewScreen: View {
     @State private var selectedDayRecord: CompletedWorkoutRecord?
     @State private var showDayDetail: Bool = false
     @State private var showTrainingCalendar: Bool = false
+    @State private var showAllActivities: Bool = false
 
     var body: some View {
         ZStack {
@@ -67,11 +68,18 @@ struct ProgressViewScreen: View {
         .navigationDestination(isPresented: $showTrainingCalendar) {
             TrainingCalendarView()
         }
+        .navigationDestination(isPresented: $showAllActivities) {
+            AllActivitiesView()
+        }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
             Task {
                 try? await Task.sleep(for: .milliseconds(400))
                 vm.syncTodaySteps()
+                await vm.healthKit.fetchTodaySteps()
+                await vm.healthKit.fetchWeeklyAvgSteps()
+                await vm.healthKit.fetchTodayActiveCalories()
+                await vm.healthKit.fetchAllActivities()
             }
             withAnimation(.easeOut(duration: 0.5).delay(0.1)) {
                 appeared = true
@@ -697,82 +705,165 @@ struct ProgressViewScreen: View {
                 Text("Activity")
                     .font(.headline)
                     .foregroundStyle(MVMTheme.primaryText)
+
+                Spacer()
+
+                if !vm.healthKit.permissionDenied {
+                    Button {
+                        showAllActivities = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("See All")
+                                .font(.caption.weight(.semibold))
+                            Image(systemName: "chevron.right")
+                                .font(.caption2.weight(.bold))
+                        }
+                        .foregroundStyle(MVMTheme.accent)
+                    }
+                }
             }
 
-            if vm.pedometer.permissionDenied {
+            if vm.healthKit.permissionDenied && vm.pedometer.permissionDenied {
                 VStack(spacing: 12) {
-                    Image(systemName: "figure.walk")
+                    Image(systemName: "heart.text.square")
                         .font(.system(size: 32))
                         .foregroundStyle(MVMTheme.tertiaryText)
 
-                    Text("Motion Access Needed")
+                    Text("Health Access Needed")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(MVMTheme.secondaryText)
 
-                    Text("Enable Motion & Fitness in Settings to track your daily steps.")
+                    Text("Enable Health and Motion access in Settings to track your daily steps and fitness activities.")
                         .font(.caption)
                         .foregroundStyle(MVMTheme.tertiaryText)
                         .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-            } else if vm.pedometer.todaySteps == 0 && vm.weeklyStepAverage == 0 {
-                VStack(spacing: 12) {
-                    Image(systemName: "figure.walk")
-                        .font(.system(size: 32))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-
-                    Text("No Steps Recorded")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.secondaryText)
-
-                    Text("Steps will appear here once your device starts tracking.")
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                        .multilineTextAlignment(.center)
+                        .lineSpacing(2)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
             } else {
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Today")
-                            .font(.caption.weight(.medium))
+                let todaySteps = max(vm.pedometer.todaySteps, vm.healthKit.todaySteps)
+                let avgSteps = max(vm.weeklyStepAverage, vm.healthKit.weeklyAvgSteps)
+
+                HStack(spacing: 0) {
+                    VStack(spacing: 6) {
+                        Image(systemName: "shoeprints.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(MVMTheme.success)
+                            .frame(width: 28, height: 28)
+                            .background(MVMTheme.success.opacity(0.12))
+                            .clipShape(Circle())
+
+                        Text("\(todaySteps)")
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundStyle(MVMTheme.primaryText)
+                            .contentTransition(.numericText())
+
+                        Text("Steps Today")
+                            .font(.caption2.weight(.medium))
                             .foregroundStyle(MVMTheme.secondaryText)
-                        HStack(alignment: .firstTextBaseline, spacing: 2) {
-                            Text("\(vm.pedometer.todaySteps)")
-                                .font(.title2.weight(.bold).monospacedDigit())
-                                .foregroundStyle(MVMTheme.primaryText)
-                                .contentTransition(.numericText())
-                            Text("steps")
-                                .font(.caption)
-                                .foregroundStyle(MVMTheme.tertiaryText)
-                        }
                     }
+                    .frame(maxWidth: .infinity)
 
-                    Spacer()
+                    Rectangle()
+                        .fill(MVMTheme.border)
+                        .frame(width: 1, height: 48)
 
-                    VStack(alignment: .trailing, spacing: 4) {
+                    VStack(spacing: 6) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(MVMTheme.accent)
+                            .frame(width: 28, height: 28)
+                            .background(MVMTheme.accent.opacity(0.12))
+                            .clipShape(Circle())
+
+                        Text("\(avgSteps)")
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundStyle(MVMTheme.primaryText)
+                            .contentTransition(.numericText())
+
                         Text("7-Day Avg")
-                            .font(.caption.weight(.medium))
+                            .font(.caption2.weight(.medium))
                             .foregroundStyle(MVMTheme.secondaryText)
-                        HStack(alignment: .firstTextBaseline, spacing: 2) {
-                            Text("\(vm.weeklyStepAverage)")
-                                .font(.title3.weight(.semibold).monospacedDigit())
-                                .foregroundStyle(MVMTheme.primaryText)
-                                .contentTransition(.numericText())
-                            Text("avg")
-                                .font(.caption)
-                                .foregroundStyle(MVMTheme.tertiaryText)
-                        }
                     }
+                    .frame(maxWidth: .infinity)
+
+                    Rectangle()
+                        .fill(MVMTheme.border)
+                        .frame(width: 1, height: 48)
+
+                    VStack(spacing: 6) {
+                        Image(systemName: "flame.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(MVMTheme.warning)
+                            .frame(width: 28, height: 28)
+                            .background(MVMTheme.warning.opacity(0.12))
+                            .clipShape(Circle())
+
+                        Text("\(Int(vm.healthKit.todayActiveCalories))")
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundStyle(MVMTheme.primaryText)
+                            .contentTransition(.numericText())
+
+                        Text("Calories")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
+
+                if !vm.healthKit.activities.isEmpty {
+                    activityPills
+                }
+
+                Button {
+                    showAllActivities = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "heart.fill")
+                            .font(.caption.weight(.bold))
+                        Text("View All Activities")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 38)
+                    .background(MVMTheme.accent.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(PressScaleButtonStyle())
             }
         }
         .padding(18)
         .premiumCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
+    }
+
+    private var activityPills: some View {
+        let topActivities = Array(vm.healthKit.activities.prefix(3))
+        return HStack(spacing: 8) {
+            ForEach(topActivities) { activity in
+                HStack(spacing: 5) {
+                    Image(systemName: activity.icon)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(MVMTheme.accent)
+                    Text(activity.name)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+                    if activity.todayCount > 0 {
+                        Text("\(activity.todayCount)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(MVMTheme.success)
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(MVMTheme.cardSoft)
+                .clipShape(Capsule())
+            }
+            Spacer()
+        }
     }
 
     // MARK: - Disclaimer Banner
