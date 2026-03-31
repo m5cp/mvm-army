@@ -7,15 +7,32 @@ enum WODService {
 
     static func generateWOD(
         equipment: EquipmentOption = .bodyweight,
-        dutyType: DutyType = .both
+        dutyType: DutyType = .both,
+        heroOnly: Bool = false
     ) -> WODTemplate {
         let lastTitle = UserDefaults.standard.string(forKey: lastWODKey)
-        let pool = filteredPool(equipment: equipment, excluding: lastTitle)
-        let selected = pool.randomElement() ?? WODTemplateLibrary.allTemplates.randomElement() ?? WODTemplateLibrary.crossfitWODs[0]
+
+        let selected: WODTemplate
+        if heroOnly {
+            let heroPool = HeroWODLibrary.heroWODs.filter { $0.title != lastTitle }
+            selected = heroPool.randomElement() ?? HeroWODLibrary.heroWODs.randomElement() ?? HeroWODLibrary.heroWODs[0]
+        } else {
+            let pool = filteredPool(equipment: equipment, excluding: lastTitle)
+            selected = pool.randomElement() ?? WODTemplateLibrary.allTemplates.randomElement() ?? WODTemplateLibrary.crossfitWODs[0]
+        }
 
         UserDefaults.standard.set(selected.title, forKey: lastWODKey)
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: lastWODDateKey)
 
+        return selected
+    }
+
+    static func generateHeroWOD() -> WODTemplate {
+        let lastTitle = UserDefaults.standard.string(forKey: lastWODKey)
+        let pool = HeroWODLibrary.heroWODs.filter { $0.title != lastTitle }
+        let selected = pool.randomElement() ?? HeroWODLibrary.heroWODs.randomElement() ?? HeroWODLibrary.heroWODs[0]
+        UserDefaults.standard.set(selected.title, forKey: lastWODKey)
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: lastWODDateKey)
         return selected
     }
 

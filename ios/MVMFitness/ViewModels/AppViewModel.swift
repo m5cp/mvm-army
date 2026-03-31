@@ -768,7 +768,7 @@ final class AppViewModel {
         return plan.days.first { Calendar.current.isDate($0.date, inSameDayAs: today) && !$0.isRestDay }
     }
 
-    func generateWODPlan(goal: PTGoal, weeks: Int) {
+    func generateWODPlan(goal: PTGoal, weeks: Int, heroPreference: WODHeroPreference = .regular) {
         UserDefaults.standard.set(goal.rawValue, forKey: "ptGoal")
         UserDefaults.standard.set(weeks, forKey: "planWeeks")
 
@@ -780,8 +780,12 @@ final class AppViewModel {
         let daysCount = 7
         let restDayIndices: Set<Int> = [3, 6]
 
-        let pool = WODTemplateLibrary.allTemplates
+        let regularPool = WODTemplateLibrary.allTemplates
+        let heroPool = HeroWODLibrary.heroWODs
         var usedTitles: Set<String> = []
+
+        let workoutDayCount = daysCount - restDayIndices.count
+        var workoutIndex = 0
 
         for i in 0..<daysCount {
             guard let date = calendar.date(byAdding: .day, value: i, to: startOfWeek) else { continue }
@@ -798,10 +802,24 @@ final class AppViewModel {
                 )
                 days.append(WODPlanDay(date: date, template: restTemplate, isRestDay: true))
             } else {
+                let useHero: Bool
+                switch heroPreference {
+                case .regular:
+                    useHero = false
+                case .heroOnly:
+                    useHero = true
+                case .majorityHero:
+                    useHero = workoutIndex < max(workoutDayCount - 1, 1)
+                case .mixed:
+                    useHero = workoutIndex % 2 == 0
+                }
+
+                let pool = useHero ? heroPool : regularPool
                 let available = pool.filter { !usedTitles.contains($0.title) }
-                let selected = available.randomElement() ?? pool.randomElement() ?? pool[0]
+                let selected = available.randomElement() ?? pool.randomElement() ?? regularPool[0]
                 usedTitles.insert(selected.title)
                 days.append(WODPlanDay(date: date, template: selected))
+                workoutIndex += 1
             }
         }
 
@@ -821,11 +839,13 @@ final class AppViewModel {
         generateWODPlan(goal: goal, weeks: plan.totalWeeks)
     }
 
-    func regenerateWODDay(dayId: UUID) {
+    func regenerateWODDay(dayId: UUID, heroOnly: Bool = false) {
         guard var plan = wodPlan,
               let idx = plan.days.firstIndex(where: { $0.id == dayId }) else { return }
         let currentTitle = plan.days[idx].template.title
-        let pool = WODTemplateLibrary.allTemplates.filter { $0.title != currentTitle }
+        let pool = heroOnly
+            ? HeroWODLibrary.heroWODs.filter { $0.title != currentTitle }
+            : WODTemplateLibrary.allTemplates.filter { $0.title != currentTitle }
         if let newTemplate = pool.randomElement() {
             plan.days[idx] = WODPlanDay(date: plan.days[idx].date, template: newTemplate)
             wodPlan = plan

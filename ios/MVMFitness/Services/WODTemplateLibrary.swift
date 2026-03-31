@@ -627,4 +627,16 @@ enum WODTemplateLibrary {
     static var allTemplates: [WODTemplate] {
         crossfitWODs + aftWODs
     }
+
+    static var regularWODs: [WODTemplate] {
+        crossfitWODs + aftWODs
+    }
+
+    static var heroWODs: [WODTemplate] {
+        HeroWODLibrary.heroWODs
+    }
+
+    static var allIncludingHero: [WODTemplate] {
+        crossfitWODs + aftWODs + HeroWODLibrary.heroWODs
+    }
 }

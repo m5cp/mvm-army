@@ -6,6 +6,7 @@ struct WODPlanSheet: View {
 
     @State private var selectedGoal: PTGoal = .aftScoreImprovement
     @State private var selectedWeeks: Int = 4
+    @State private var selectedHeroPreference: WODHeroPreference = .regular
     @State private var showGoalSetup: Bool = false
     @State private var animateCards: Bool = false
     @State private var refreshTrigger: Bool = false
@@ -122,8 +123,19 @@ struct WODPlanSheet: View {
                 }
             }
 
+            VStack(alignment: .leading, spacing: 10) {
+                Text("WORKOUT STYLE")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.8)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                ForEach(WODHeroPreference.allCases) { pref in
+                    heroPreferenceRow(pref)
+                }
+            }
+
             Button {
-                vm.generateWODPlan(goal: selectedGoal, weeks: selectedWeeks)
+                vm.generateWODPlan(goal: selectedGoal, weeks: selectedWeeks, heroPreference: selectedHeroPreference)
                 showGoalSetup = false
                 animateCards = false
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) {
@@ -133,7 +145,7 @@ struct WODPlanSheet: View {
                 HStack(spacing: 10) {
                     Image(systemName: "bolt.fill")
                         .font(.subheadline.weight(.bold))
-                    Text("Generate \(selectedWeeks)-Week WOD Plan")
+                    Text("Generate \(selectedWeeks)-Week Plan")
                         .font(.headline.weight(.bold))
                 }
                 .foregroundStyle(.white)
@@ -152,6 +164,51 @@ struct WODPlanSheet: View {
         }
         .padding(18)
         .premiumCard()
+    }
+
+    private func heroPreferenceRow(_ pref: WODHeroPreference) -> some View {
+        let isSelected = selectedHeroPreference == pref
+
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                selectedHeroPreference = pref
+            }
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: pref.icon)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(isSelected ? .white : Color(hex: "#F59E0B"))
+                    .frame(width: 38, height: 38)
+                    .background(isSelected ? Color(hex: "#F59E0B") : Color(hex: "#F59E0B").opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(pref.rawValue)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text(pref.subtitle)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(Color(hex: "#F59E0B"))
+                }
+            }
+            .padding(12)
+            .background(isSelected ? Color(hex: "#F59E0B").opacity(0.08) : Color.white.opacity(0.03))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(isSelected ? Color(hex: "#F59E0B").opacity(0.3) : MVMTheme.border)
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     private func goalRow(_ goal: PTGoal) -> some View {
@@ -290,6 +347,15 @@ struct WODPlanSheet: View {
                         .lineLimit(1)
 
                     HStack(spacing: 8) {
+                        if HeroWODLibrary.isHeroWOD(day.template) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "medal.fill")
+                                    .font(.system(size: 9))
+                                Text("HERO")
+                                    .font(.system(size: 9, weight: .heavy))
+                            }
+                            .foregroundStyle(Color(hex: "#C4A35A"))
+                        }
                         Text(day.template.format.rawValue)
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(Color(hex: "#F59E0B"))

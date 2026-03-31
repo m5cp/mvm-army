@@ -1,5 +1,32 @@
 import Foundation
 
+nonisolated enum WODHeroPreference: String, Codable, CaseIterable, Sendable, Identifiable {
+    case regular = "Regular WODs"
+    case mixed = "Mix of Both"
+    case majorityHero = "Majority Hero"
+    case heroOnly = "Hero WODs Only"
+
+    var id: String { rawValue }
+
+    var subtitle: String {
+        switch self {
+        case .regular: return "Standard CrossFit workouts"
+        case .mixed: return "Alternate hero and regular WODs"
+        case .majorityHero: return "Mostly hero WODs with some regular"
+        case .heroOnly: return "All hero WODs honoring fallen heroes"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .regular: return "flame.fill"
+        case .mixed: return "shuffle"
+        case .majorityHero: return "star.fill"
+        case .heroOnly: return "medal.fill"
+        }
+    }
+}
+
 nonisolated enum WODFormat: String, Codable, CaseIterable, Sendable {
     case amrap = "AMRAP"
     case emom = "EMOM"
