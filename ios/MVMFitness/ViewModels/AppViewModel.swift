@@ -853,7 +853,7 @@ final class AppViewModel {
             if day.isRestDay {
                 text += "Day \(index + 1) (\(dayName)): Rest & Recovery\n"
             } else {
-                let heroTag = HeroWODLibrary.isHeroWOD(day.template) ? " HERO" : ""
+                let heroTag = HeroWODLibrary.isHeroWorkout(day.template) ? " HERO" : ""
                 text += "Day \(index + 1) (\(dayName)): \(day.template.title)\(heroTag)\n"
                 text += "  \(day.template.format.rawValue) · ~\(day.template.durationMinutes) min\n"
                 for movement in day.template.movements {

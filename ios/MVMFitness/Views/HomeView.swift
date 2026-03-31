@@ -679,7 +679,7 @@ struct HomeView: View {
 
                 planRow(
                     title: "Plan My Functional Fitness",
-                    subtitle: "Functional & Hero WODs",
+                    subtitle: "Functional & Hero Workouts",
                     icon: "bolt.heart.fill",
                     color: MVMTheme.heroAmber
                 ) {

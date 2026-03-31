@@ -36,7 +36,7 @@ struct WODDetailView: View {
                     unavailableState
                 }
             }
-            .navigationTitle("Functional / Hero WOD")
+            .navigationTitle("Functional / Hero Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -102,7 +102,7 @@ struct WODDetailView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(MVMTheme.accent.opacity(0.5))
 
-            Text("Functional / Hero WOD Unavailable")
+            Text("Functional / Hero Workout Unavailable")
                 .font(.title3.weight(.bold))
                 .foregroundStyle(MVMTheme.primaryText)
 
@@ -151,7 +151,7 @@ struct WODDetailView: View {
     }
 
     private func wodHeader(_ template: WODTemplate) -> some View {
-        let isHero = HeroWODLibrary.isHeroWOD(template)
+        let isHero = HeroWODLibrary.isHeroWorkout(template)
 
         return VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
@@ -159,7 +159,7 @@ struct WODDetailView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white.opacity(0.9))
 
-                Text(isHero ? "HERO WOD" : "WOD")
+                Text(isHero ? "HERO WORKOUT" : "WOD")
                     .font(.caption2.weight(.heavy))
                     .tracking(1.0)
                     .foregroundStyle(.white.opacity(0.8))
@@ -366,7 +366,7 @@ struct WODDetailView: View {
                         generateTrigger.toggle()
                         generateHero()
                     } label: {
-                        Label("Hero WOD", systemImage: "medal.fill")
+                        Label("Hero Workout", systemImage: "medal.fill")
                     }
                 } label: {
                     HStack(spacing: 6) {
@@ -449,7 +449,7 @@ struct WODDetailView: View {
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
-                Text("Add this Functional / Hero WOD to your iOS Calendar.")
+                Text("Add this Functional / Hero Workout to your iOS Calendar.")
                     .font(.subheadline)
                     .foregroundStyle(MVMTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -545,15 +545,31 @@ struct WODDetailView: View {
                     .foregroundStyle(Color(hex: "#C4A35A"))
             }
 
-            Text(tribute.name)
+            Text(tribute.displayName)
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(MVMTheme.primaryText)
 
-            Text(tribute.tribute)
+            Text(tribute.serviceBranch)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(MVMTheme.secondaryText)
+
+            Text("\(tribute.dateOfDeath) — \(tribute.location)")
                 .font(.caption)
                 .foregroundStyle(MVMTheme.secondaryText)
+
+            if !tribute.shortTribute.isEmpty {
+                Text(tribute.shortTribute)
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(3)
+            }
+
+            Text(HeroWODLibrary.tributeDisclaimer)
+                .font(.system(size: 9))
+                .foregroundStyle(MVMTheme.tertiaryText.opacity(0.6))
                 .fixedSize(horizontal: false, vertical: true)
-                .lineSpacing(3)
+                .padding(.top, 4)
         }
         .padding(16)
         .background(Color(hex: "#C4A35A").opacity(0.08))

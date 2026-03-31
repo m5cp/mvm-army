@@ -114,7 +114,7 @@ enum WODPlanPDFService {
             return currentY
         }
 
-        let isHero = HeroWODLibrary.isHeroWOD(day.template)
+        let isHero = HeroWODLibrary.isHeroWorkout(day.template)
         let heroTag = isHero ? " 🎖 HERO" : ""
 
         let dayTitleAttrs: [NSAttributedString.Key: Any] = [
@@ -138,7 +138,7 @@ enum WODPlanPDFService {
                 .font: UIFont.italicSystemFont(ofSize: 9),
                 .foregroundColor: UIColor.darkGray
             ]
-            let tributeStr = "In honor of \(tribute.name): \(tribute.tribute)"
+            let tributeStr = "In honor of \(tribute.displayName), \(tribute.serviceBranch) — \(tribute.dateOfDeath), \(tribute.location)"
             let tributeRect = CGRect(x: margin + 8, y: currentY, width: contentWidth - 16, height: 40)
             (tributeStr as NSString).draw(with: tributeRect, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: tributeAttrs, context: nil)
             currentY += 28

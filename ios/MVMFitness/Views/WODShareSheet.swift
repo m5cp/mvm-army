@@ -131,7 +131,7 @@ enum WODCardRenderer {
     private static let heroGold = UIColor(red: 0.769, green: 0.639, blue: 0.353, alpha: 1.0)
 
     static func render(template: WODTemplate) -> UIImage? {
-        let isHero = HeroWODLibrary.isHeroWOD(template)
+        let isHero = HeroWODLibrary.isHeroWorkout(template)
         let tribute = HeroWODLibrary.tributeFor(template.title)
         let w: CGFloat = 1080
         let movementRows = min(template.movements.count, 6)
@@ -198,7 +198,7 @@ enum WODCardRenderer {
             .font: UIFont.systemFont(ofSize: 20, weight: .heavy),
             .foregroundColor: heroGold
         ]
-        let badgeStr = NSAttributedString(string: "🎖  HERO WOD", attributes: badgeAttrs)
+        let badgeStr = NSAttributedString(string: "🎖  MEMORIAL WORKOUT", attributes: badgeAttrs)
         let badgeSize = badgeStr.size()
         let pillRect = CGRect(x: 60, y: 130, width: badgeSize.width + 28, height: 36)
         let pillPath = UIBezierPath(roundedRect: pillRect, cornerRadius: 18)
@@ -224,7 +224,7 @@ enum WODCardRenderer {
             .font: UIFont.systemFont(ofSize: 28, weight: .bold),
             .foregroundColor: UIColor.white
         ]
-        let nameStr = NSAttributedString(string: tribute.name, attributes: nameAttrs)
+        let nameStr = NSAttributedString(string: tribute.displayName, attributes: nameAttrs)
         nameStr.draw(with: CGRect(x: 60, y: y, width: width - 120, height: 40), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
         y += 44
 
@@ -232,10 +232,18 @@ enum WODCardRenderer {
             .font: UIFont.systemFont(ofSize: 20, weight: .regular),
             .foregroundColor: UIColor.white.withAlphaComponent(0.55)
         ]
-        let tributeStr = NSAttributedString(string: tribute.tribute, attributes: tributeAttrs)
-        let tributeBounds = tributeStr.boundingRect(with: CGSize(width: width - 120, height: 120), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
-        tributeStr.draw(with: CGRect(x: 60, y: y, width: width - 120, height: 120), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
-        y += min(tributeBounds.height, 120) + 16
+        let serviceStr = NSAttributedString(string: "\(tribute.serviceBranch) · \(tribute.dateOfDeath) — \(tribute.location)", attributes: tributeAttrs)
+        let serviceBounds = serviceStr.boundingRect(with: CGSize(width: width - 120, height: 80), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
+        serviceStr.draw(with: CGRect(x: 60, y: y, width: width - 120, height: 80), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
+        y += min(serviceBounds.height, 80) + 8
+
+        let footerAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 14, weight: .regular),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.3)
+        ]
+        let footerStr = NSAttributedString(string: "Memorial workout tribute", attributes: footerAttrs)
+        footerStr.draw(at: CGPoint(x: 60, y: y))
+        y += 24
 
         context.setStrokeColor(heroGold.withAlphaComponent(0.15).cgColor)
         context.setLineWidth(1)

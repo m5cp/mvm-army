@@ -111,6 +111,10 @@ MVM Fitness provides example workout structures, planning tools, and accountabil
 Workout Content
 Workouts displayed in the App are examples based on stored templates, Army fitness test structures, H2F drill categories, and general fitness formats. They are generated from a library of predefined templates combined with user-selected preferences such as focus area, equipment, and duration.
 
+This app is not affiliated with or endorsed by CrossFit, Inc. Workout names and formats are used for general fitness and educational purposes only.
+
+Memorial workouts are included to honor individuals who gave their lives in service. Information is based on publicly available sources and may be limited. If you identify an error, please contact us for correction.
+
 The App does not evaluate your physical condition, medical history, or readiness to perform any exercise.
 
 Not Medical Advice

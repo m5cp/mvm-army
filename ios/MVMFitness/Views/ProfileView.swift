@@ -33,6 +33,7 @@ struct ProfileView: View {
                     notificationsSection
                     appControlsSection
                     legalSection
+                    memorialDisclaimerSection
                     footer
                 }
                 .padding(.horizontal, 20)
@@ -465,6 +466,29 @@ struct ProfileView: View {
                 settingsRow(icon: "accessibility", title: "Accessibility", color: MVMTheme.accent, showChevron: true)
             }
             .accessibilityHint("View the accessibility statement")
+        }
+    }
+
+    // MARK: - Memorial Disclaimer
+
+    private var memorialDisclaimerSection: some View {
+        settingsSection(title: "MEMORIAL WORKOUTS", icon: "flag.fill") {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(HeroWODLibrary.memorialDisclaimer)
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(3)
+
+                Divider().overlay(MVMTheme.border)
+
+                Text(HeroWODLibrary.tributeDisclaimer)
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(3)
+            }
+            .padding(.vertical, 8)
         }
     }
 

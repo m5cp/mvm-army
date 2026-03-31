@@ -508,7 +508,7 @@ struct WODPlanSheet: View {
                         .lineLimit(1)
 
                     HStack(spacing: 8) {
-                        if HeroWODLibrary.isHeroWOD(day.template) {
+                        if HeroWODLibrary.isHeroWorkout(day.template) {
                             HStack(spacing: 3) {
                                 Image(systemName: "medal.fill")
                                     .font(.system(size: 9))
@@ -1013,7 +1013,7 @@ enum WODPlanCardRenderer {
             let statsY: CGFloat = 300
             ShareCardCGHelpers.drawStatBox(context: context, x: 60, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(workoutDays.count)", label: "WODs", valueColor: wodAmber)
 
-            let heroCount = workoutDays.filter { HeroWODLibrary.isHeroWOD($0.template) }.count
+            let heroCount = workoutDays.filter { HeroWODLibrary.isHeroWorkout($0.template) }.count
             ShareCardCGHelpers.drawStatBox(context: context, x: 60 + boxWidth + 20, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(heroCount)", label: "Hero", valueColor: heroGold)
 
             let restCount = plan.days.filter { $0.isRestDay }.count
@@ -1041,7 +1041,7 @@ enum WODPlanCardRenderer {
             dayFormatter.dateFormat = "EEE"
 
             for day in workoutDays.prefix(5) {
-                let isHero = HeroWODLibrary.isHeroWOD(day.template)
+                let isHero = HeroWODLibrary.isHeroWorkout(day.template)
                 let dotColor = isHero ? heroGold : wodAmber
                 let dotRect = CGRect(x: 70, y: rowY + 12, width: 10, height: 10)
                 context.setFillColor(dotColor.cgColor)
