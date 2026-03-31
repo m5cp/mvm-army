@@ -10,6 +10,7 @@ struct PTWODDetailView: View {
     @State private var showQRSheet: Bool = false
     @State private var showShareSheet: Bool = false
     @State private var showCalendarSync: Bool = false
+    @State private var showSavedToast: Bool = false
     @State private var calendarService = CalendarExportService()
     @State private var showExportAlert: Bool = false
     @State private var exportAlertMessage: String = ""
@@ -56,6 +57,27 @@ struct PTWODDetailView: View {
                 Button("OK") {}
             } message: {
                 Text(exportAlertMessage)
+            }
+            .overlay {
+                if showSavedToast {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(MVMTheme.success)
+                            Text("Saved to Photos")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Capsule())
+                        .padding(.bottom, 40)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showSavedToast)
+                }
             }
         }
         .onAppear {
@@ -283,7 +305,7 @@ struct PTWODDetailView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.clockwise")
                             .font(.caption.weight(.bold))
-                        Text("New PT")
+                        Text("New Workout")
                             .font(.subheadline.weight(.semibold))
                     }
                     .foregroundStyle(MVMTheme.secondaryText)
@@ -300,9 +322,17 @@ struct PTWODDetailView: View {
                 .buttonStyle(PressScaleButtonStyle())
 
                 Button {
-                    showCalendarSync = true
+                    let saved = ShareCardRenderer.saveToPhotos(
+                        cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
+                    )
+                    if saved {
+                        showSavedToast = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            showSavedToast = false
+                        }
+                    }
                 } label: {
-                    Image(systemName: "calendar.badge.plus")
+                    Image(systemName: "photo.on.rectangle.angled")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(MVMTheme.secondaryText)
                         .frame(width: 44, height: 44)

@@ -455,31 +455,7 @@ struct HomeView: View {
                     }
                 }
 
-                HStack(spacing: 10) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.right.circle.fill")
-                            .font(.caption.weight(.bold))
-                        Text("Start / Continue Test")
-                            .font(.subheadline.weight(.bold))
-                    }
-                    .foregroundStyle(Color(hex: "#0C0F0E"))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                    HStack(spacing: 6) {
-                        Image(systemName: "pencil.line")
-                            .font(.caption.weight(.bold))
-                        Text("Quick Score")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .foregroundStyle(.white.opacity(0.9))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(.white.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
             }
             .padding(22)
             .background {
@@ -516,7 +492,6 @@ struct HomeView: View {
 
             if let today = vm.todayWorkout, !today.isRestDay {
                 todayWorkoutCard(today)
-                todayWorkoutActions(today)
             } else {
                 todayEmptyCard
             }
@@ -702,7 +677,7 @@ struct HomeView: View {
                 .padding(.leading, 4)
 
             if let template = vm.todayFunctionalWOD {
-                todayFunctionalCard(template)
+                todayFunctionalCardSimple(template)
             } else {
                 Button {
                     showFunctionalWODSheet = true
@@ -740,82 +715,78 @@ struct HomeView: View {
         .offset(y: animateHero ? 0 : 8)
     }
 
-    private func todayFunctionalCard(_ template: WODTemplate) -> some View {
+    private func todayFunctionalCardSimple(_ template: WODTemplate) -> some View {
         let isHero = HeroWODLibrary.isHeroWorkout(template)
 
-        return VStack(spacing: 8) {
-            Button {
-                showFunctionalWODSheet = true
-            } label: {
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 8) {
-                            Image(systemName: isHero ? "medal.fill" : "bolt.heart.fill")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 28, height: 28)
-                                .background(.white.opacity(0.15))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                            Text(isHero ? "MEMORIAL" : "FUNCTIONAL")
-                                .font(.caption2.weight(.heavy))
-                                .tracking(0.8)
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
-
-                        Text(template.title)
-                            .font(.headline.weight(.bold))
+        return Button {
+            showFunctionalWODSheet = true
+        } label: {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: isHero ? "medal.fill" : "bolt.heart.fill")
+                            .font(.caption.weight(.bold))
                             .foregroundStyle(.white)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
-
-                        HStack(spacing: 8) {
-                            Label("\(template.movements.count) movements", systemImage: "list.bullet")
-                            Label("~\(template.durationMinutes) min", systemImage: "clock")
-                        }
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.6))
-                    }
-
-                    Spacer(minLength: 0)
-
-                    VStack(spacing: 6) {
-                        Image(systemName: "play.fill")
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 48, height: 48)
+                            .frame(width: 28, height: 28)
                             .background(.white.opacity(0.15))
-                            .clipShape(Circle())
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                        Text("View")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.white.opacity(0.6))
+                        Text(isHero ? "MEMORIAL" : "FUNCTIONAL")
+                            .font(.caption2.weight(.heavy))
+                            .tracking(0.8)
+                            .foregroundStyle(.white.opacity(0.7))
                     }
-                }
-                .padding(18)
-                .background {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(
-                            isHero ?
-                            LinearGradient(
-                                colors: [Color(hex: "#8B5E34"), Color(hex: "#6B4423").opacity(0.95)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ) :
-                            LinearGradient(
-                                colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706").opacity(0.95)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .shadow(color: Color(hex: "#F59E0B").opacity(0.2), radius: 16, y: 10)
-            }
-            .buttonStyle(PressScaleButtonStyle())
 
-            todayFunctionalActions(template)
+                    Text(template.title)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+
+                    HStack(spacing: 8) {
+                        Label("\(template.movements.count) movements", systemImage: "list.bullet")
+                        Label("~\(template.durationMinutes) min", systemImage: "clock")
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.6))
+                }
+
+                Spacer(minLength: 0)
+
+                VStack(spacing: 6) {
+                    Image(systemName: "play.fill")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 48, height: 48)
+                        .background(.white.opacity(0.15))
+                        .clipShape(Circle())
+
+                    Text("View")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+            }
+            .padding(18)
+            .background {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(
+                        isHero ?
+                        LinearGradient(
+                            colors: [Color(hex: "#8B5E34"), Color(hex: "#6B4423").opacity(0.95)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ) :
+                        LinearGradient(
+                            colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706").opacity(0.95)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: Color(hex: "#F59E0B").opacity(0.2), radius: 16, y: 10)
         }
+        .buttonStyle(PressScaleButtonStyle())
     }
 
     private func todayFunctionalActions(_ template: WODTemplate) -> some View {
