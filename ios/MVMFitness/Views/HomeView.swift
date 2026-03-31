@@ -503,7 +503,7 @@ struct HomeView: View {
     private func todayWorkoutCard(_ workout: WorkoutDay) -> some View {
         Button {
             startWorkoutTrigger.toggle()
-            showActiveSession = true
+            showPTWorkoutSheet = true
         } label: {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
