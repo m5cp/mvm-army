@@ -1,4 +1,4 @@
-🇺🇸 MVM Fitness
+MVM Fitness
 
 Mission-ready fitness tracking built for performance, not convenience.
 
