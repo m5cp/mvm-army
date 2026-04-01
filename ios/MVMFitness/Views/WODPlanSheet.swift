@@ -21,6 +21,7 @@ struct WODPlanSheet: View {
     @State private var exportAlertMessage: String = ""
     @State private var calendarService = CalendarExportService()
     @State private var actionTrigger: Bool = false
+    @State private var selectedWODDay: WODPlanDay?
 
     private let calendar = Calendar.current
 
@@ -69,6 +70,9 @@ struct WODPlanSheet: View {
                 if let plan = vm.wodPlan {
                     WODPlanPDFExportSheet(plan: plan)
                 }
+            }
+            .sheet(item: $selectedWODDay) { day in
+                WODPlanDayDetailSheet(day: day)
             }
             .alert("Saved", isPresented: $showSavedAlert) {
                 Button("OK") {}
@@ -525,7 +529,10 @@ struct WODPlanSheet: View {
     private func dayRow(_ day: WODPlanDay, offset: Int) -> some View {
         let isToday = calendar.isDateInToday(day.date)
 
-        return HStack(spacing: 14) {
+        return Button {
+            selectedWODDay = day
+        } label: {
+        HStack(spacing: 14) {
             VStack(spacing: 2) {
                 Text(shortDayName(day.date))
                     .font(.system(size: 10, weight: .bold))
@@ -592,19 +599,14 @@ struct WODPlanSheet: View {
                 Image(systemName: "leaf.fill")
                     .font(.caption)
                     .foregroundStyle(MVMTheme.tertiaryText)
-            } else if !day.isRestDay {
-                Button {
-                    vm.regenerateWODDay(dayId: day.id)
-                    refreshTrigger.toggle()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                        .frame(width: 28, height: 28)
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
+            } else if day.isCompleted {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.body)
+                    .foregroundStyle(MVMTheme.success)
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
             }
         }
         .padding(.horizontal, 14)
@@ -621,6 +623,8 @@ struct WODPlanSheet: View {
                 )
         }
         .clipShape(RoundedRectangle(cornerRadius: 14))
+        }  // end Button label
+        .buttonStyle(PressScaleButtonStyle())
         .opacity(animateCards ? 1 : 0)
         .offset(y: animateCards ? 0 : 10)
         .animation(

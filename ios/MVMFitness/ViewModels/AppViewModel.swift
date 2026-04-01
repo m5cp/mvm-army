@@ -1054,6 +1054,44 @@ final class AppViewModel {
         generateWODPlan(goal: goal, weeks: plan.totalWeeks, heroPreference: plan.heroPreference)
     }
 
+    func convertWODDayToRest(dayId: UUID) {
+        guard var plan = wodPlan,
+              let idx = plan.days.firstIndex(where: { $0.id == dayId }) else { return }
+        let restTemplate = WODTemplate(
+            title: "Rest & Recovery",
+            category: .bodyweight,
+            format: .circuit,
+            durationMinutes: 0,
+            equipment: .none,
+            movements: [],
+            workoutDescription: "Active rest"
+        )
+        plan.days[idx] = WODPlanDay(date: plan.days[idx].date, template: restTemplate, isRestDay: true)
+        wodPlan = plan
+        persistAll()
+    }
+
+    func convertWODRestToWorkout(dayId: UUID) {
+        guard var plan = wodPlan,
+              let idx = plan.days.firstIndex(where: { $0.id == dayId && $0.isRestDay }) else { return }
+        let pool = plan.heroPreference == .heroOnly
+            ? HeroWODLibrary.heroWODs
+            : WODTemplateLibrary.allTemplates
+        if let newTemplate = pool.randomElement() {
+            plan.days[idx] = WODPlanDay(date: plan.days[idx].date, template: newTemplate)
+            wodPlan = plan
+            persistAll()
+        }
+    }
+
+    func updateWODDayMovements(dayId: UUID, movements: [WODMovement]) {
+        guard var plan = wodPlan,
+              let idx = plan.days.firstIndex(where: { $0.id == dayId }) else { return }
+        plan.days[idx].template.movements = movements
+        wodPlan = plan
+        persistAll()
+    }
+
     func regenerateWODDay(dayId: UUID, heroOnly: Bool = false) {
         guard var plan = wodPlan,
               let idx = plan.days.firstIndex(where: { $0.id == dayId }) else { return }

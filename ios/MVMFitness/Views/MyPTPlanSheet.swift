@@ -22,6 +22,8 @@ struct MyPTPlanSheet: View {
     @State private var exportAlertMessage: String = ""
     @State private var calendarService = CalendarExportService()
     @State private var actionTrigger: Bool = false
+    @State private var selectedPTDay: WorkoutDay?
+    @State private var showShareCardSheet: Bool = false
 
     private let calendar = Calendar.current
 
@@ -76,6 +78,14 @@ struct MyPTPlanSheet: View {
                 if let plan = vm.currentPlan {
                     PlanShareSheet(plan: plan, shareText: vm.planShareText)
                 }
+            }
+            .sheet(isPresented: $showShareCardSheet) {
+                if let plan = vm.currentPlan {
+                    PTPlanShareCardSheet(plan: plan, shareText: vm.planShareText)
+                }
+            }
+            .sheet(item: $selectedPTDay) { day in
+                PTPlanDayDetailSheet(day: day)
             }
             .sheet(isPresented: $showExportPDFSheet) {
                 if let plan = vm.currentPlan {
@@ -165,8 +175,8 @@ struct MyPTPlanSheet: View {
             }
 
             HStack(spacing: 10) {
-                planActionButton(icon: "qrcode", label: "Share") {
-                    showShareQRSheet = true
+                planActionButton(icon: "square.and.arrow.up", label: "Share") {
+                    showShareCardSheet = true
                 }
 
                 planActionButton(icon: "doc.richtext", label: "Export") {
@@ -634,7 +644,10 @@ struct MyPTPlanSheet: View {
     private func dayRow(_ day: WorkoutDay, offset: Int) -> some View {
         let isToday = calendar.isDateInToday(day.date)
 
-        return HStack(spacing: 14) {
+        return Button {
+            selectedPTDay = day
+        } label: {
+        HStack(spacing: 14) {
             VStack(spacing: 2) {
                 Text(shortDayName(day.date))
                     .font(.system(size: 10, weight: .bold))
@@ -720,6 +733,8 @@ struct MyPTPlanSheet: View {
                 )
         }
         .clipShape(RoundedRectangle(cornerRadius: 14))
+        }  // end Button label
+        .buttonStyle(PressScaleButtonStyle())
         .opacity(animateCards ? 1 : 0)
         .offset(y: animateCards ? 0 : 10)
         .animation(
