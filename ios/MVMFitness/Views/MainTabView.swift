@@ -23,6 +23,7 @@ nonisolated enum AppTab: Int, CaseIterable, Sendable {
 }
 
 struct MainTabView: View {
+    @Environment(AppViewModel.self) private var vm
     @State private var selectedTab: AppTab = .home
     @State private var homePath = NavigationPath()
     @State private var progressPath = NavigationPath()
@@ -53,6 +54,10 @@ struct MainTabView: View {
             customTabBar
         }
         .background(MVMTheme.background.ignoresSafeArea())
+        .instantRecapOverlay(recap: Binding(
+            get: { vm.activeRecap },
+            set: { vm.activeRecap = $0 }
+        ))
     }
 
     private var customTabBar: some View {

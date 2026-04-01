@@ -17,6 +17,21 @@ final class AppViewModel {
     var aftCalculatorResults: [AFTCalculatorResult] = []
     var wodPlan: WODPlan?
     var todayFunctionalWOD: WODTemplate?
+    var activeRecap: InstantRecap?
+
+    var performanceHighlights: [PerformanceHighlight] {
+        PerformanceHighlightsService.generateHighlights(
+            aftScores: aftScores,
+            completedRecords: completedRecords,
+            currentPlan: currentPlan,
+            wodPlan: wodPlan,
+            streak: streak
+        )
+    }
+
+    func showRecap(_ recap: InstantRecap) {
+        activeRecap = recap
+    }
 
     init() {
         loadLocalData()
@@ -488,13 +503,16 @@ final class AppViewModel {
                 source: .unit
             ), at: 0
         )
+        showRecap(PerformanceHighlightsService.workoutRecap(title: scheduledUnitPT[idx].title, exerciseCount: scheduledUnitPT[idx].exercises.count))
         persistAll()
     }
 
     // MARK: - AFT Scores
 
     func saveAFTScore(_ record: AFTScoreRecord) {
+        let previousScores = aftScores
         aftScores.insert(record, at: 0)
+        showRecap(PerformanceHighlightsService.aftScoreRecap(newScore: record, previousScores: previousScores))
         persistAll()
     }
 
@@ -514,6 +532,7 @@ final class AppViewModel {
     // MARK: - AFT Calculator
 
     func saveAFTCalculatorResult(_ result: AFTCalculatorResult) {
+        let previousScores = aftScores
         aftCalculatorResults.insert(result, at: 0)
 
         let scoreRecord = AFTScoreRecord(
@@ -532,6 +551,7 @@ final class AppViewModel {
             weakestEvents: result.weakestEvents
         )
         aftScores.insert(scoreRecord, at: 0)
+        showRecap(PerformanceHighlightsService.aftScoreRecap(newScore: scoreRecord, previousScores: previousScores))
         persistAll()
     }
 
@@ -611,6 +631,10 @@ final class AppViewModel {
                     source: plan.days[idx].source
                 ), at: 0
             )
+
+            let completed = plan.days.filter(\.isCompleted).count
+            let total = plan.totalWorkoutDays
+            showRecap(PerformanceHighlightsService.planDayRecap(dayNumber: completed, totalDays: total))
         }
         persistAll()
     }
@@ -633,6 +657,7 @@ final class AppViewModel {
                 source: workout.source
             ), at: 0
         )
+        showRecap(PerformanceHighlightsService.workoutRecap(title: workout.title, exerciseCount: workout.exercises.count))
         persistAll()
     }
 
