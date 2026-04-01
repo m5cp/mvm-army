@@ -23,11 +23,12 @@ struct ProgressViewScreen: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
-                    if !vm.performanceHighlights.isEmpty {
-                        PerformanceHighlightsView(highlights: vm.performanceHighlights)
-                            .opacity(appeared ? 1 : 0)
-                            .offset(y: appeared ? 0 : 12)
-                    }
+                    PerformanceHighlightsView(
+                        highlights: vm.performanceHighlights,
+                        showEmptyState: vm.performanceHighlights.isEmpty
+                    )
+                    .opacity(appeared ? 1 : 0)
+                    .offset(y: appeared ? 0 : 12)
                     thisWeekHero
                     interactiveWeekStrip
                     weeklyFrequencyChart
