@@ -33,7 +33,7 @@ struct DAForm705ExportView: View {
                     .padding(.bottom, 36)
                 }
             }
-            .navigationTitle("DA Form 705")
+            .navigationTitle("Score Export")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(MVMTheme.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
@@ -56,14 +56,19 @@ struct DAForm705ExportView: View {
             HStack(spacing: 8) {
                 Image(systemName: "doc.richtext.fill")
                     .foregroundStyle(MVMTheme.accent)
-                Text("Export DA Form 705 Replica")
+                Text("Export AFT Score Report")
                     .font(.headline)
                     .foregroundStyle(MVMTheme.primaryText)
             }
 
-            Text("Generates an unofficial replica of DA Form 705 with your AFT data filled in. Review and add optional details before exporting.")
+            Text("Generates an unofficial score report with your AFT data filled in. Review and add optional details before exporting.")
                 .font(.subheadline)
                 .foregroundStyle(MVMTheme.secondaryText)
+
+            Text("This is not an official military document. For personal reference only.")
+                .font(.caption2)
+                .foregroundStyle(MVMTheme.warning)
+                .padding(.top, 2)
         }
         .padding(18)
         .premiumCard()
@@ -269,7 +274,7 @@ struct DAForm705ExportView: View {
                 } else {
                     Image(systemName: "square.and.arrow.up")
                 }
-                Text(isGenerating ? "Generating..." : "Export DA Form 705 Replica")
+                Text(isGenerating ? "Generating..." : "Export Score Report")
             }
             .font(.headline)
             .foregroundStyle(.white)

@@ -414,7 +414,7 @@ struct ProfileView: View {
             NavigationLink {
                 ResourcesView()
             } label: {
-                settingsRow(icon: "book.fill", title: "Resources", color: MVMTheme.accent, showChevron: true)
+                settingsRow(icon: "tablecells", title: "Scoring Reference", color: MVMTheme.accent, showChevron: true)
             }
         }
     }
@@ -482,6 +482,13 @@ struct ProfileView: View {
             Text("Version 5.0")
                 .font(.caption2)
                 .foregroundStyle(MVMTheme.tertiaryText.opacity(0.4))
+
+            Text("Not affiliated with, endorsed by, or sponsored by the U.S. Department of Defense or the Department of the Army.")
+                .font(.system(size: 9))
+                .foregroundStyle(MVMTheme.tertiaryText.opacity(0.35))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
         }
         .padding(.top, 8)
     }

@@ -289,7 +289,7 @@ struct MyPTPlanSheet: View {
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
-                Text("Your plan will be tailored to your goal using Army PRT principles and ACFT event standards.")
+                Text("Your plan will be tailored to your goal using Army PRT principles and AFT event standards.")
                     .font(.caption)
                     .foregroundStyle(MVMTheme.secondaryText)
                     .multilineTextAlignment(.center)

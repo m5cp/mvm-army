@@ -67,7 +67,7 @@ nonisolated enum PTGoal: String, CaseIterable, Codable, Identifiable, Sendable {
 
     var subtitle: String {
         switch self {
-        case .aftScoreImprovement: return "Maximize your ACFT score across all events"
+        case .aftScoreImprovement: return "Maximize your AFT score across all events"
         case .endurance: return "Build stamina for long-distance and sustained effort"
         case .power: return "Increase explosive strength and max lifts"
         case .speed: return "Improve sprint times, agility, and quickness"

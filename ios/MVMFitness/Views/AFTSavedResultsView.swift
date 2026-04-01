@@ -35,7 +35,7 @@ struct AFTSavedResultsView: View {
                                         exportResult = result
                                         showExportSheet = true
                                     } label: {
-                                        Label("Export DA Form 705", systemImage: "doc.text.fill")
+                                        Label("Export Score Report", systemImage: "doc.text.fill")
                                     }
                                 }
                         }

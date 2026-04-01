@@ -742,7 +742,7 @@ struct AFTCalculatorView: View {
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "doc.text.fill")
-                    Text("Export DA Form 705")
+                    Text("Export Score Report")
                 }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(MVMTheme.accent)
