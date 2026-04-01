@@ -28,23 +28,23 @@ struct AFTGoalModeView: View {
     }
 
     private var deadliftNeeded: Int {
-        AFTScoringTables.deadliftNeeded(points: perEventTarget, age: age, sex: sex)
+        AFTScoringTables.deadliftNeeded(points: perEventTarget, age: age, sex: sex, standard: standard)
     }
 
     private var pushUpNeeded: Int {
-        AFTScoringTables.pushUpNeeded(points: perEventTarget, age: age, sex: sex)
+        AFTScoringTables.pushUpNeeded(points: perEventTarget, age: age, sex: sex, standard: standard)
     }
 
     private var sdcNeeded: Int {
-        AFTScoringTables.sdcNeeded(points: perEventTarget, age: age, sex: sex)
+        AFTScoringTables.sdcNeeded(points: perEventTarget, age: age, sex: sex, standard: standard)
     }
 
     private var plankNeeded: Int {
-        AFTScoringTables.plankNeeded(points: perEventTarget, age: age, sex: sex)
+        AFTScoringTables.plankNeeded(points: perEventTarget, age: age, sex: sex, standard: standard)
     }
 
     private var runNeeded: Int {
-        AFTScoringTables.runNeeded(points: perEventTarget, age: age, sex: sex)
+        AFTScoringTables.runNeeded(points: perEventTarget, age: age, sex: sex, standard: standard)
     }
 
     var body: some View {

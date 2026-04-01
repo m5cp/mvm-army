@@ -4,6 +4,9 @@ struct AFTScoreSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppViewModel.self) private var vm
 
+    @State private var ageText: String = "25"
+    @State private var sex: SoldierSex = .male
+    @State private var standard: AFTStandard = .general
     @State private var deadliftLbs: String = "180"
     @State private var pushUpReps: String = "25"
     @State private var sdcMinutes: String = "2"
@@ -13,6 +16,10 @@ struct AFTScoreSheet: View {
     @State private var runMinutes: String = "16"
     @State private var runSeconds: String = "00"
     @State private var didSave = false
+
+    private var scoringAge: Int {
+        Int(ageText) ?? 25
+    }
 
     private var sdcTotalSeconds: Int {
         (Int(sdcMinutes) ?? 0) * 60 + (Int(sdcSeconds) ?? 0)
@@ -26,13 +33,29 @@ struct AFTScoreSheet: View {
         (Int(runMinutes) ?? 0) * 60 + (Int(runSeconds) ?? 0)
     }
 
+    private var dlPts: Int { AFTScoringTables.scoreDeadlift(lbs: Int(deadliftLbs) ?? 0, age: scoringAge, sex: sex, standard: standard) }
+    private var puPts: Int { AFTScoringTables.scorePushUp(reps: Int(pushUpReps) ?? 0, age: scoringAge, sex: sex, standard: standard) }
+    private var sdcPts: Int { AFTScoringTables.scoreSDC(seconds: sdcTotalSeconds, age: scoringAge, sex: sex, standard: standard) }
+    private var plkPts: Int { AFTScoringTables.scorePlank(seconds: plankTotalSeconds, age: scoringAge, sex: sex, standard: standard) }
+    private var runPts: Int { AFTScoringTables.scoreRun(seconds: runTotalSeconds, age: scoringAge, sex: sex, standard: standard) }
+    private var totalScore: Int { dlPts + puPts + sdcPts + plkPts + runPts }
+
     private var preview: AFTScoreRecord {
-        AFTScoreCalculator.calculate(
+        let pairs: [(String, Int)] = [("MDL", dlPts), ("HRP", puPts), ("SDC", sdcPts), ("PLK", plkPts), ("2MR", runPts)]
+        let weakest = pairs.sorted { $0.1 < $1.1 }.prefix(2).map(\.0)
+        return AFTScoreRecord(
             deadliftLbs: Int(deadliftLbs) ?? 0,
             pushUpReps: Int(pushUpReps) ?? 0,
             sdcSeconds: sdcTotalSeconds,
             plankSeconds: plankTotalSeconds,
-            runSeconds: runTotalSeconds
+            runSeconds: runTotalSeconds,
+            deadliftPoints: dlPts,
+            pushUpPoints: puPts,
+            sdcPoints: sdcPts,
+            plankPoints: plkPts,
+            runPoints: runPts,
+            totalScore: totalScore,
+            weakestEvents: weakest
         )
     }
 
@@ -44,6 +67,7 @@ struct AFTScoreSheet: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 18) {
                         infoCard
+                        soldierInfoCard
                         eventInputs
                         scorePreview
                         weakestCard
@@ -94,6 +118,93 @@ struct AFTScoreSheet: View {
             Text("Log your AFT event results to track progress and identify weak events. Scores use age- and sex-normed AFT tables.")
                 .font(.subheadline)
                 .foregroundStyle(MVMTheme.secondaryText)
+        }
+        .padding(18)
+        .premiumCard()
+    }
+
+    private var soldierInfoCard: some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Age")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+
+                    TextField("25", text: $ageText)
+                        .keyboardType(.numberPad)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                        .padding(.horizontal, 14)
+                        .frame(height: 48)
+                        .background(MVMTheme.cardSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+                        }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Sex")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+
+                    HStack(spacing: 0) {
+                        ForEach(SoldierSex.allCases) { option in
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    sex = option
+                                }
+                            } label: {
+                                Text(option.rawValue)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(sex == option ? .white : MVMTheme.secondaryText)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 48)
+                                    .background(sex == option ? MVMTheme.accent : MVMTheme.cardSoft)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Standard")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                HStack(spacing: 0) {
+                    ForEach(AFTStandard.allCases) { option in
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                standard = option
+                            }
+                        } label: {
+                            VStack(spacing: 2) {
+                                Text(option.rawValue)
+                                    .font(.subheadline.weight(.semibold))
+                                Text("Min \(option.minimumPerEvent)/evt")
+                                    .font(.caption2)
+                                    .opacity(0.7)
+                            }
+                            .foregroundStyle(standard == option ? .white : MVMTheme.secondaryText)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 54)
+                            .background(standard == option ? MVMTheme.accent : MVMTheme.cardSoft)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+                }
+            }
         }
         .padding(18)
         .premiumCard()

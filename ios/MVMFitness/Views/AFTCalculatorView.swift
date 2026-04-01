@@ -39,19 +39,19 @@ struct AFTCalculatorView: View {
     }
 
     private var deadliftPoints: Int {
-        AFTScoringTables.scoreDeadlift(lbs: Int(deadliftLbs), age: scoringAge, sex: sex)
+        AFTScoringTables.scoreDeadlift(lbs: Int(deadliftLbs), age: scoringAge, sex: sex, standard: standard)
     }
     private var pushUpPoints: Int {
-        AFTScoringTables.scorePushUp(reps: Int(pushUpReps), age: scoringAge, sex: sex)
+        AFTScoringTables.scorePushUp(reps: Int(pushUpReps), age: scoringAge, sex: sex, standard: standard)
     }
     private var sdcPoints: Int {
-        AFTScoringTables.scoreSDC(seconds: Int(sdcSeconds), age: scoringAge, sex: sex)
+        AFTScoringTables.scoreSDC(seconds: Int(sdcSeconds), age: scoringAge, sex: sex, standard: standard)
     }
     private var plankPoints: Int {
-        AFTScoringTables.scorePlank(seconds: Int(plankSeconds), age: scoringAge, sex: sex)
+        AFTScoringTables.scorePlank(seconds: Int(plankSeconds), age: scoringAge, sex: sex, standard: standard)
     }
     private var runPoints: Int {
-        AFTScoringTables.scoreRun(seconds: Int(runSeconds), age: scoringAge, sex: sex)
+        AFTScoringTables.scoreRun(seconds: Int(runSeconds), age: scoringAge, sex: sex, standard: standard)
     }
 
     private var totalScore: Int {
@@ -99,19 +99,19 @@ struct AFTCalculatorView: View {
     }
 
     private var deadliftBounds: AFTEventBounds {
-        AFTScoringTables.deadliftBounds(age: scoringAge, sex: sex)
+        AFTScoringTables.deadliftBounds(age: scoringAge, sex: sex, standard: standard)
     }
     private var pushUpBounds: AFTEventBounds {
-        AFTScoringTables.pushUpBounds(age: scoringAge, sex: sex)
+        AFTScoringTables.pushUpBounds(age: scoringAge, sex: sex, standard: standard)
     }
     private var sdcBoundsVal: AFTEventBounds {
-        AFTScoringTables.sdcBounds(age: scoringAge, sex: sex)
+        AFTScoringTables.sdcBounds(age: scoringAge, sex: sex, standard: standard)
     }
     private var plankBoundsVal: AFTEventBounds {
-        AFTScoringTables.plankBounds(age: scoringAge, sex: sex)
+        AFTScoringTables.plankBounds(age: scoringAge, sex: sex, standard: standard)
     }
     private var runBoundsVal: AFTEventBounds {
-        AFTScoringTables.runBounds(age: scoringAge, sex: sex)
+        AFTScoringTables.runBounds(age: scoringAge, sex: sex, standard: standard)
     }
 
     var body: some View {

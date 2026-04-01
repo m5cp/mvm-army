@@ -483,7 +483,7 @@ struct ProfileView: View {
                 .font(.caption2)
                 .foregroundStyle(MVMTheme.tertiaryText.opacity(0.4))
 
-            Text("Not affiliated with, endorsed by, or sponsored by the U.S. Department of Defense or the Department of the Army.")
+            Text("Not affiliated with, endorsed by, or sponsored by the U.S. Department of War, the Department of the Army, or any government agency.")
                 .font(.system(size: 9))
                 .foregroundStyle(MVMTheme.tertiaryText.opacity(0.35))
                 .multilineTextAlignment(.center)

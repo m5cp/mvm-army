@@ -198,7 +198,7 @@ enum LegalPages {
             LegalSection(icon: "lock.shield", title: "Data Security", body: "All data is stored securely on-device using iOS's built-in data protection. No data is transmitted to external servers. When you share content (export a scorecard, share a QR code, or sync to your calendar), that content leaves through standard iOS sharing mechanisms.", tint: MVMTheme.slateAccent),
             LegalSection(icon: "hand.raised.slash", title: "Zero Trackers", body: "No analytics. No ad SDKs. No sneaky third-party code watching you. Your workout data doesn't secretly fund someone's startup. We built this clean.", tint: MVMTheme.accent),
             LegalSection(icon: "person.2.slash", title: "Kids & This App", body: "MVM Fitness isn't built for anyone under 13, and we don't knowingly collect info from minors. If your kid wants to do burpees, they can — but this app is for the grown-ups.", tint: MVMTheme.tertiaryText),
-            LegalSection(icon: "envelope", title: "Contact", body: "For privacy-related questions or concerns, reach out through the App Store listing or email support.\n\nThis app is not affiliated with, endorsed by, or sponsored by the U.S. Department of Defense or the Department of the Army.", tint: MVMTheme.accent2)
+            LegalSection(icon: "envelope", title: "Contact", body: "For privacy-related questions or concerns, reach out through the App Store listing or email support.\n\nThis app is not affiliated with, endorsed by, or sponsored by the U.S. Department of War, the Department of the Army, or any government agency.", tint: MVMTheme.accent2)
         ]
     )
 
@@ -217,7 +217,7 @@ enum LegalPages {
             LegalSection(icon: "person.fill.checkmark", title: "You Own Your Reps", body: "You're responsible for knowing your limits, using proper form, and stopping when something feels wrong. Pain, dizziness, seeing stars? Drop the weight, take a knee, and listen to your body.", tint: MVMTheme.accent),
             LegalSection(icon: "shield.slash", title: "Limitation of Liability", body: "The developer is not responsible for injuries, damages, or outcomes resulting from use of this app. The app is provided \"as is\" — no warranties, no guarantees. All workout content is based on publicly available fitness standards and is provided for informational purposes only.", tint: MVMTheme.tertiaryText),
             LegalSection(icon: "lock.doc", title: "Our Work", body: "All content, design, and code belong to the developer. Workout formats are based on publicly available fitness standards. Built with love, caffeine, and an unreasonable number of burpees.", tint: MVMTheme.slateAccent),
-            LegalSection(icon: "building.columns", title: "Independence Disclaimer", body: "This app is not affiliated with, endorsed by, or sponsored by the U.S. Department of Defense or the Department of the Army. All fitness standards referenced are based on publicly available information.", tint: MVMTheme.accent2),
+            LegalSection(icon: "building.columns", title: "Independence Disclaimer", body: "This app is not affiliated with, endorsed by, or sponsored by the U.S. Department of War, the Department of the Army, or any government agency. All fitness standards referenced are based on publicly available information.", tint: MVMTheme.accent2),
             LegalSection(icon: "envelope", title: "Talk to Us", body: "Questions, concerns, or just want to say hooah? Reach out through the App Store listing.", tint: MVMTheme.accent2)
         ]
     )

@@ -9,7 +9,6 @@ struct ResourcesView: View {
                 VStack(spacing: 20) {
                     testOverviewSection
                     scoringReferenceSection
-                    officialGuidanceSection
                     disclaimerSection
                 }
                 .padding(.horizontal, 20)
@@ -73,7 +72,7 @@ struct ResourcesView: View {
                     Text("General Standard")
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(MVMTheme.primaryText)
-                    Text("Minimum 60 points per event, 300 points total to pass.")
+                    Text("Minimum 60 points per event, 300 points total to pass. Scoring is age- and sex-normed.")
                         .font(.caption)
                         .foregroundStyle(MVMTheme.secondaryText)
                 }
@@ -84,7 +83,7 @@ struct ResourcesView: View {
                     Text("Combat Standard")
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(MVMTheme.primaryText)
-                    Text("Minimum 70 points per event, 350 points total to pass.")
+                    Text("Minimum 60 points per event, 350 points total to pass. Sex-neutral scoring — all soldiers use the same table.")
                         .font(.caption)
                         .foregroundStyle(MVMTheme.secondaryText)
                 }
@@ -102,7 +101,9 @@ struct ResourcesView: View {
 
                 Divider().overlay(MVMTheme.border)
 
-                scoringQuickRef
+                scoringQuickRefMale
+                Divider().overlay(MVMTheme.border)
+                scoringQuickRefFemale
             }
             .padding(16)
             .background(MVMTheme.card)
@@ -114,18 +115,34 @@ struct ResourcesView: View {
         }
     }
 
-    private var scoringQuickRef: some View {
+    private var scoringQuickRefMale: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Quick Reference — 100-Point Benchmarks")
+            Text("100-Point Benchmarks — Male / Combat (17–21)")
                 .font(.caption.weight(.bold))
                 .foregroundStyle(MVMTheme.accent)
 
             VStack(spacing: 6) {
-                quickRefRow(event: "MDL", benchmark: "340 lbs (M, 17–21)")
-                quickRefRow(event: "HRP", benchmark: "57 reps (M, 17–21)")
-                quickRefRow(event: "SDC", benchmark: "1:33 (M, 17–21)")
-                quickRefRow(event: "PLK", benchmark: "3:30+ (M, 17–21)")
-                quickRefRow(event: "2MR", benchmark: "13:30 (M, 17–21)")
+                quickRefRow(event: "MDL", benchmark: "340 lbs")
+                quickRefRow(event: "HRP", benchmark: "58 reps")
+                quickRefRow(event: "SDC", benchmark: "1:30")
+                quickRefRow(event: "PLK", benchmark: "3:40")
+                quickRefRow(event: "2MR", benchmark: "13:22")
+            }
+        }
+    }
+
+    private var scoringQuickRefFemale: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("100-Point Benchmarks — Female / General (17–21)")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(MVMTheme.accent2)
+
+            VStack(spacing: 6) {
+                quickRefRow(event: "MDL", benchmark: "220 lbs", tint: MVMTheme.accent2)
+                quickRefRow(event: "HRP", benchmark: "53 reps", tint: MVMTheme.accent2)
+                quickRefRow(event: "SDC", benchmark: "1:55", tint: MVMTheme.accent2)
+                quickRefRow(event: "PLK", benchmark: "3:40", tint: MVMTheme.accent2)
+                quickRefRow(event: "2MR", benchmark: "15:36", tint: MVMTheme.accent2)
             }
 
             Text("Benchmarks vary by age group and sex. Use the AFT Calculator for personalized scoring.")
@@ -134,11 +151,11 @@ struct ResourcesView: View {
         }
     }
 
-    private func quickRefRow(event: String, benchmark: String) -> some View {
+    private func quickRefRow(event: String, benchmark: String, tint: Color = MVMTheme.accent) -> some View {
         HStack {
             Text(event)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(MVMTheme.accent)
+                .foregroundStyle(tint)
                 .frame(width: 36, alignment: .leading)
             Text(benchmark)
                 .font(.caption)
@@ -149,45 +166,6 @@ struct ResourcesView: View {
         .padding(.horizontal, 10)
         .background(MVMTheme.cardSoft)
         .clipShape(.rect(cornerRadius: 8))
-    }
-
-    private var officialGuidanceSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sectionHeader(icon: "link", title: "OFFICIAL GUIDANCE")
-
-            Link(destination: URL(string: "https://www.army.mil/acft/")!) {
-                HStack(spacing: 14) {
-                    Image(systemName: "globe")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(MVMTheme.accent)
-                        .frame(width: 40, height: 40)
-                        .background(MVMTheme.accent.opacity(0.12))
-                        .clipShape(.rect(cornerRadius: 10))
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("View Official Guidance")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(MVMTheme.primaryText)
-                        Text("Opens the official U.S. Army fitness test page")
-                            .font(.caption)
-                            .foregroundStyle(MVMTheme.tertiaryText)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    Image(systemName: "arrow.up.right.square")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(MVMTheme.accent)
-                }
-                .padding(14)
-                .background(MVMTheme.card)
-                .clipShape(.rect(cornerRadius: 14))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(MVMTheme.border)
-                }
-            }
-        }
     }
 
     private var disclaimerSection: some View {
@@ -201,7 +179,7 @@ struct ResourcesView: View {
                     .foregroundStyle(MVMTheme.tertiaryText)
             }
 
-            Text("This information is based on publicly available military fitness standards and is provided for general reference only. This app is not affiliated with the U.S. Department of Defense.")
+            Text("This information is based on publicly available military fitness standards and is provided for general reference only. This app is not affiliated with, endorsed by, or sponsored by the U.S. Department of War or the Department of the Army.")
                 .font(.caption2)
                 .foregroundStyle(MVMTheme.tertiaryText)
                 .lineSpacing(3)

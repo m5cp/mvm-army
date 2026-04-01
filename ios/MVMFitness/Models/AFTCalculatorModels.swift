@@ -15,7 +15,7 @@ nonisolated enum AFTStandard: String, CaseIterable, Codable, Identifiable, Senda
 
     var minimumPerEvent: Int {
         switch self {
-        case .combat: return 70
+        case .combat: return 60
         case .general: return 60
         }
     }

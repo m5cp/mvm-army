@@ -13,11 +13,11 @@ enum AFTCalculatorService {
         plankSeconds: Int,
         runSeconds: Int
     ) -> AFTCalculatorResult {
-        let dlPts = AFTScoringTables.scoreDeadlift(lbs: deadliftLbs, age: age, sex: sex)
-        let puPts = AFTScoringTables.scorePushUp(reps: pushUpReps, age: age, sex: sex)
-        let sdcPts = AFTScoringTables.scoreSDC(seconds: sdcSeconds, age: age, sex: sex)
-        let plkPts = AFTScoringTables.scorePlank(seconds: plankSeconds, age: age, sex: sex)
-        let runPts = AFTScoringTables.scoreRun(seconds: runSeconds, age: age, sex: sex)
+        let dlPts = AFTScoringTables.scoreDeadlift(lbs: deadliftLbs, age: age, sex: sex, standard: standard)
+        let puPts = AFTScoringTables.scorePushUp(reps: pushUpReps, age: age, sex: sex, standard: standard)
+        let sdcPts = AFTScoringTables.scoreSDC(seconds: sdcSeconds, age: age, sex: sex, standard: standard)
+        let plkPts = AFTScoringTables.scorePlank(seconds: plankSeconds, age: age, sex: sex, standard: standard)
+        let runPts = AFTScoringTables.scoreRun(seconds: runSeconds, age: age, sex: sex, standard: standard)
 
         let total = dlPts + puPts + sdcPts + plkPts + runPts
 

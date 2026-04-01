@@ -36,33 +36,39 @@ nonisolated struct AFTEventBounds: Sendable {
 
 nonisolated enum AFTScoringTables: Sendable {
 
+    static func effectiveSex(sex: SoldierSex, standard: AFTStandard) -> SoldierSex {
+        if standard == .combat { return .male }
+        return sex
+    }
+
     // MARK: - MDL (3-Rep Max Deadlift) — lbs, higher is better
 
-    static func deadliftBounds(age: Int, sex: SoldierSex) -> AFTEventBounds {
+    static func deadliftBounds(age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> AFTEventBounds {
         let group = AFTAgeGroup.from(age: age)
-        switch sex {
+        let eff = effectiveSex(sex: sex, standard: standard)
+        switch eff {
         case .male:
             switch group {
-            case .age17to21: return AFTEventBounds(max100: 340, min60: 140)
-            case .age22to26: return AFTEventBounds(max100: 370, min60: 140)
-            case .age27to31: return AFTEventBounds(max100: 370, min60: 140)
-            case .age32to36: return AFTEventBounds(max100: 370, min60: 140)
-            case .age37to41: return AFTEventBounds(max100: 340, min60: 140)
+            case .age17to21: return AFTEventBounds(max100: 340, min60: 150)
+            case .age22to26: return AFTEventBounds(max100: 350, min60: 150)
+            case .age27to31: return AFTEventBounds(max100: 350, min60: 150)
+            case .age32to36: return AFTEventBounds(max100: 350, min60: 140)
+            case .age37to41: return AFTEventBounds(max100: 350, min60: 140)
             case .age42to46: return AFTEventBounds(max100: 340, min60: 140)
-            case .age47to51: return AFTEventBounds(max100: 320, min60: 120)
-            case .age52to56: return AFTEventBounds(max100: 280, min60: 100)
-            case .age57to61: return AFTEventBounds(max100: 250, min60: 80)
-            case .age62plus:  return AFTEventBounds(max100: 230, min60: 80)
+            case .age47to51: return AFTEventBounds(max100: 330, min60: 140)
+            case .age52to56: return AFTEventBounds(max100: 250, min60: 140)
+            case .age57to61: return AFTEventBounds(max100: 230, min60: 140)
+            case .age62plus:  return AFTEventBounds(max100: 230, min60: 140)
             }
         case .female:
             switch group {
-            case .age17to21: return AFTEventBounds(max100: 210, min60: 120)
+            case .age17to21: return AFTEventBounds(max100: 220, min60: 120)
             case .age22to26: return AFTEventBounds(max100: 230, min60: 120)
-            case .age27to31: return AFTEventBounds(max100: 230, min60: 120)
+            case .age27to31: return AFTEventBounds(max100: 240, min60: 120)
             case .age32to36: return AFTEventBounds(max100: 230, min60: 120)
-            case .age37to41: return AFTEventBounds(max100: 210, min60: 120)
+            case .age37to41: return AFTEventBounds(max100: 220, min60: 120)
             case .age42to46: return AFTEventBounds(max100: 210, min60: 120)
-            case .age47to51: return AFTEventBounds(max100: 190, min60: 120)
+            case .age47to51: return AFTEventBounds(max100: 200, min60: 120)
             case .age52to56: return AFTEventBounds(max100: 190, min60: 120)
             case .age57to61: return AFTEventBounds(max100: 170, min60: 120)
             case .age62plus:  return AFTEventBounds(max100: 170, min60: 120)
@@ -72,18 +78,19 @@ nonisolated enum AFTScoringTables: Sendable {
 
     // MARK: - HRP (Hand-Release Push-Up) — reps, higher is better
 
-    static func pushUpBounds(age: Int, sex: SoldierSex) -> AFTEventBounds {
+    static func pushUpBounds(age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> AFTEventBounds {
         let group = AFTAgeGroup.from(age: age)
-        switch sex {
+        let eff = effectiveSex(sex: sex, standard: standard)
+        switch eff {
         case .male:
             switch group {
-            case .age17to21: return AFTEventBounds(max100: 57, min60: 10)
-            case .age22to26: return AFTEventBounds(max100: 61, min60: 10)
-            case .age27to31: return AFTEventBounds(max100: 62, min60: 10)
-            case .age32to36: return AFTEventBounds(max100: 60, min60: 10)
-            case .age37to41: return AFTEventBounds(max100: 59, min60: 10)
-            case .age42to46: return AFTEventBounds(max100: 56, min60: 10)
-            case .age47to51: return AFTEventBounds(max100: 55, min60: 10)
+            case .age17to21: return AFTEventBounds(max100: 58, min60: 15)
+            case .age22to26: return AFTEventBounds(max100: 61, min60: 14)
+            case .age27to31: return AFTEventBounds(max100: 62, min60: 14)
+            case .age32to36: return AFTEventBounds(max100: 60, min60: 13)
+            case .age37to41: return AFTEventBounds(max100: 59, min60: 12)
+            case .age42to46: return AFTEventBounds(max100: 57, min60: 11)
+            case .age47to51: return AFTEventBounds(max100: 55, min60: 11)
             case .age52to56: return AFTEventBounds(max100: 51, min60: 10)
             case .age57to61: return AFTEventBounds(max100: 46, min60: 10)
             case .age62plus:  return AFTEventBounds(max100: 43, min60: 10)
@@ -106,41 +113,42 @@ nonisolated enum AFTScoringTables: Sendable {
 
     // MARK: - SDC (Sprint-Drag-Carry) — seconds, lower is better
 
-    static func sdcBounds(age: Int, sex: SoldierSex) -> AFTEventBounds {
+    static func sdcBounds(age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> AFTEventBounds {
         let group = AFTAgeGroup.from(age: age)
-        switch sex {
+        let eff = effectiveSex(sex: sex, standard: standard)
+        switch eff {
         case .male:
             switch group {
-            case .age17to21: return AFTEventBounds(max100: 89, min60: 148)
-            case .age22to26: return AFTEventBounds(max100: 90, min60: 151)
-            case .age27to31: return AFTEventBounds(max100: 90, min60: 152)
-            case .age32to36: return AFTEventBounds(max100: 93, min60: 156)
-            case .age37to41: return AFTEventBounds(max100: 96, min60: 161)
-            case .age42to46: return AFTEventBounds(max100: 100, min60: 165)
-            case .age47to51: return AFTEventBounds(max100: 105, min60: 173)
-            case .age52to56: return AFTEventBounds(max100: 112, min60: 180)
-            case .age57to61: return AFTEventBounds(max100: 118, min60: 192)
-            case .age62plus:  return AFTEventBounds(max100: 129, min60: 196)
+            case .age17to21: return AFTEventBounds(max100: 90, min60: 208)
+            case .age22to26: return AFTEventBounds(max100: 85, min60: 211)
+            case .age27to31: return AFTEventBounds(max100: 80, min60: 212)
+            case .age32to36: return AFTEventBounds(max100: 75, min60: 216)
+            case .age37to41: return AFTEventBounds(max100: 70, min60: 221)
+            case .age42to46: return AFTEventBounds(max100: 70, min60: 227)
+            case .age47to51: return AFTEventBounds(max100: 70, min60: 232)
+            case .age52to56: return AFTEventBounds(max100: 70, min60: 243)
+            case .age57to61: return AFTEventBounds(max100: 70, min60: 288)
+            case .age62plus:  return AFTEventBounds(max100: 70, min60: 348)
             }
         case .female:
             switch group {
-            case .age17to21: return AFTEventBounds(max100: 115, min60: 195)
-            case .age22to26: return AFTEventBounds(max100: 115, min60: 195)
-            case .age27to31: return AFTEventBounds(max100: 115, min60: 195)
-            case .age32to36: return AFTEventBounds(max100: 119, min60: 202)
-            case .age37to41: return AFTEventBounds(max100: 122, min60: 207)
-            case .age42to46: return AFTEventBounds(max100: 129, min60: 222)
-            case .age47to51: return AFTEventBounds(max100: 131, min60: 231)
-            case .age52to56: return AFTEventBounds(max100: 138, min60: 243)
-            case .age57to61: return AFTEventBounds(max100: 145, min60: 255)
-            case .age62plus:  return AFTEventBounds(max100: 155, min60: 270)
+            case .age17to21: return AFTEventBounds(max100: 115, min60: 245)
+            case .age22to26: return AFTEventBounds(max100: 115, min60: 248)
+            case .age27to31: return AFTEventBounds(max100: 115, min60: 250)
+            case .age32to36: return AFTEventBounds(max100: 119, min60: 258)
+            case .age37to41: return AFTEventBounds(max100: 122, min60: 265)
+            case .age42to46: return AFTEventBounds(max100: 129, min60: 278)
+            case .age47to51: return AFTEventBounds(max100: 131, min60: 290)
+            case .age52to56: return AFTEventBounds(max100: 138, min60: 305)
+            case .age57to61: return AFTEventBounds(max100: 145, min60: 320)
+            case .age62plus:  return AFTEventBounds(max100: 155, min60: 340)
             }
         }
     }
 
     // MARK: - PLK (Plank) — seconds, higher is better
 
-    static func plankBounds(age: Int, sex: SoldierSex) -> AFTEventBounds {
+    static func plankBounds(age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> AFTEventBounds {
         let group = AFTAgeGroup.from(age: age)
         switch group {
         case .age17to21: return AFTEventBounds(max100: 220, min60: 90)
@@ -158,21 +166,22 @@ nonisolated enum AFTScoringTables: Sendable {
 
     // MARK: - 2MR (2-Mile Run) — seconds, lower is better
 
-    static func runBounds(age: Int, sex: SoldierSex) -> AFTEventBounds {
+    static func runBounds(age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> AFTEventBounds {
         let group = AFTAgeGroup.from(age: age)
-        switch sex {
+        let eff = effectiveSex(sex: sex, standard: standard)
+        switch eff {
         case .male:
             switch group {
-            case .age17to21: return AFTEventBounds(max100: 802, min60: 1320)
-            case .age22to26: return AFTEventBounds(max100: 807, min60: 1320)
-            case .age27to31: return AFTEventBounds(max100: 811, min60: 1320)
-            case .age32to36: return AFTEventBounds(max100: 822, min60: 1320)
-            case .age37to41: return AFTEventBounds(max100: 838, min60: 1331)
-            case .age42to46: return AFTEventBounds(max100: 845, min60: 1352)
-            case .age47to51: return AFTEventBounds(max100: 870, min60: 1375)
-            case .age52to56: return AFTEventBounds(max100: 909, min60: 1400)
-            case .age57to61: return AFTEventBounds(max100: 928, min60: 1416)
-            case .age62plus:  return AFTEventBounds(max100: 928, min60: 1416)
+            case .age17to21: return AFTEventBounds(max100: 802, min60: 1260)
+            case .age22to26: return AFTEventBounds(max100: 822, min60: 1290)
+            case .age27to31: return AFTEventBounds(max100: 832, min60: 1300)
+            case .age32to36: return AFTEventBounds(max100: 862, min60: 1320)
+            case .age37to41: return AFTEventBounds(max100: 882, min60: 1350)
+            case .age42to46: return AFTEventBounds(max100: 912, min60: 1380)
+            case .age47to51: return AFTEventBounds(max100: 942, min60: 1410)
+            case .age52to56: return AFTEventBounds(max100: 972, min60: 1440)
+            case .age57to61: return AFTEventBounds(max100: 1002, min60: 1470)
+            case .age62plus:  return AFTEventBounds(max100: 1020, min60: 1500)
             }
         case .female:
             switch group {
@@ -208,28 +217,28 @@ nonisolated enum AFTScoringTables: Sendable {
         return 60 + Int((fraction * 40.0).rounded())
     }
 
-    static func scoreDeadlift(lbs: Int, age: Int, sex: SoldierSex) -> Int {
-        let bounds = deadliftBounds(age: age, sex: sex)
+    static func scoreDeadlift(lbs: Int, age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> Int {
+        let bounds = deadliftBounds(age: age, sex: sex, standard: standard)
         return scoreHigherIsBetter(rawValue: lbs, bounds: bounds)
     }
 
-    static func scorePushUp(reps: Int, age: Int, sex: SoldierSex) -> Int {
-        let bounds = pushUpBounds(age: age, sex: sex)
+    static func scorePushUp(reps: Int, age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> Int {
+        let bounds = pushUpBounds(age: age, sex: sex, standard: standard)
         return scoreHigherIsBetter(rawValue: reps, bounds: bounds)
     }
 
-    static func scoreSDC(seconds: Int, age: Int, sex: SoldierSex) -> Int {
-        let bounds = sdcBounds(age: age, sex: sex)
+    static func scoreSDC(seconds: Int, age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> Int {
+        let bounds = sdcBounds(age: age, sex: sex, standard: standard)
         return scoreLowerIsBetter(rawValue: seconds, bounds: bounds)
     }
 
-    static func scorePlank(seconds: Int, age: Int, sex: SoldierSex) -> Int {
-        let bounds = plankBounds(age: age, sex: sex)
+    static func scorePlank(seconds: Int, age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> Int {
+        let bounds = plankBounds(age: age, sex: sex, standard: standard)
         return scoreHigherIsBetter(rawValue: seconds, bounds: bounds)
     }
 
-    static func scoreRun(seconds: Int, age: Int, sex: SoldierSex) -> Int {
-        let bounds = runBounds(age: age, sex: sex)
+    static func scoreRun(seconds: Int, age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> Int {
+        let bounds = runBounds(age: age, sex: sex, standard: standard)
         return scoreLowerIsBetter(rawValue: seconds, bounds: bounds)
     }
 
@@ -247,23 +256,23 @@ nonisolated enum AFTScoringTables: Sendable {
         return Int((bounds.min60 - fraction * (bounds.min60 - bounds.max100)).rounded(.down))
     }
 
-    static func deadliftNeeded(points: Int, age: Int, sex: SoldierSex) -> Int {
-        rawForHigherIsBetter(targetPoints: points, bounds: deadliftBounds(age: age, sex: sex))
+    static func deadliftNeeded(points: Int, age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> Int {
+        rawForHigherIsBetter(targetPoints: points, bounds: deadliftBounds(age: age, sex: sex, standard: standard))
     }
 
-    static func pushUpNeeded(points: Int, age: Int, sex: SoldierSex) -> Int {
-        rawForHigherIsBetter(targetPoints: points, bounds: pushUpBounds(age: age, sex: sex))
+    static func pushUpNeeded(points: Int, age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> Int {
+        rawForHigherIsBetter(targetPoints: points, bounds: pushUpBounds(age: age, sex: sex, standard: standard))
     }
 
-    static func sdcNeeded(points: Int, age: Int, sex: SoldierSex) -> Int {
-        rawForLowerIsBetter(targetPoints: points, bounds: sdcBounds(age: age, sex: sex))
+    static func sdcNeeded(points: Int, age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> Int {
+        rawForLowerIsBetter(targetPoints: points, bounds: sdcBounds(age: age, sex: sex, standard: standard))
     }
 
-    static func plankNeeded(points: Int, age: Int, sex: SoldierSex) -> Int {
-        rawForHigherIsBetter(targetPoints: points, bounds: plankBounds(age: age, sex: sex))
+    static func plankNeeded(points: Int, age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> Int {
+        rawForHigherIsBetter(targetPoints: points, bounds: plankBounds(age: age, sex: sex, standard: standard))
     }
 
-    static func runNeeded(points: Int, age: Int, sex: SoldierSex) -> Int {
-        rawForLowerIsBetter(targetPoints: points, bounds: runBounds(age: age, sex: sex))
+    static func runNeeded(points: Int, age: Int, sex: SoldierSex, standard: AFTStandard = .general) -> Int {
+        rawForLowerIsBetter(targetPoints: points, bounds: runBounds(age: age, sex: sex, standard: standard))
     }
 }
