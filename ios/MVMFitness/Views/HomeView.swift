@@ -2,7 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(AppViewModel.self) private var vm
-    @AppStorage("disclaimerAccepted") private var disclaimerAccepted: Bool = false
+
 
     @State private var animateHero: Bool = false
     @State private var animateMetrics: Bool = false
@@ -56,14 +56,10 @@ struct HomeView: View {
 
                     aftCalculatorHero
 
-                    if disclaimerAccepted {
-                        todayWorkoutSection
-                        todayFunctionalSection
-                        planningSection
-                        dailyActivitySection
-                    } else {
-                        disclaimerBanner
-                    }
+                    todayWorkoutSection
+                    todayFunctionalSection
+                    planningSection
+                    dailyActivitySection
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
@@ -87,23 +83,21 @@ struct HomeView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
-                    if disclaimerAccepted {
-                        Button {
-                            navigateToTrainingCalendar = true
-                        } label: {
-                            Image(systemName: "calendar")
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(MVMTheme.secondaryText)
-                        }
+                    Button {
+                        navigateToTrainingCalendar = true
+                    } label: {
+                        Image(systemName: "calendar")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
 
-                        Button {
-                            toolTapTrigger.toggle()
-                            showScanSheet = true
-                        } label: {
-                            Image(systemName: "qrcode.viewfinder")
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(MVMTheme.secondaryText)
-                        }
+                    Button {
+                        toolTapTrigger.toggle()
+                        showScanSheet = true
+                    } label: {
+                        Image(systemName: "qrcode.viewfinder")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(MVMTheme.secondaryText)
                     }
 
                     Menu {
@@ -338,50 +332,6 @@ struct HomeView: View {
         .ignoresSafeArea()
     }
 
-    // MARK: - Disclaimer Banner
-
-    private var disclaimerBanner: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "lock.shield.fill")
-                .font(.title2)
-                .foregroundStyle(MVMTheme.accent)
-
-            Text("Limited Access Mode")
-                .font(.headline.weight(.bold))
-                .foregroundStyle(MVMTheme.primaryText)
-
-            Text("Accept the terms of use to unlock workout planning, logging, progress tracking, and all training features.")
-                .font(.caption)
-                .foregroundStyle(MVMTheme.secondaryText)
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
-
-            Button {
-                disclaimerAccepted = true
-                vm.generateWeeklyPlan()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.shield.fill")
-                        .font(.subheadline.weight(.bold))
-                    Text("Accept Terms & Unlock")
-                        .font(.subheadline.weight(.bold))
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(MVMTheme.heroGradient)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-            .buttonStyle(PressScaleButtonStyle())
-        }
-        .padding(20)
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-    }
 
     private func workoutIcon(for workout: WorkoutDay) -> String {
         let title = workout.title.lowercased()

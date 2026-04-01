@@ -3,7 +3,7 @@ import Charts
 
 struct ProgressViewScreen: View {
     @Environment(AppViewModel.self) private var vm
-    @AppStorage("disclaimerAccepted") private var disclaimerAccepted: Bool = false
+
 
     @State private var showAFTSheet: Bool = false
     @State private var appeared: Bool = false
@@ -23,20 +23,14 @@ struct ProgressViewScreen: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
-                    if disclaimerAccepted {
-                        thisWeekHero
-                        interactiveWeekStrip
-                        weeklyFrequencyChart
-                    }
+                    thisWeekHero
+                    interactiveWeekStrip
+                    weeklyFrequencyChart
                     aftCard
                     if !vm.aftScores.isEmpty {
                         aftHistoryCard
                     }
-                    if disclaimerAccepted {
-                        activityCard
-                    } else {
-                        progressDisclaimerBanner
-                    }
+                    activityCard
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
@@ -906,51 +900,6 @@ struct ProgressViewScreen: View {
         }
     }
 
-    // MARK: - Disclaimer Banner
-
-    private var progressDisclaimerBanner: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "lock.shield.fill")
-                .font(.title2)
-                .foregroundStyle(MVMTheme.accent)
-
-            Text("Limited Access Mode")
-                .font(.headline.weight(.bold))
-                .foregroundStyle(MVMTheme.primaryText)
-
-            Text("Workout tracking, training charts, and activity data require accepting the terms of use. The AFT Calculator and score history remain available.")
-                .font(.caption)
-                .foregroundStyle(MVMTheme.secondaryText)
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
-
-            Button {
-                disclaimerAccepted = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.shield.fill")
-                        .font(.subheadline.weight(.bold))
-                    Text("Accept Terms & Unlock")
-                        .font(.subheadline.weight(.bold))
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(MVMTheme.heroGradient)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-            .buttonStyle(PressScaleButtonStyle())
-        }
-        .padding(20)
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 12)
-    }
 
     // MARK: - Helpers
 
