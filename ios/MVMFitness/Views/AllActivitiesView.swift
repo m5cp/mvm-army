@@ -3,6 +3,9 @@ import SwiftUI
 struct AllActivitiesView: View {
     @Environment(AppViewModel.self) private var vm
 
+    @State private var selectedActivity: ActivitySummary?
+    @State private var showActivityDetail: Bool = false
+
     var body: some View {
         ZStack {
             MVMTheme.background.ignoresSafeArea()
@@ -18,7 +21,14 @@ struct AllActivitiesView: View {
                         emptyCard
                     } else {
                         ForEach(vm.healthKit.activities) { activity in
-                            activityCard(activity)
+                            Button {
+                                selectedActivity = activity
+                                showActivityDetail = true
+                            } label: {
+                                activityCard(activity)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Tap to view daily breakdown for \(activity.name)")
                         }
                     }
 
@@ -34,6 +44,11 @@ struct AllActivitiesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationDestination(isPresented: $showActivityDetail) {
+            if let activity = selectedActivity {
+                ActivityDetailView(activity: activity)
+            }
+        }
         .task {
             await vm.healthKit.fetchTodayActiveCalories()
             await vm.healthKit.fetchAllActivities()
@@ -147,6 +162,10 @@ struct AllActivitiesView: View {
                 }
 
                 Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
             }
 
             HStack(spacing: 0) {

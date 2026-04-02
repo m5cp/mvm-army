@@ -274,4 +274,112 @@ final class HealthKitManager {
         await fetchTodayActiveCalories()
         await fetchAllActivities()
     }
+
+    // MARK: - Day-Specific Activity Detail
+
+    nonisolated struct DayActivityDetail: Sendable {
+        let date: Date
+        let sessions: [DaySessionInfo]
+        let totalDuration: TimeInterval
+        let totalCalories: Double
+        let totalDistance: Double
+        let totalSteps: Int
+    }
+
+    nonisolated struct DaySessionInfo: Identifiable, Sendable {
+        let id: String
+        let startDate: Date
+        let endDate: Date
+        let duration: TimeInterval
+        let calories: Double
+        let distance: Double
+        let sourceName: String
+    }
+
+    func fetchDayDetail(for activityType: HKWorkoutActivityType, on date: Date) async -> DayActivityDetail {
+        guard isAvailable else {
+            return DayActivityDetail(date: date, sessions: [], totalDuration: 0, totalCalories: 0, totalDistance: 0, totalSteps: 0)
+        }
+
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+        guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else {
+            return DayActivityDetail(date: date, sessions: [], totalDuration: 0, totalCalories: 0, totalDistance: 0, totalSteps: 0)
+        }
+
+        let typePredicate = HKQuery.predicateForWorkouts(with: activityType)
+        let datePredicate = HKQuery.predicateForSamples(withStart: dayStart, end: dayEnd, options: .strictStartDate)
+        let compound = NSCompoundPredicate(andPredicateWithSubpredicates: [typePredicate, datePredicate])
+
+        let sessions: [DaySessionInfo] = await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: workoutType,
+                predicate: compound,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, _ in
+                let workouts = (samples as? [HKWorkout]) ?? []
+                let infos = workouts.enumerated().map { index, workout in
+                    DaySessionInfo(
+                        id: "\(index)-\(workout.startDate.timeIntervalSince1970)",
+                        startDate: workout.startDate,
+                        endDate: workout.endDate,
+                        duration: workout.duration,
+                        calories: workout.totalEnergyBurned?.doubleValue(for: .kilocalorie()) ?? 0,
+                        distance: workout.totalDistance?.doubleValue(for: .mile()) ?? 0,
+                        sourceName: workout.sourceRevision.source.name
+                    )
+                }
+                continuation.resume(returning: infos)
+            }
+            self.store.execute(query)
+        }
+
+        let totalDuration = sessions.reduce(0) { $0 + $1.duration }
+        let totalCalories = sessions.reduce(0) { $0 + $1.calories }
+        let totalDistance = sessions.reduce(0) { $0 + $1.distance }
+
+        let steps = await fetchStepsForDay(dayStart: dayStart, dayEnd: dayEnd)
+
+        return DayActivityDetail(
+            date: date,
+            sessions: sessions,
+            totalDuration: totalDuration,
+            totalCalories: totalCalories,
+            totalDistance: totalDistance,
+            totalSteps: steps
+        )
+    }
+
+    func fetchWeekDayDetails(for activityType: HKWorkoutActivityType) async -> [DayActivityDetail] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        var results: [DayActivityDetail] = []
+
+        for dayOffset in (0..<7).reversed() {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let detail = await fetchDayDetail(for: activityType, on: date)
+            results.append(detail)
+        }
+
+        return results
+    }
+
+    private func fetchStepsForDay(dayStart: Date, dayEnd: Date) async -> Int {
+        guard isAvailable else { return 0 }
+
+        let predicate = HKQuery.predicateForSamples(withStart: dayStart, end: dayEnd, options: .strictStartDate)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: stepType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum
+            ) { _, result, _ in
+                let steps = result?.sumQuantity()?.doubleValue(for: HKUnit.count()) ?? 0
+                continuation.resume(returning: Int(steps))
+            }
+            store.execute(query)
+        }
+    }
 }

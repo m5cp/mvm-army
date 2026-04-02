@@ -227,7 +227,7 @@ enum LegalPages {
         icon: "exclamationmark.triangle.fill",
         accent: MVMTheme.warning,
         subtitle: "Real talk about what this app does, what it doesn't, and why you should still see your doc.",
-        updated: "March 2026",
+        updated: "April 2026",
         sections: [
             LegalSection(icon: "info.circle", title: "What You're Getting", body: "MVM Fitness gives you workout templates, planning tools, and a way to hold yourself accountable. That's it. It's not a personal trainer, not a prescription, and not a green light to start a new exercise program without checking with your doc first. Think of it as your organized battle buddy — not your medic.", tint: MVMTheme.warning),
             LegalSection(icon: "list.clipboard", title: "About the Workouts", body: "Every workout comes from a library of templates — Army fitness structures, H2F drill categories, general fitness formats, and your selected preferences like focus area, equipment, and duration.\n\nWe don't know your injury history, your 1RM, or that one knee that clicks when it rains. The app doesn't evaluate your physical condition or readiness. That part's on you.", tint: MVMTheme.accent),
@@ -244,7 +244,7 @@ enum LegalPages {
         icon: "bolt.heart.fill",
         accent: Color(hex: "#EF4444"),
         subtitle: "PT makes you stronger — but it can also break you if you're not smart about it. Read this.",
-        updated: "March 2026",
+        updated: "April 2026",
         sections: [
             LegalSection(icon: "stethoscope", title: "Doc First, Reps Second", body: "Before you start any new workout or exercise program, talk to a doctor or qualified medical professional. MVM Fitness is a planning and tracking tool — it doesn't know if you tore your ACL last year or if your blood pressure runs high. That's between you and your provider.", tint: Color(hex: "#EF4444")),
             LegalSection(icon: "exclamationmark.triangle", title: "The Real Talk", body: "Physical training comes with real risks, including:\n\n• Muscle strains, sprains, and tears\n• Joint and bone injuries\n• Overexertion and heat-related illness\n• Cardiovascular complications\n• Stress fractures\n• Aggravation of existing conditions\n\nThis isn't meant to scare you — it's meant to make you train smart.", tint: MVMTheme.warning),
@@ -259,7 +259,7 @@ enum LegalPages {
         icon: "accessibility",
         accent: MVMTheme.accent2,
         subtitle: "Every soldier deserves full access to their tools. We built this for everyone — no exceptions.",
-        updated: "March 2026",
+        updated: "April 2026",
         sections: [
             LegalSection(icon: "speaker.wave.3", title: "VoiceOver Ready", body: "Every button, control, and screen has been labeled for VoiceOver. If you navigate by ear, we've got your six. Accessibility labels and hints are baked in throughout the entire app.", tint: MVMTheme.accent),
             LegalSection(icon: "textformat.size", title: "Your Font, Your Size", body: "Crank up that text size in iOS Settings and MVM Fitness scales right with you. Dynamic Type support means you can read everything comfortably — no squinting at tiny numbers during your AFT.", tint: MVMTheme.slateAccent),

@@ -426,6 +426,8 @@ struct HomeView: View {
             .shadow(color: MVMTheme.brandGreen.opacity(0.3), radius: 24, y: 14)
         }
         .buttonStyle(PressScaleButtonStyle())
+        .accessibilityLabel("AFT Calculator")
+        .accessibilityHint("Open the Army Fitness Test score calculator")
         .scaleEffect(animateHero ? 1 : 0.96)
         .opacity(animateHero ? 1 : 0)
     }
@@ -515,6 +517,8 @@ struct HomeView: View {
             .shadow(color: Color(hex: "#2E5A7C").opacity(0.2), radius: 16, y: 10)
         }
         .buttonStyle(PressScaleButtonStyle())
+        .accessibilityLabel("Today's Individual PT: \(workout.title), \(workout.exercises.count) exercises")
+        .accessibilityHint("Tap to view workout details")
     }
 
     private func todayWorkoutActions(_ workout: WorkoutDay) -> some View {
@@ -729,6 +733,8 @@ struct HomeView: View {
             .shadow(color: Color(hex: "#F59E0B").opacity(0.2), radius: 16, y: 10)
         }
         .buttonStyle(PressScaleButtonStyle())
+        .accessibilityLabel("Today's FunctionFitness: \(template.title), \(template.movements.count) movements")
+        .accessibilityHint("Tap to view workout details")
     }
 
     private func todayFunctionalActions(_ template: WODTemplate) -> some View {
