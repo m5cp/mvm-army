@@ -945,7 +945,7 @@ final class AppViewModel {
         return plan.days.first { Calendar.current.isDate($0.date, inSameDayAs: today) && !$0.isRestDay }
     }
 
-    func generateWODPlan(goal: PTGoal, weeks: Int, heroPreference: WODHeroPreference = .regular) {
+    func generateWODPlan(goal: PTGoal, weeks: Int, heroPreference: WODHeroPreference = .regular, trainingFrequency: Int = 5, trainingGoal: TrainingGoal = .generalFitness) {
         UserDefaults.standard.set(goal.rawValue, forKey: "ptGoal")
         UserDefaults.standard.set(weeks, forKey: "planWeeks")
 
@@ -955,13 +955,38 @@ final class AppViewModel {
 
         var days: [WODPlanDay] = []
         let daysCount = 7
-        let restDayIndices: Set<Int> = [3, 6]
 
-        let regularPool = WODTemplateLibrary.allTemplates
-        let elitePool = HeroWODLibrary.heroWODs
-        var usedTitles: Set<String> = []
+        let clampedFrequency = min(max(trainingFrequency, 2), 6)
+        let restDayIndices = computeRestDays(trainingDays: clampedFrequency)
 
+        let pool = WODTemplateLibrary.poolForPreference(heroPreference)
         let workoutDayCount = daysCount - restDayIndices.count
+
+        let wodEquipment: WODEquipment
+        switch currentEquipment {
+        case .gym: wodEquipment = .gym
+        case .minimal, .field: wodEquipment = .minimal
+        default: wodEquipment = .none
+        }
+
+        let brainSelection = SmartBrainSelection(
+            goal: trainingGoal,
+            duration: currentMinutes,
+            equipment: wodEquipment,
+            difficulty: SmartWorkoutBrain.shouldReduceIntensity() ? .moderate : .high,
+            trainingFrequency: workoutDayCount,
+            focusArea: .fullBody,
+            workoutStyle: heroPreference == .mixed ? .freeWeight : heroPreference == .heroOnly ? .hybrid : .functional,
+            level: currentLevel
+        )
+
+        let smartSelections = SmartWorkoutBrain.selectWeekPlanWithBrain(
+            pool: pool,
+            selection: brainSelection,
+            weekNumber: 1,
+            totalWeeks: weeks
+        )
+
         var workoutIndex = 0
 
         for i in 0..<daysCount {
@@ -979,20 +1004,13 @@ final class AppViewModel {
                 )
                 days.append(WODPlanDay(date: date, template: restTemplate, isRestDay: true))
             } else {
-                let useHero: Bool
-                switch heroPreference {
-                case .regular:
-                    useHero = false
-                case .heroOnly:
-                    useHero = true
-                case .mixed:
-                    useHero = workoutIndex % 2 == 0
+                let selected: WODTemplate
+                if workoutIndex < smartSelections.count {
+                    selected = smartSelections[workoutIndex]
+                } else {
+                    selected = pool.randomElement() ?? WODTemplateLibrary.functionalWODs[0]
                 }
-
-                let pool = useHero ? elitePool : regularPool
-                let available = pool.filter { !usedTitles.contains($0.title) }
-                let selected = available.randomElement() ?? pool.randomElement() ?? regularPool[0]
-                usedTitles.insert(selected.title)
+                SmartWorkoutBrain.recordWODSplit(selected.trainingSplit)
                 days.append(WODPlanDay(date: date, template: selected))
                 workoutIndex += 1
             }
@@ -1004,10 +1022,24 @@ final class AppViewModel {
             totalWeeks: weeks,
             currentWeek: 1,
             weekStartDate: startOfWeek,
-            heroPreference: heroPreference
+            heroPreference: heroPreference,
+            trainingFrequency: clampedFrequency,
+            trainingGoal: trainingGoal.rawValue,
+            workoutStyle: heroPreference.rawValue
         )
         loadTodayFunctionalWOD()
         persistAll()
+    }
+
+    private func computeRestDays(trainingDays: Int) -> Set<Int> {
+        switch trainingDays {
+        case 2: return [1, 2, 4, 5, 6]
+        case 3: return [1, 3, 5, 6]
+        case 4: return [2, 4, 6]
+        case 5: return [3, 6]
+        case 6: return [6]
+        default: return [3, 6]
+        }
     }
 
     var wodPlanShareText: String {
@@ -1053,7 +1085,8 @@ final class AppViewModel {
     func refreshWODPlan() {
         guard let plan = wodPlan else { return }
         let goal = PTGoal(rawValue: plan.ptGoal) ?? .aftScoreImprovement
-        generateWODPlan(goal: goal, weeks: plan.totalWeeks, heroPreference: plan.heroPreference)
+        let tGoal = TrainingGoal(rawValue: plan.trainingGoal) ?? .generalFitness
+        generateWODPlan(goal: goal, weeks: plan.totalWeeks, heroPreference: plan.heroPreference, trainingFrequency: plan.trainingFrequency, trainingGoal: tGoal)
     }
 
     func convertWODDayToRest(dayId: UUID) {
@@ -1076,10 +1109,15 @@ final class AppViewModel {
     func convertWODRestToWorkout(dayId: UUID) {
         guard var plan = wodPlan,
               let idx = plan.days.firstIndex(where: { $0.id == dayId && $0.isRestDay }) else { return }
-        let pool = plan.heroPreference == .heroOnly
-            ? HeroWODLibrary.heroWODs
-            : WODTemplateLibrary.allTemplates
-        if let newTemplate = pool.randomElement() {
+        let pool = WODTemplateLibrary.poolForPreference(plan.heroPreference)
+        let recentSplits = SmartWorkoutBrain.recentTrainingSplits()
+        let usedTitles = Set(plan.days.filter { !$0.isRestDay }.map { $0.template.title })
+        if let newTemplate = SmartWorkoutBrain.selectBestTemplate(
+            from: pool,
+            equipment: .gym,
+            recentSplits: recentSplits,
+            excluding: usedTitles
+        ) {
             plan.days[idx] = WODPlanDay(date: plan.days[idx].date, template: newTemplate)
             wodPlan = plan
             persistAll()
@@ -1098,10 +1136,15 @@ final class AppViewModel {
         guard var plan = wodPlan,
               let idx = plan.days.firstIndex(where: { $0.id == dayId }) else { return }
         let currentTitle = plan.days[idx].template.title
-        let pool = heroOnly
-            ? HeroWODLibrary.heroWODs.filter { $0.title != currentTitle }
-            : WODTemplateLibrary.allTemplates.filter { $0.title != currentTitle }
-        if let newTemplate = pool.randomElement() {
+        let pool = WODTemplateLibrary.poolForPreference(plan.heroPreference)
+        let usedTitles = Set(plan.days.filter { !$0.isRestDay }.map { $0.template.title })
+        let recentSplits = SmartWorkoutBrain.recentTrainingSplits()
+        if let newTemplate = SmartWorkoutBrain.selectBestTemplate(
+            from: pool,
+            equipment: .gym,
+            recentSplits: recentSplits,
+            excluding: usedTitles.union([currentTitle])
+        ) {
             plan.days[idx] = WODPlanDay(date: plan.days[idx].date, template: newTemplate)
             wodPlan = plan
             persistAll()

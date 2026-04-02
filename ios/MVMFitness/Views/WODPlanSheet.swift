@@ -8,6 +8,8 @@ struct WODPlanSheet: View {
     @State private var selectedGoal: PTGoal = .aftScoreImprovement
     @State private var selectedWeeks: Int = 4
     @State private var selectedHeroPreference: WODHeroPreference = .regular
+    @State private var selectedTrainingFrequency: Int = 5
+    @State private var selectedTrainingGoal: TrainingGoal = .generalFitness
     @State private var showGoalSetup: Bool = false
     @State private var animateCards: Bool = false
     @State private var refreshTrigger: Bool = false
@@ -91,6 +93,10 @@ struct WODPlanSheet: View {
                 selectedWeeks = vm.currentPlanWeeks
                 if let plan = vm.wodPlan {
                     selectedHeroPreference = plan.heroPreference
+                    selectedTrainingFrequency = plan.trainingFrequency
+                    if let tGoal = TrainingGoal(rawValue: plan.trainingGoal) {
+                        selectedTrainingGoal = tGoal
+                    }
                     showGoalSetup = false
                     isPlanApproved = true
                 } else {
@@ -338,6 +344,53 @@ struct WODPlanSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 10) {
+                Text("TRAINING FREQUENCY")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.8)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                HStack(spacing: 8) {
+                    ForEach([3, 4, 5, 6], id: \.self) { freq in
+                        Button {
+                            withAnimation(.spring(response: 0.25)) {
+                                selectedTrainingFrequency = freq
+                            }
+                        } label: {
+                            VStack(spacing: 3) {
+                                Text("\(freq)")
+                                    .font(.headline.weight(.bold))
+                                Text("days")
+                                    .font(.caption2.weight(.medium))
+                            }
+                            .foregroundStyle(selectedTrainingFrequency == freq ? .white : MVMTheme.secondaryText)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(selectedTrainingFrequency == freq ? Color(hex: "#F59E0B") : Color.white.opacity(0.06))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                HStack(spacing: 6) {
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 10))
+                    Text(splitRecommendation)
+                        .font(.caption2.weight(.medium))
+                }
+                .foregroundStyle(Color(hex: "#F59E0B").opacity(0.7))
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("TRAINING FOCUS")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.8)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                trainingGoalPicker
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
                 Text("WORKOUT STYLE")
                     .font(.caption2.weight(.heavy))
                     .tracking(0.8)
@@ -349,7 +402,7 @@ struct WODPlanSheet: View {
             }
 
             Button {
-                vm.generateWODPlan(goal: selectedGoal, weeks: selectedWeeks, heroPreference: selectedHeroPreference)
+                vm.generateWODPlan(goal: selectedGoal, weeks: selectedWeeks, heroPreference: selectedHeroPreference, trainingFrequency: selectedTrainingFrequency, trainingGoal: selectedTrainingGoal)
                 showGoalSetup = false
                 isPlanApproved = false
                 animateCards = false
@@ -565,14 +618,14 @@ struct WODPlanSheet: View {
                         .lineLimit(1)
 
                     HStack(spacing: 8) {
-                        if HeroWODLibrary.isHeroWorkout(day.template) {
+                        if day.template.category == .freeWeight {
                             HStack(spacing: 3) {
-                                Image(systemName: "medal.fill")
+                                Image(systemName: "dumbbell.fill")
                                     .font(.system(size: 9))
-                                Text("MEMORIAL")
+                                Text("FREE WEIGHT")
                                     .font(.system(size: 9, weight: .heavy))
                             }
-                            .foregroundStyle(Color(hex: "#C4A35A"))
+                            .foregroundStyle(Color(hex: "#8B5CF6"))
                         }
                         Text(day.template.format.rawValue)
                             .font(.caption2.weight(.semibold))
@@ -580,6 +633,9 @@ struct WODPlanSheet: View {
                         Text("~\(day.template.durationMinutes) min")
                             .font(.caption2.weight(.medium))
                             .foregroundStyle(MVMTheme.tertiaryText)
+                        Text(day.template.intensityGrade.rawValue)
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(intensityColor(day.template.intensityGrade))
                     }
                 }
             }
@@ -677,6 +733,65 @@ struct WODPlanSheet: View {
         }
         .buttonStyle(.plain)
         .opacity(animateCards ? 1 : 0)
+    }
+
+    private var splitRecommendation: String {
+        let splits = SmartWorkoutBrain.recommendedSplit(daysPerWeek: selectedTrainingFrequency, level: .intermediate)
+        let uniqueSplits = Array(Set(splits.map(\.rawValue)))
+        let splitText = uniqueSplits.prefix(3).joined(separator: " / ")
+        return "Smart Brain recommends: \(splitText)"
+    }
+
+    private var trainingGoalPicker: some View {
+        let goals: [TrainingGoal] = [.generalFitness, .strength, .hypertrophy, .conditioning, .aftReadiness, .power]
+
+        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+            ForEach(goals, id: \.rawValue) { goal in
+                let isSelected = selectedTrainingGoal == goal
+                Button {
+                    withAnimation(.spring(response: 0.25)) {
+                        selectedTrainingGoal = goal
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: trainingGoalIcon(goal))
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(isSelected ? .white : Color(hex: "#F59E0B"))
+
+                        Text(goal.rawValue)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(isSelected ? .white : MVMTheme.secondaryText)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
+                    .background(isSelected ? Color(hex: "#F59E0B") : Color.white.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func trainingGoalIcon(_ goal: TrainingGoal) -> String {
+        switch goal {
+        case .strength: return "figure.strengthtraining.traditional"
+        case .hypertrophy: return "dumbbell.fill"
+        case .muscularEndurance: return "figure.run"
+        case .power: return "bolt.fill"
+        case .aftReadiness: return "shield.checkered"
+        case .generalFitness: return "figure.mixed.cardio"
+        case .conditioning: return "flame.fill"
+        }
+    }
+
+    private func intensityColor(_ grade: IntensityGrade) -> Color {
+        switch grade {
+        case .low: return .green
+        case .moderate: return Color(hex: "#F59E0B")
+        case .high: return .orange
+        case .extreme: return .red
+        }
     }
 
     private func shortDayName(_ date: Date) -> String {

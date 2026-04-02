@@ -624,6 +624,10 @@ enum WODTemplateLibrary {
         )
     ]
 
+    static var freeWeightWODs: [WODTemplate] {
+        FreeWeightLibrary.freeWeightWorkouts
+    }
+
     static var allTemplates: [WODTemplate] {
         functionalWODs + aftWODs
     }
@@ -638,5 +642,20 @@ enum WODTemplateLibrary {
 
     static var allIncludingHero: [WODTemplate] {
         functionalWODs + aftWODs + HeroWODLibrary.heroWODs
+    }
+
+    static var allIncludingFreeWeights: [WODTemplate] {
+        functionalWODs + aftWODs + FreeWeightLibrary.freeWeightWorkouts
+    }
+
+    static func poolForPreference(_ preference: WODHeroPreference) -> [WODTemplate] {
+        switch preference {
+        case .regular:
+            return functionalWODs + aftWODs
+        case .mixed:
+            return FreeWeightLibrary.freeWeightWorkouts
+        case .heroOnly:
+            return functionalWODs + aftWODs + FreeWeightLibrary.freeWeightWorkouts
+        }
     }
 }
