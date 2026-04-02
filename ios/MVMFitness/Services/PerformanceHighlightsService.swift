@@ -225,7 +225,7 @@ enum PerformanceHighlightsService {
         if completed == total {
             return PerformanceHighlight(
                 type: .planProgress,
-                title: "Functional week complete",
+                title: "FunctionFitness week complete",
                 icon: "flag.fill"
             )
         }

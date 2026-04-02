@@ -36,7 +36,7 @@ struct WODDetailView: View {
                     unavailableState
                 }
             }
-            .navigationTitle("Functional Fitness Workout")
+            .navigationTitle("FunctionFitness Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -48,7 +48,7 @@ struct WODDetailView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .sheet(isPresented: $showQRSheet) {
                 if let workout {
-                    WorkoutQRSheet(workout: workout, workoutType: "Functional")
+                    WorkoutQRSheet(workout: workout, workoutType: "FunctionFitness")
                 }
             }
             .sheet(isPresented: $showShareSheet) {
@@ -102,7 +102,7 @@ struct WODDetailView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(MVMTheme.accent.opacity(0.5))
 
-            Text("Functional Fitness Workout Unavailable")
+            Text("FunctionFitness Workout Unavailable")
                 .font(.title3.weight(.bold))
                 .foregroundStyle(MVMTheme.primaryText)
 
@@ -155,7 +155,7 @@ struct WODDetailView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white.opacity(0.9))
 
-                Text("FUNCTIONAL FITNESS")
+                Text("FUNCTIONFITNESS")
                     .font(.caption2.weight(.heavy))
                     .tracking(1.0)
                     .foregroundStyle(.white.opacity(0.8))
@@ -350,7 +350,7 @@ struct WODDetailView: View {
                         generateTrigger.toggle()
                         generateAnother()
                     } label: {
-                        Label("Functional Workout", systemImage: "arrow.clockwise")
+                        Label("FunctionFitness Workout", systemImage: "arrow.clockwise")
                     }
                     Button {
                         generateTrigger.toggle()
@@ -439,7 +439,7 @@ struct WODDetailView: View {
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
-                Text("Add this Functional Fitness Workout to your iOS Calendar.")
+                Text("Add this FunctionFitness Workout to your iOS Calendar.")
                     .font(.subheadline)
                     .foregroundStyle(MVMTheme.secondaryText)
                     .multilineTextAlignment(.center)

@@ -46,7 +46,7 @@ struct WODPlanSheet: View {
                     .padding(.bottom, 36)
                 }
             }
-            .navigationTitle("Plan My Functional Fitness")
+            .navigationTitle("Plan My FunctionFitness")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -285,11 +285,11 @@ struct WODPlanSheet: View {
                     .background(Color(hex: "#F59E0B").opacity(0.12))
                     .clipShape(Circle())
 
-                Text("Plan My Functional Fitness")
+                Text("Plan My FunctionFitness")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
-                Text("Generate a functional fitness weekly plan tailored to your goals. Uses the same goal as your PT plan.")
+                Text("Generate a FunctionFitness weekly plan tailored to your goals. Uses the same goal as your PT plan.")
                     .font(.caption)
                     .foregroundStyle(MVMTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -481,7 +481,7 @@ struct WODPlanSheet: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(plan.ptGoal.isEmpty ? "Functional Fitness Plan" : plan.ptGoal)
+                Text(plan.ptGoal.isEmpty ? "FunctionFitness Plan" : plan.ptGoal)
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(.white)
 
@@ -744,7 +744,7 @@ struct WODPlanShareSheet: View {
                             }
 
                             VStack(spacing: 6) {
-                                Text(plan.ptGoal.isEmpty ? "Functional Fitness Plan" : plan.ptGoal)
+                                Text(plan.ptGoal.isEmpty ? "FunctionFitness Plan" : plan.ptGoal)
                                     .font(.title3.weight(.bold))
                                     .foregroundStyle(MVMTheme.primaryText)
 
@@ -761,7 +761,7 @@ struct WODPlanShareSheet: View {
                                     if let image = renderedImage {
                                         ShareLink(
                                             item: Image(uiImage: image),
-                                            preview: SharePreview("Functional Fitness Plan", image: Image(uiImage: image))
+                                            preview: SharePreview("FunctionFitness Plan", image: Image(uiImage: image))
                                         ) {
                                             HStack(spacing: 8) {
                                                 Image(systemName: "square.and.arrow.up")
@@ -1031,7 +1031,7 @@ enum WODPlanCardRenderer {
                 .foregroundColor: wodAmber,
                 .kern: 2.0
             ]
-            let badgeStr = NSAttributedString(string: "FUNCTIONAL FITNESS PLAN", attributes: badgeAttrs)
+            let badgeStr = NSAttributedString(string: "FUNCTIONFITNESS PLAN", attributes: badgeAttrs)
             badgeStr.draw(at: CGPoint(x: 60, y: 130))
 
             let styleAttrs: [NSAttributedString.Key: Any] = [
@@ -1047,7 +1047,7 @@ enum WODPlanCardRenderer {
             context.fillPath()
             styleStr.draw(at: CGPoint(x: stylePillRect.midX - styleSize.width / 2, y: stylePillRect.midY - styleSize.height / 2))
 
-            let goalLabel = plan.ptGoal.isEmpty ? "Functional Fitness Plan" : plan.ptGoal
+            let goalLabel = plan.ptGoal.isEmpty ? "FunctionFitness Plan" : plan.ptGoal
             let titleAttrs: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: 44, weight: .bold),
                 .foregroundColor: UIColor.white

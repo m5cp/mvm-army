@@ -259,7 +259,7 @@ struct HomeView: View {
                 WorkoutQRSheet(workout: today, workoutType: "Individual PT")
             } else if let template = vm.todayFunctionalWOD {
                 let workout = WODService.convertToWorkoutDay(template)
-                WorkoutQRSheet(workout: workout, workoutType: "Functional")
+                WorkoutQRSheet(workout: workout, workoutType: "FunctionFitness")
             }
         }
         .overlay {
@@ -620,7 +620,7 @@ struct HomeView: View {
 
     private var todayFunctionalSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("TODAY'S FUNCTIONAL FITNESS")
+            Text("TODAY'S FUNCTIONFITNESS")
                 .font(.caption.weight(.heavy))
                 .tracking(1.2)
                 .foregroundStyle(MVMTheme.tertiaryText)
@@ -641,10 +641,10 @@ struct HomeView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
 
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Generate Functional Workout")
+                            Text("Generate FunctionFitness Workout")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(MVMTheme.primaryText)
-                            Text("Get a functional fitness session")
+                            Text("Get a FunctionFitness session")
                                 .font(.caption)
                                 .foregroundStyle(MVMTheme.tertiaryText)
                         }
@@ -679,7 +679,7 @@ struct HomeView: View {
                             .background(.white.opacity(0.15))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                        Text("FUNCTIONAL")
+                        Text("FUNCTIONFITNESS")
                             .font(.caption2.weight(.heavy))
                             .tracking(0.8)
                             .foregroundStyle(.white.opacity(0.7))
@@ -880,8 +880,8 @@ struct HomeView: View {
                 }
 
                 planRow(
-                    title: "Plan My Functional Fitness",
-                    subtitle: "Functional fitness workouts",
+                    title: "Plan My FunctionFitness",
+                    subtitle: "FunctionFitness workouts",
                     icon: "bolt.heart.fill",
                     color: MVMTheme.heroAmber
                 ) {

@@ -128,7 +128,7 @@ struct WODPlanDayDetailSheet: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white.opacity(0.9))
 
-                Text("FUNCTIONAL FITNESS")
+                Text("FUNCTIONFITNESS")
                     .font(.caption2.weight(.heavy))
                     .tracking(1.0)
                     .foregroundStyle(.white.opacity(0.8))

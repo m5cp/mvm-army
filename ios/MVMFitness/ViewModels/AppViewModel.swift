@@ -1014,9 +1014,9 @@ final class AppViewModel {
         guard let plan = wodPlan else { return "" }
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MMM d"
-        let goalLabel = plan.ptGoal.isEmpty ? "Functional Fitness Plan" : plan.ptGoal
+        let goalLabel = plan.ptGoal.isEmpty ? "FunctionFitness Plan" : plan.ptGoal
 
-        var text = "MVM Fitness — Functional Fitness Plan\n"
+        var text = "MVM Fitness — FunctionFitness Plan\n"
         text += "Goal: \(goalLabel) · Week \(plan.currentWeek) of \(plan.totalWeeks)\n"
         if let first = plan.days.first, let last = plan.days.last {
             text += "\(dateFormatter.string(from: first.date)) – \(dateFormatter.string(from: last.date))\n"

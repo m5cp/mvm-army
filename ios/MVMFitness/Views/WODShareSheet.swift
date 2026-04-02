@@ -161,7 +161,7 @@ enum WODCardRenderer {
             .font: UIFont.systemFont(ofSize: 20, weight: .heavy),
             .foregroundColor: ShareCardCGHelpers.warningAmber
         ]
-        let starStr = NSAttributedString(string: "\u{2605}  FUNCTIONAL FITNESS", attributes: starAttrs)
+        let starStr = NSAttributedString(string: "\u{2605}  FUNCTIONFITNESS", attributes: starAttrs)
         let starSize = starStr.size()
         let pillRect = CGRect(x: 60, y: 130, width: starSize.width + 28, height: 36)
         let pillPath = UIBezierPath(roundedRect: pillRect, cornerRadius: 18)

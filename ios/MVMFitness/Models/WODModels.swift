@@ -1,7 +1,7 @@
 import Foundation
 
 nonisolated enum WODHeroPreference: String, Codable, CaseIterable, Sendable, Identifiable {
-    case regular = "Functional Fitness Plan"
+    case regular = "FunctionFitness Plan"
     case mixed = "Mixed Intensity"
     case heroOnly = "Elite Challenge Plan"
 
@@ -9,7 +9,7 @@ nonisolated enum WODHeroPreference: String, Codable, CaseIterable, Sendable, Ide
 
     var subtitle: String {
         switch self {
-        case .regular: return "Standard functional workouts"
+        case .regular: return "Standard FunctionFitness workouts"
         case .mixed: return "Blend of standard and elite workouts"
         case .heroOnly: return "All elite challenge workouts"
         }
@@ -36,7 +36,7 @@ nonisolated enum WODFormat: String, Codable, CaseIterable, Sendable {
 }
 
 nonisolated enum WODCategory: String, Codable, CaseIterable, Sendable {
-    case crossfit = "Functional"
+    case crossfit = "FunctionFitness"
     case aftStyle = "AFT-Style"
     case tactical = "Tactical"
     case bodyweight = "Bodyweight"

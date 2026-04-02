@@ -49,7 +49,7 @@ enum WorkoutSanitizer {
         for substring in prohibitedSubstrings {
             result = result.replacingOccurrences(of: substring, with: "", options: .caseInsensitive)
         }
-        result = result.replacingOccurrences(of: "CrossFit", with: "Functional Fitness", options: .caseInsensitive)
+        result = result.replacingOccurrences(of: "CrossFit", with: "FunctionFitness", options: .caseInsensitive)
         result = result.replacingOccurrences(of: "WOD", with: "Workout", options: .caseInsensitive)
         result = result.replacingOccurrences(of: "Hero workout", with: "Workout", options: .caseInsensitive)
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -61,7 +61,7 @@ enum WorkoutSanitizer {
         for substring in prohibitedSubstrings {
             result = result.replacingOccurrences(of: substring, with: "", options: .caseInsensitive)
         }
-        result = result.replacingOccurrences(of: "CrossFit", with: "Functional Fitness", options: .caseInsensitive)
+        result = result.replacingOccurrences(of: "CrossFit", with: "FunctionFitness", options: .caseInsensitive)
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
@@ -116,10 +116,10 @@ enum WorkoutSanitizer {
     private static func sanitizeTag(_ tag: String) -> String {
         let lower = tag.lowercased()
         if lower.contains("memorial") || lower.contains("hero") {
-            return "Functional"
+            return "FunctionFitness"
         }
         if lower.contains("crossfit") {
-            return "Functional Fitness"
+            return "FunctionFitness"
         }
         return tag
     }

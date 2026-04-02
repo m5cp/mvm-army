@@ -58,7 +58,7 @@ enum WODPlanPDFService {
             .font: UIFont.boldSystemFont(ofSize: 16),
             .foregroundColor: UIColor.black
         ]
-        let title = "FUNCTIONAL WOD PLAN"
+        let title = "FUNCTIONFITNESS PLAN"
         let titleSize = (title as NSString).size(withAttributes: titleAttrs)
         let titleX = (pageWidth - titleSize.width) / 2
         (title as NSString).draw(at: CGPoint(x: titleX, y: currentY), withAttributes: titleAttrs)

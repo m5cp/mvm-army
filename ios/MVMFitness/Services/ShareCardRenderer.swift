@@ -77,7 +77,7 @@ enum ShareCardRenderer {
         case .completion(let title, let count, let duration):
             return "MVM Fitness — Completed: \(title)\n\(count) exercises · \(duration)\n#MVMFitness"
         case .completedWorkout(let record):
-            let prefix = record.source == .wod ? "Functional: " : ""
+            let prefix = record.source == .wod ? "FunctionFitness: " : ""
             return "MVM Fitness — \(prefix)\(record.title)\n\(record.exerciseCount) exercises\n#MVMFitness"
         }
     }
@@ -321,7 +321,7 @@ enum CompletedWorkoutCGRenderer {
             missionStr.draw(at: CGPoint(x: (w - missionSize.width) / 2, y: 345))
 
             if record.source == .wod {
-                let badgeText = "FUNCTIONAL"
+                let badgeText = "FUNCTIONFITNESS"
                 let badgeColor = ShareCardCGHelpers.warningAmber
                 let wodAttrs: [NSAttributedString.Key: Any] = [
                     .font: UIFont.systemFont(ofSize: 20, weight: .bold),
@@ -354,7 +354,7 @@ enum CompletedWorkoutCGRenderer {
 
             let sourceLabel: String = {
                 switch record.source {
-                case .wod: return "Functional"
+                case .wod: return "FunctionFitness"
                 case .unit: return "Unit PT"
                 case .individual: return "Individual"
                 case .random: return "Random"
