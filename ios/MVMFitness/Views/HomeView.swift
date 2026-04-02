@@ -666,22 +666,20 @@ struct HomeView: View {
     }
 
     private func todayFunctionalCardSimple(_ template: WODTemplate) -> some View {
-        let isHero = HeroWODLibrary.isHeroWorkout(template)
-
         return Button {
             showFunctionalWODSheet = true
         } label: {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
-                        Image(systemName: isHero ? "medal.fill" : "bolt.heart.fill")
+                        Image(systemName: "bolt.heart.fill")
                             .font(.caption.weight(.bold))
                             .foregroundStyle(.white)
                             .frame(width: 28, height: 28)
                             .background(.white.opacity(0.15))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                        Text(isHero ? "MEMORIAL" : "FUNCTIONAL")
+                        Text("FUNCTIONAL")
                             .font(.caption2.weight(.heavy))
                             .tracking(0.8)
                             .foregroundStyle(.white.opacity(0.7))
@@ -720,12 +718,6 @@ struct HomeView: View {
             .background {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(
-                        isHero ?
-                        LinearGradient(
-                            colors: [Color(hex: "#8B5E34"), Color(hex: "#6B4423").opacity(0.95)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ) :
                         LinearGradient(
                             colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706").opacity(0.95)],
                             startPoint: .topLeading,
@@ -889,7 +881,7 @@ struct HomeView: View {
 
                 planRow(
                     title: "Plan My Functional Fitness",
-                    subtitle: "Functional & memorial workouts",
+                    subtitle: "Functional fitness workouts",
                     icon: "bolt.heart.fill",
                     color: MVMTheme.heroAmber
                 ) {

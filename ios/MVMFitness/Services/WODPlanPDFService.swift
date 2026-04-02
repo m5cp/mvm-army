@@ -114,8 +114,7 @@ enum WODPlanPDFService {
             return currentY
         }
 
-        let isHero = HeroWODLibrary.isHeroWorkout(day.template)
-        let heroTag = isHero ? " 🎖 HERO" : ""
+        let heroTag = ""
 
         let dayTitleAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.boldSystemFont(ofSize: 12),
@@ -133,16 +132,6 @@ enum WODPlanPDFService {
         (meta as NSString).draw(at: CGPoint(x: margin + 8, y: currentY), withAttributes: metaAttrs)
         currentY += 16
 
-        if isHero, let tribute = HeroWODLibrary.tributeFor(day.template.title) {
-            let tributeAttrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont.italicSystemFont(ofSize: 9),
-                .foregroundColor: UIColor.darkGray
-            ]
-            let tributeStr = "In honor of \(tribute.displayName), \(tribute.serviceBranch) — \(tribute.dateOfDeath), \(tribute.location)"
-            let tributeRect = CGRect(x: margin + 8, y: currentY, width: contentWidth - 16, height: 40)
-            (tributeStr as NSString).draw(with: tributeRect, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: tributeAttrs, context: nil)
-            currentY += 28
-        }
 
         let exerciseAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 10),

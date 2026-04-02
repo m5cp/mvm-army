@@ -136,9 +136,7 @@ struct WODDetailView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 16) {
                 wodHeader(template)
-                if let tribute = HeroWODLibrary.tributeFor(template.title) {
-                    heroTributeCard(tribute)
-                }
+
                 wodDetails(template)
                 movementsList(template)
                 actionButtons(workout)
@@ -151,15 +149,13 @@ struct WODDetailView: View {
     }
 
     private func wodHeader(_ template: WODTemplate) -> some View {
-        let isHero = HeroWODLibrary.isHeroWorkout(template)
-
         return VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
-                Image(systemName: isHero ? "medal.fill" : "star.fill")
+                Image(systemName: "star.fill")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white.opacity(0.9))
 
-                Text(isHero ? "MEMORIAL WORKOUT" : "FUNCTIONAL FITNESS")
+                Text("FUNCTIONAL FITNESS")
                     .font(.caption2.weight(.heavy))
                     .tracking(1.0)
                     .foregroundStyle(.white.opacity(0.8))
@@ -189,12 +185,6 @@ struct WODDetailView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 24)
                     .fill(
-                        isHero ?
-                        LinearGradient(
-                            colors: [Color(hex: "#8B5E34"), Color(hex: "#6B4423").opacity(0.95)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ) :
                         LinearGradient(
                             colors: [Color(hex: "#3B6DE0"), Color(hex: "#5B4DC7").opacity(0.95)],
                             startPoint: .topLeading,
@@ -206,7 +196,7 @@ struct WODDetailView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: (isHero ? Color(hex: "#8B5E34") : MVMTheme.accent).opacity(0.2), radius: 20, y: 12)
+        .shadow(color: MVMTheme.accent.opacity(0.2), radius: 20, y: 12)
     }
 
     private func wodDetails(_ template: WODTemplate) -> some View {
@@ -366,7 +356,7 @@ struct WODDetailView: View {
                         generateTrigger.toggle()
                         generateHero()
                     } label: {
-                        Label("Memorial Workout", systemImage: "medal.fill")
+                        Label("Elite Challenge", systemImage: "bolt.heart.fill")
                     }
                 } label: {
                     HStack(spacing: 6) {
@@ -449,7 +439,7 @@ struct WODDetailView: View {
                     .font(.title3.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
-                Text("Add this Functional / Hero Workout to your iOS Calendar.")
+                Text("Add this Functional Fitness Workout to your iOS Calendar.")
                     .font(.subheadline)
                     .foregroundStyle(MVMTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -532,51 +522,5 @@ struct WODDetailView: View {
         workout = WODService.convertToWorkoutDay(template)
     }
 
-    private func heroTributeCard(_ tribute: HeroWODInfo) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "flag.fill")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color(hex: "#C4A35A"))
 
-                Text("IN HONOR OF")
-                    .font(.caption2.weight(.heavy))
-                    .tracking(1.2)
-                    .foregroundStyle(Color(hex: "#C4A35A"))
-            }
-
-            Text(tribute.displayName)
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(MVMTheme.primaryText)
-
-            Text(tribute.serviceBranch)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(MVMTheme.secondaryText)
-
-            Text("\(tribute.dateOfDeath) — \(tribute.location)")
-                .font(.caption)
-                .foregroundStyle(MVMTheme.secondaryText)
-
-            if !tribute.shortTribute.isEmpty {
-                Text(tribute.shortTribute)
-                    .font(.caption)
-                    .foregroundStyle(MVMTheme.tertiaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .lineSpacing(3)
-            }
-
-            Text(HeroWODLibrary.tributeDisclaimer)
-                .font(.system(size: 9))
-                .foregroundStyle(MVMTheme.tertiaryText.opacity(0.6))
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 4)
-        }
-        .padding(16)
-        .background(Color(hex: "#C4A35A").opacity(0.08))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(hex: "#C4A35A").opacity(0.2))
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
 }

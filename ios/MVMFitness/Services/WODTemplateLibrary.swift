@@ -4,7 +4,7 @@ enum WODTemplateLibrary {
 
     static let functionalWODs: [WODTemplate] = [
         WODTemplate(
-            title: "Murph Light",
+            title: "The Iron Forge",
             category: .crossfit,
             format: .forTime,
             durationMinutes: 25,
@@ -61,7 +61,7 @@ enum WODTemplateLibrary {
             workoutDescription: "EMOM for 20 minutes. Odd minutes: burpees. Even minutes: squats. Rest the remainder of each minute."
         ),
         WODTemplate(
-            title: "Filthy Fifty (Scaled)",
+            title: "The Fifty Challenge",
             category: .crossfit,
             format: .forTime,
             durationMinutes: 30,
@@ -76,7 +76,7 @@ enum WODTemplateLibrary {
             workoutDescription: "For time: 50 reps of each movement in order."
         ),
         WODTemplate(
-            title: "Tabata Tornado",
+            title: "The Interval Storm",
             category: .crossfit,
             format: .tabata,
             durationMinutes: 16,
@@ -87,7 +87,7 @@ enum WODTemplateLibrary {
                 WODMovement(name: "Burpees", duration: "20s on / 10s off x 8"),
                 WODMovement(name: "Plank Hold", duration: "20s on / 10s off x 8")
             ],
-            workoutDescription: "4 Tabata rounds (8 intervals each). 1 min rest between movements."
+            workoutDescription: "4 interval rounds (8 intervals each, 20s on / 10s off). 1 min rest between movements."
         ),
         WODTemplate(
             title: "Death by Push-Ups",
@@ -116,7 +116,7 @@ enum WODTemplateLibrary {
             workoutDescription: "5 rounds: 200m shuttle run, 15 KB swings, 10 push-ups. Rest 60 sec between rounds."
         ),
         WODTemplate(
-            title: "Cindy",
+            title: "The Relentless Circuit",
             category: .crossfit,
             format: .amrap,
             durationMinutes: 20,
@@ -126,7 +126,7 @@ enum WODTemplateLibrary {
                 WODMovement(name: "Push-Ups", reps: "10"),
                 WODMovement(name: "Air Squats", reps: "15")
             ],
-            workoutDescription: "AMRAP 20 minutes: 5 pull-ups, 10 push-ups, 15 air squats. Scale pull-ups to ring rows.",
+            workoutDescription: "As many rounds as possible in 20 minutes: 5 pull-ups, 10 push-ups, 15 air squats. Scale pull-ups to ring rows.",
             notes: "Classic functional benchmark"
         ),
         WODTemplate(
@@ -213,7 +213,7 @@ enum WODTemplateLibrary {
             workoutDescription: "5 rounds through all 4 stations. 30 sec rest between rounds."
         ),
         WODTemplate(
-            title: "Fight Gone Bad (Scaled)",
+            title: "The Rotation Grind",
             category: .crossfit,
             format: .circuit,
             durationMinutes: 17,
@@ -228,7 +228,7 @@ enum WODTemplateLibrary {
             workoutDescription: "3 rounds: 1 min at each station, count total reps. 1 min rest between rounds."
         ),
         WODTemplate(
-            title: "The Seven",
+            title: "The Seven Stations",
             category: .crossfit,
             format: .forTime,
             durationMinutes: 22,
@@ -287,7 +287,7 @@ enum WODTemplateLibrary {
             workoutDescription: "4 rounds for time. Focus on form over speed."
         ),
         WODTemplate(
-            title: "Bear Complex",
+            title: "The Barbell Flow",
             category: .crossfit,
             format: .circuit,
             durationMinutes: 20,

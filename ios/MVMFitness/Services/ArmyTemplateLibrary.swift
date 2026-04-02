@@ -1359,7 +1359,7 @@ enum ArmyTemplateLibrary {
             mode: .unitPT,
             focus: .tactical,
             equipment: [.field],
-            objective: "Tabata-style intervals for maximum output in minimal time.",
+            objective: "High-intensity intervals for maximum output in minimal time.",
             warmup: ArmyDrillLibrary.prepDrill,
             mainEffort: [
                 ArmyExercise(name: "Push-Up", sets: 8, duration: "20 sec on / 10 sec off"),

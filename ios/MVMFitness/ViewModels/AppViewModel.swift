@@ -623,6 +623,7 @@ final class AppViewModel {
         currentPlan = plan
 
         if !alreadyCompleted {
+            SmartWorkoutBrain.recordWorkoutPatterns(plan.days[idx].exercises)
             completedRecords.insert(
                 CompletedWorkoutRecord(
                     title: plan.days[idx].title,
@@ -649,6 +650,7 @@ final class AppViewModel {
 
     func completeStandaloneWorkout(_ workout: WorkoutDay) {
         lastWorkoutTag = workout.templateTag
+        SmartWorkoutBrain.recordWorkoutPatterns(workout.exercises)
         completedRecords.insert(
             CompletedWorkoutRecord(
                 title: workout.title,
@@ -956,7 +958,7 @@ final class AppViewModel {
         let restDayIndices: Set<Int> = [3, 6]
 
         let regularPool = WODTemplateLibrary.allTemplates
-        let heroPool = HeroWODLibrary.heroWODs
+        let elitePool = HeroWODLibrary.heroWODs
         var usedTitles: Set<String> = []
 
         let workoutDayCount = daysCount - restDayIndices.count
@@ -987,7 +989,7 @@ final class AppViewModel {
                     useHero = workoutIndex % 2 == 0
                 }
 
-                let pool = useHero ? heroPool : regularPool
+                let pool = useHero ? elitePool : regularPool
                 let available = pool.filter { !usedTitles.contains($0.title) }
                 let selected = available.randomElement() ?? pool.randomElement() ?? regularPool[0]
                 usedTitles.insert(selected.title)
@@ -1029,7 +1031,7 @@ final class AppViewModel {
             if day.isRestDay {
                 text += "Day \(index + 1) (\(dayName)): Rest & Recovery\n"
             } else {
-                let heroTag = HeroWODLibrary.isHeroWorkout(day.template) ? " Memorial" : ""
+                let heroTag = ""
                 text += "Day \(index + 1) (\(dayName)): \(day.template.title)\(heroTag)\n"
                 text += "  \(day.template.format.rawValue) · ~\(day.template.durationMinutes) min\n"
                 for movement in day.template.movements {
@@ -1163,7 +1165,7 @@ final class AppViewModel {
                 if wDay.isCompleted { status = .completed }
                 else if isPast && !isToday { status = .missed }
                 else { status = .planned }
-                let typeLabel = HeroWODLibrary.isMemorialWorkout(wDay.template) ? "Memorial" : "Functional"
+                let typeLabel = "Functional"
                 entries.append(CalendarWorkoutEntry(
                     id: wDay.id, title: wDay.template.title, date: wDay.date,
                     type: typeLabel, duration: wDay.template.durationMinutes,

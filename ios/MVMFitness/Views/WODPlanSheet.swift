@@ -1067,8 +1067,8 @@ enum WODPlanCardRenderer {
             let statsY: CGFloat = 300
             ShareCardCGHelpers.drawStatBox(context: context, x: 60, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(workoutDays.count)", label: "Sessions", valueColor: wodAmber)
 
-            let heroCount = workoutDays.filter { HeroWODLibrary.isHeroWorkout($0.template) }.count
-            ShareCardCGHelpers.drawStatBox(context: context, x: 60 + boxWidth + 20, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(heroCount)", label: "Memorial", valueColor: heroGold)
+            let totalMins = workoutDays.reduce(0) { $0 + $1.template.durationMinutes }
+            ShareCardCGHelpers.drawStatBox(context: context, x: 60 + boxWidth + 20, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "~\(totalMins)m", label: "Duration", valueColor: wodAmber)
 
             let restCount = plan.days.filter { $0.isRestDay }.count
             ShareCardCGHelpers.drawStatBox(context: context, x: 60 + (boxWidth + 20) * 2, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: "\(restCount)", label: "Rest", valueColor: ShareCardCGHelpers.successGreen)
@@ -1095,8 +1095,7 @@ enum WODPlanCardRenderer {
             dayFormatter.dateFormat = "EEE"
 
             for day in workoutDays.prefix(5) {
-                let isHero = HeroWODLibrary.isHeroWorkout(day.template)
-                let dotColor = isHero ? heroGold : wodAmber
+                let dotColor = wodAmber
                 let dotRect = CGRect(x: 70, y: rowY + 12, width: 10, height: 10)
                 context.setFillColor(dotColor.cgColor)
                 context.fillEllipse(in: dotRect)
@@ -1124,15 +1123,6 @@ enum WODPlanCardRenderer {
                 let metaStr = NSAttributedString(string: metaText, attributes: metaAttrs)
                 metaStr.draw(at: CGPoint(x: 160, y: rowY + 36))
 
-                if isHero {
-                    let heroTagAttrs: [NSAttributedString.Key: Any] = [
-                        .font: UIFont.systemFont(ofSize: 14, weight: .heavy),
-                        .foregroundColor: heroGold
-                    ]
-                    let heroTagStr = NSAttributedString(string: "MEMORIAL", attributes: heroTagAttrs)
-                    let heroTagSize = heroTagStr.size()
-                    heroTagStr.draw(at: CGPoint(x: w - 60 - heroTagSize.width, y: rowY + 10))
-                }
 
                 rowY += 70
             }

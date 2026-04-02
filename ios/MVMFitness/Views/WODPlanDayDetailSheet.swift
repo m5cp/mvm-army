@@ -11,11 +11,8 @@ struct WODPlanDayDetailSheet: View {
     @State private var hasChanges: Bool = false
     @State private var editTrigger: Bool = false
 
-    private let isHero: Bool
-
     init(day: WODPlanDay) {
         self.day = day
-        self.isHero = HeroWODLibrary.isHeroWorkout(day.template)
     }
 
     var body: some View {
@@ -113,9 +110,7 @@ struct WODPlanDayDetailSheet: View {
             VStack(spacing: 16) {
                 headerCard
                 detailsBar
-                if let tribute = HeroWODLibrary.tributeFor(day.template.title) {
-                    tributeCard(tribute)
-                }
+
                 movementsSection
                 actionsSection
             }
@@ -129,11 +124,11 @@ struct WODPlanDayDetailSheet: View {
     private var headerCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
-                Image(systemName: isHero ? "medal.fill" : "bolt.heart.fill")
+                Image(systemName: "bolt.heart.fill")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white.opacity(0.9))
 
-                Text(isHero ? "MEMORIAL WORKOUT" : "FUNCTIONAL FITNESS")
+                Text("FUNCTIONAL FITNESS")
                     .font(.caption2.weight(.heavy))
                     .tracking(1.0)
                     .foregroundStyle(.white.opacity(0.8))
@@ -162,12 +157,6 @@ struct WODPlanDayDetailSheet: View {
         .background {
             RoundedRectangle(cornerRadius: 24)
                 .fill(
-                    isHero ?
-                    LinearGradient(
-                        colors: [Color(hex: "#8B5E34"), Color(hex: "#6B4423").opacity(0.95)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ) :
                     LinearGradient(
                         colors: [Color(hex: "#D97706"), Color(hex: "#B45309").opacity(0.95)],
                         startPoint: .topLeading,
@@ -220,46 +209,6 @@ struct WODPlanDayDetailSheet: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func tributeCard(_ tribute: HeroWODInfo) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "flag.fill")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color(hex: "#C4A35A"))
-                Text("IN HONOR OF")
-                    .font(.caption2.weight(.heavy))
-                    .tracking(1.2)
-                    .foregroundStyle(Color(hex: "#C4A35A"))
-            }
-
-            Text(tribute.displayName)
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(MVMTheme.primaryText)
-
-            Text(tribute.serviceBranch)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(MVMTheme.secondaryText)
-
-            Text("\(tribute.dateOfDeath) — \(tribute.location)")
-                .font(.caption)
-                .foregroundStyle(MVMTheme.secondaryText)
-
-            if !tribute.shortTribute.isEmpty {
-                Text(tribute.shortTribute)
-                    .font(.caption)
-                    .foregroundStyle(MVMTheme.tertiaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .lineSpacing(3)
-            }
-        }
-        .padding(16)
-        .background(Color(hex: "#C4A35A").opacity(0.08))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(hex: "#C4A35A").opacity(0.2))
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
 
     private var movementsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
