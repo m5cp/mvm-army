@@ -146,7 +146,7 @@ struct ProgressViewScreen: View {
     private var primaryMetricsRow: some View {
         let todaySteps = max(vm.pedometer.todaySteps, vm.healthKit.todaySteps)
         let calories = Int(vm.healthKit.todayActiveCalories)
-        let avgSteps = max(vm.weeklyStepAverage, vm.healthKit.weeklyAvgSteps)
+        let distance = vm.healthKit.todayWalkRunDistance
 
         return HStack(spacing: 10) {
             primaryMetricCard(
@@ -158,19 +158,19 @@ struct ProgressViewScreen: View {
             )
 
             primaryMetricCard(
+                icon: "map.fill",
+                iconColor: MVMTheme.accent,
+                value: hasRequestedHealthKit ? String(format: "%.1f mi", distance) : "—",
+                label: "Distance",
+                sublabel: "Today"
+            )
+
+            primaryMetricCard(
                 icon: "flame.fill",
                 iconColor: Color(hex: "#FF6B35"),
                 value: hasRequestedHealthKit ? "\(calories)" : "—",
                 label: "Calories",
                 sublabel: "Active"
-            )
-
-            primaryMetricCard(
-                icon: "chart.line.uptrend.xyaxis",
-                iconColor: MVMTheme.accent,
-                value: hasRequestedHealthKit ? avgSteps.formatted() : "—",
-                label: "7-Day Avg",
-                sublabel: "Steps"
             )
         }
         .opacity(appeared ? 1 : 0)

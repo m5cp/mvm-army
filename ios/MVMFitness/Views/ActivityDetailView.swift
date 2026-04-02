@@ -13,6 +13,10 @@ struct ActivityDetailView: View {
     @State private var isLoading: Bool = true
     @State private var appeared: Bool = false
 
+    private var isStepsOverview: Bool {
+        activity.id == "steps-overview"
+    }
+
     var body: some View {
         ZStack {
             MVMTheme.background.ignoresSafeArea()
@@ -71,7 +75,11 @@ struct ActivityDetailView: View {
                     Text(activity.name)
                         .font(.title3.weight(.bold))
                         .foregroundStyle(MVMTheme.primaryText)
-                    if activity.todayCount > 0 {
+                    if isStepsOverview {
+                        Text("All sources")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    } else if activity.todayCount > 0 {
                         Text("\(activity.todayCount) session\(activity.todayCount == 1 ? "" : "s") today")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(MVMTheme.success)
@@ -85,32 +93,57 @@ struct ActivityDetailView: View {
                 Spacer()
             }
 
-            HStack(spacing: 8) {
-                heroMetricPill(
-                    icon: "clock.fill",
-                    value: formatDuration(activity.todayDuration),
-                    label: "Today",
-                    color: MVMTheme.accent
-                )
-
-                heroMetricPill(
-                    icon: "chart.line.uptrend.xyaxis",
-                    value: formatDuration(activity.weeklyAvgDuration),
-                    label: "7-Day Avg",
-                    color: MVMTheme.slateAccent
-                )
-
-                if activity.todayDistance > 0 || activity.weeklyAvgDistance > 0 {
+            if isStepsOverview {
+                HStack(spacing: 8) {
                     heroMetricPill(
-                        icon: "map.fill",
-                        value: String(format: "%.1f mi", activity.todayDistance),
-                        label: "Distance",
+                        icon: "figure.walk",
+                        value: vm.healthKit.todaySteps.formatted(),
+                        label: "Today",
                         color: MVMTheme.success
                     )
+
+                    heroMetricPill(
+                        icon: "chart.line.uptrend.xyaxis",
+                        value: vm.healthKit.weeklyAvgSteps.formatted(),
+                        label: "7-Day Avg",
+                        color: MVMTheme.slateAccent
+                    )
+
+                    heroMetricPill(
+                        icon: "map.fill",
+                        value: String(format: "%.1f mi", vm.healthKit.todayWalkRunDistance),
+                        label: "Distance",
+                        color: MVMTheme.accent
+                    )
+                }
+            } else {
+                HStack(spacing: 8) {
+                    heroMetricPill(
+                        icon: "clock.fill",
+                        value: formatDuration(activity.todayDuration),
+                        label: "Today",
+                        color: MVMTheme.accent
+                    )
+
+                    heroMetricPill(
+                        icon: "chart.line.uptrend.xyaxis",
+                        value: formatDuration(activity.weeklyAvgDuration),
+                        label: "7-Day Avg",
+                        color: MVMTheme.slateAccent
+                    )
+
+                    if activity.todayDistance > 0 || activity.weeklyAvgDistance > 0 {
+                        heroMetricPill(
+                            icon: "map.fill",
+                            value: String(format: "%.1f mi", activity.todayDistance),
+                            label: "Distance",
+                            color: MVMTheme.success
+                        )
+                    }
                 }
             }
 
-            if activity.todayCalories > 0 {
+            if !isStepsOverview && activity.todayCalories > 0 {
                 HStack(spacing: 6) {
                     Image(systemName: "flame.fill")
                         .font(.caption2.weight(.bold))
@@ -136,7 +169,7 @@ struct ActivityDetailView: View {
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(activity.name), \(activity.todayCount) sessions today, \(formatDuration(activity.todayDuration)) total duration")
+        .accessibilityLabel(isStepsOverview ? "Steps, \(vm.healthKit.todaySteps) today" : "\(activity.name), \(activity.todayCount) sessions today, \(formatDuration(activity.todayDuration)) total duration")
     }
 
     private func heroMetricPill(icon: String, value: String, label: String, color: Color) -> some View {
@@ -173,7 +206,7 @@ struct ActivityDetailView: View {
                     .font(.headline.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
                 Spacer()
-                Text("Duration (min)")
+                Text(isStepsOverview ? "Steps" : "Duration (min)")
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(MVMTheme.tertiaryText)
             }
@@ -182,6 +215,69 @@ struct ActivityDetailView: View {
                 ProgressView()
                     .tint(MVMTheme.accent)
                     .frame(maxWidth: .infinity, minHeight: 140)
+            } else if isStepsOverview {
+                let hasAnySteps = weekDetails.contains { $0.totalSteps > 0 }
+                if hasAnySteps {
+                    Chart {
+                        ForEach(weekDetails, id: \.date) { day in
+                            let isSelected = selectedDate.map { Calendar.current.isDate($0, inSameDayAs: day.date) } ?? false
+
+                            BarMark(
+                                x: .value("Day", dayChartLabel(day.date)),
+                                y: .value("Steps", day.totalSteps)
+                            )
+                            .foregroundStyle(
+                                isSelected
+                                    ? AnyShapeStyle(LinearGradient(colors: [MVMTheme.success, MVMTheme.success.opacity(0.7)], startPoint: .top, endPoint: .bottom))
+                                    : AnyShapeStyle(MVMTheme.success.opacity(0.35))
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 5))
+
+                            if isSelected && day.totalSteps > 0 {
+                                PointMark(
+                                    x: .value("Day", dayChartLabel(day.date)),
+                                    y: .value("Steps", day.totalSteps)
+                                )
+                                .annotation(position: .top, spacing: 4) {
+                                    Text(day.totalSteps.formatted())
+                                        .font(.caption2.weight(.bold))
+                                        .foregroundStyle(MVMTheme.success)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(MVMTheme.cardSoft)
+                                        .clipShape(.rect(cornerRadius: 6))
+                                }
+                                .symbolSize(0)
+                            }
+                        }
+                    }
+                    .chartYAxis {
+                        AxisMarks(values: .automatic(desiredCount: 3)) { _ in
+                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                                .foregroundStyle(MVMTheme.border)
+                            AxisValueLabel()
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
+                    }
+                    .chartXAxis {
+                        AxisMarks { _ in
+                            AxisValueLabel()
+                                .foregroundStyle(MVMTheme.secondaryText)
+                        }
+                    }
+                    .frame(height: 160)
+                } else {
+                    VStack(spacing: 10) {
+                        Image(systemName: "chart.bar")
+                            .font(.title2)
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                        Text("No step data this week")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 140)
+                }
             } else {
                 let hasAnyData = weekDetails.contains { !$0.sessions.isEmpty }
 
@@ -268,7 +364,7 @@ struct ActivityDetailView: View {
             HStack(spacing: 5) {
                 ForEach(weekDetails, id: \.date) { detail in
                     let isSelected = selectedDate.map { Calendar.current.isDate($0, inSameDayAs: detail.date) } ?? false
-                    let hasData = !detail.sessions.isEmpty
+                    let hasData = isStepsOverview ? detail.totalSteps > 0 : !detail.sessions.isEmpty
                     let isToday = Calendar.current.isDateInToday(detail.date)
 
                     Button {
@@ -288,7 +384,7 @@ struct ActivityDetailView: View {
                                     .frame(width: 38, height: 38)
 
                                 if hasData {
-                                    Text("\(detail.sessions.count)")
+                                    Text(isStepsOverview ? "\(detail.totalSteps / 1000)k" : "\(detail.sessions.count)")
                                         .font(.caption2.weight(.bold))
                                         .foregroundStyle(isSelected ? .white : MVMTheme.primaryText)
                                 } else if isToday {
@@ -305,7 +401,7 @@ struct ActivityDetailView: View {
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("\(fullDayLabel(detail.date)), \(detail.sessions.count) sessions")
+                    .accessibilityLabel(isStepsOverview ? "\(fullDayLabel(detail.date)), \(detail.totalSteps) steps" : "\(fullDayLabel(detail.date)), \(detail.sessions.count) sessions")
                 }
             }
             .padding(14)
@@ -342,7 +438,9 @@ struct ActivityDetailView: View {
                 }
             }
 
-            if detail.sessions.isEmpty {
+            if isStepsOverview {
+                stepsDayStatsRow(detail)
+            } else if detail.sessions.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "moon.zzz.fill")
                         .font(.title2)
@@ -520,9 +618,75 @@ struct ActivityDetailView: View {
 
     // MARK: - Helpers
 
+    private func stepsDayStatsRow(_ detail: HealthKitManager.DayActivityDetail) -> some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 0) {
+                dayStat(
+                    icon: "figure.walk",
+                    value: detail.totalSteps.formatted(),
+                    label: "Steps",
+                    color: MVMTheme.success
+                )
+
+                if detail.passiveDistance > 0 {
+                    Rectangle().fill(MVMTheme.border).frame(width: 1, height: 44)
+                    dayStat(
+                        icon: "map.fill",
+                        value: String(format: "%.2f mi", detail.passiveDistance),
+                        label: "Distance",
+                        color: MVMTheme.accent
+                    )
+                }
+
+                if detail.passiveCalories > 0 {
+                    Rectangle().fill(MVMTheme.border).frame(width: 1, height: 44)
+                    dayStat(
+                        icon: "flame.fill",
+                        value: "\(Int(detail.passiveCalories))",
+                        label: "Calories",
+                        color: Color(hex: "#FF6B35")
+                    )
+                }
+            }
+            .padding(14)
+            .background(MVMTheme.cardSoft)
+            .clipShape(.rect(cornerRadius: 16))
+
+            if detail.totalSteps == 0 {
+                VStack(spacing: 8) {
+                    Image(systemName: "moon.zzz.fill")
+                        .font(.title3)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                    Text("No step data recorded")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+            }
+
+            HStack(spacing: 6) {
+                Image(systemName: "heart.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+                Text("Includes all sources: iPhone, Apple Watch, and connected apps")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(MVMTheme.cardSoft)
+            .clipShape(.rect(cornerRadius: 10))
+        }
+    }
+
     private func loadWeekData() async {
         isLoading = true
-        weekDetails = await vm.healthKit.fetchWeekDayDetails(for: activity.activityType)
+        if isStepsOverview {
+            weekDetails = await vm.healthKit.fetchStepsWeekDetails()
+        } else {
+            weekDetails = await vm.healthKit.fetchWeekDayDetails(for: activity.activityType)
+        }
         if let today = weekDetails.last {
             selectedDate = today.date
             selectedDayDetail = today

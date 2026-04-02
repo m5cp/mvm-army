@@ -272,6 +272,7 @@ final class HealthKitManager {
         await fetchTodaySteps()
         await fetchWeeklyAvgSteps()
         await fetchTodayActiveCalories()
+        await fetchTodayDistance()
         await fetchAllActivities()
     }
 
@@ -284,6 +285,8 @@ final class HealthKitManager {
         let totalCalories: Double
         let totalDistance: Double
         let totalSteps: Int
+        let passiveDistance: Double
+        let passiveCalories: Double
     }
 
     nonisolated struct DaySessionInfo: Identifiable, Sendable {
@@ -298,13 +301,13 @@ final class HealthKitManager {
 
     func fetchDayDetail(for activityType: HKWorkoutActivityType, on date: Date) async -> DayActivityDetail {
         guard isAvailable else {
-            return DayActivityDetail(date: date, sessions: [], totalDuration: 0, totalCalories: 0, totalDistance: 0, totalSteps: 0)
+            return DayActivityDetail(date: date, sessions: [], totalDuration: 0, totalCalories: 0, totalDistance: 0, totalSteps: 0, passiveDistance: 0, passiveCalories: 0)
         }
 
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)
         guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else {
-            return DayActivityDetail(date: date, sessions: [], totalDuration: 0, totalCalories: 0, totalDistance: 0, totalSteps: 0)
+            return DayActivityDetail(date: date, sessions: [], totalDuration: 0, totalCalories: 0, totalDistance: 0, totalSteps: 0, passiveDistance: 0, passiveCalories: 0)
         }
 
         let typePredicate = HKQuery.predicateForWorkouts(with: activityType)
@@ -340,6 +343,8 @@ final class HealthKitManager {
         let totalDistance = sessions.reduce(0) { $0 + $1.distance }
 
         let steps = await fetchStepsForDay(dayStart: dayStart, dayEnd: dayEnd)
+        let passiveDist = await fetchDistanceForDay(dayStart: dayStart, dayEnd: dayEnd)
+        let passiveCals = await fetchCaloriesForDay(dayStart: dayStart, dayEnd: dayEnd)
 
         return DayActivityDetail(
             date: date,
@@ -347,7 +352,9 @@ final class HealthKitManager {
             totalDuration: totalDuration,
             totalCalories: totalCalories,
             totalDistance: totalDistance,
-            totalSteps: steps
+            totalSteps: steps,
+            passiveDistance: passiveDist,
+            passiveCalories: passiveCals
         )
     }
 
@@ -378,6 +385,98 @@ final class HealthKitManager {
             ) { _, result, _ in
                 let steps = result?.sumQuantity()?.doubleValue(for: HKUnit.count()) ?? 0
                 continuation.resume(returning: Int(steps))
+            }
+            store.execute(query)
+        }
+    }
+
+    private func fetchDistanceForDay(dayStart: Date, dayEnd: Date) async -> Double {
+        guard isAvailable else { return 0 }
+
+        let predicate = HKQuery.predicateForSamples(withStart: dayStart, end: dayEnd, options: .strictStartDate)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: distanceWalkRunType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum
+            ) { _, result, _ in
+                let dist = result?.sumQuantity()?.doubleValue(for: .mile()) ?? 0
+                continuation.resume(returning: dist)
+            }
+            self.store.execute(query)
+        }
+    }
+
+    private func fetchCaloriesForDay(dayStart: Date, dayEnd: Date) async -> Double {
+        guard isAvailable else { return 0 }
+
+        let predicate = HKQuery.predicateForSamples(withStart: dayStart, end: dayEnd, options: .strictStartDate)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: activeEnergyType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum
+            ) { _, result, _ in
+                let cals = result?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0
+                continuation.resume(returning: cals)
+            }
+            self.store.execute(query)
+        }
+    }
+
+    // MARK: - Steps Weekly Detail (includes passive data)
+
+    func fetchStepsWeekDetails() async -> [DayActivityDetail] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        var results: [DayActivityDetail] = []
+
+        for dayOffset in (0..<7).reversed() {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let dayStart = calendar.startOfDay(for: date)
+            guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { continue }
+
+            let steps = await fetchStepsForDay(dayStart: dayStart, dayEnd: dayEnd)
+            let distance = await fetchDistanceForDay(dayStart: dayStart, dayEnd: dayEnd)
+            let calories = await fetchCaloriesForDay(dayStart: dayStart, dayEnd: dayEnd)
+
+            results.append(DayActivityDetail(
+                date: date,
+                sessions: [],
+                totalDuration: 0,
+                totalCalories: 0,
+                totalDistance: 0,
+                totalSteps: steps,
+                passiveDistance: distance,
+                passiveCalories: calories
+            ))
+        }
+
+        return results
+    }
+
+    // MARK: - Today Walking + Running Distance
+
+    var todayWalkRunDistance: Double = 0
+
+    func fetchTodayDistance() async {
+        guard isAvailable else { return }
+        let start = Calendar.current.startOfDay(for: .now)
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: .now, options: .strictStartDate)
+
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            let query = HKStatisticsQuery(
+                quantityType: distanceWalkRunType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum
+            ) { _, result, _ in
+                let dist = result?.sumQuantity()?.doubleValue(for: .mile()) ?? 0
+                Task { @MainActor in
+                    self.todayWalkRunDistance = dist
+                    continuation.resume()
+                }
             }
             store.execute(query)
         }
