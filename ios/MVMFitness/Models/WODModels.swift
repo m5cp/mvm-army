@@ -55,13 +55,15 @@ nonisolated struct WODMovement: Codable, Identifiable, Hashable, Sendable {
     var reps: String?
     var duration: String?
     var notes: String?
+    var weight: String?
 
-    init(name: String, reps: String? = nil, duration: String? = nil, notes: String? = nil) {
+    init(name: String, reps: String? = nil, duration: String? = nil, notes: String? = nil, weight: String? = nil) {
         self.id = UUID()
         self.name = name
         self.reps = reps
         self.duration = duration
         self.notes = notes
+        self.weight = weight
     }
 }
 

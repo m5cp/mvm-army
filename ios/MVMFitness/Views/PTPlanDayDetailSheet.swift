@@ -236,12 +236,27 @@ struct PTPlanDayDetailSheet: View {
                 Divider().overlay(MVMTheme.border)
 
                 VStack(alignment: .leading, spacing: 14) {
+                    ExerciseAutocompleteField(
+                        title: "Name",
+                        text: Binding(
+                            get: { exercises[index].name },
+                            set: { exercises[index].name = $0; hasChanges = true }
+                        ),
+                        accentColor: MVMTheme.accent,
+                        onChanged: { hasChanges = true }
+                    )
+                    .zIndex(10)
+
                     if exercises[index].isCardio {
                         cardioEditor(index: index)
                     } else if exercises[index].isTimeBased {
                         timedEditor(index: index)
                     } else {
                         strengthEditor(index: index)
+                    }
+
+                    if !exercises[index].isCardio {
+                        weightField(index: index)
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
@@ -275,36 +290,16 @@ struct PTPlanDayDetailSheet: View {
     }
 
     private func strengthEditor(index: Int) -> some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 16) {
-                stepperField(title: "Sets", value: Binding(
-                    get: { exercises[index].sets },
-                    set: { exercises[index].sets = $0; hasChanges = true }
-                ), range: 1...20)
+        HStack(spacing: 16) {
+            stepperField(title: "Sets", value: Binding(
+                get: { exercises[index].sets },
+                set: { exercises[index].sets = $0; hasChanges = true }
+            ), range: 1...20)
 
-                stepperField(title: "Reps", value: Binding(
-                    get: { exercises[index].reps },
-                    set: { exercises[index].reps = $0; hasChanges = true }
-                ), range: 1...100)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Weight")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(MVMTheme.secondaryText)
-
-                TextField("e.g. 135 lbs", text: Binding(
-                    get: { exercises[index].weight },
-                    set: { exercises[index].weight = $0; hasChanges = true }
-                ))
-                .font(.subheadline)
-                .padding(.horizontal, 12)
-                .frame(height: 44)
-                .background(MVMTheme.cardSoft)
-                .foregroundStyle(MVMTheme.primaryText)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
-            }
+            stepperField(title: "Reps", value: Binding(
+                get: { exercises[index].reps },
+                set: { exercises[index].reps = $0; hasChanges = true }
+            ), range: 1...100)
         }
     }
 
@@ -407,6 +402,36 @@ struct PTPlanDayDetailSheet: View {
                     .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
                 }
             }
+        }
+    }
+
+    private func weightField(index: Int) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "scalemass.fill")
+                    .font(.caption2)
+                    .foregroundStyle(MVMTheme.accent)
+                Text("Weight / Load")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+                if ExerciseLibrary.isWeightedExercise(exercises[index].name) {
+                    Text("(recommended)")
+                        .font(.caption2)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+            }
+
+            TextField("e.g. 135 lbs, 20 lb vest", text: Binding(
+                get: { exercises[index].weight },
+                set: { exercises[index].weight = $0; hasChanges = true }
+            ))
+            .font(.subheadline)
+            .padding(.horizontal, 12)
+            .frame(height: 44)
+            .background(MVMTheme.cardSoft)
+            .foregroundStyle(MVMTheme.primaryText)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
         }
     }
 

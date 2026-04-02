@@ -21,7 +21,7 @@ struct EditWorkoutSheet: View {
                                 .font(.title3.weight(.bold))
                                 .foregroundStyle(MVMTheme.primaryText)
 
-                            Text("Tap an exercise to edit sets, reps, weight, speed, and more.")
+                            Text("Tap an exercise to edit name, sets, reps, weight, and more.")
                                 .font(.subheadline)
                                 .foregroundStyle(MVMTheme.secondaryText)
                         }
@@ -104,12 +104,23 @@ struct EditWorkoutSheet: View {
                 Divider().overlay(MVMTheme.border)
 
                 VStack(alignment: .leading, spacing: 14) {
+                    ExerciseAutocompleteField(
+                        title: "Name",
+                        text: $exercises[index].name,
+                        accentColor: MVMTheme.accent
+                    )
+                    .zIndex(10)
+
                     if exercises[index].isCardio {
                         cardioFields(index: index)
                     } else if exercises[index].isTimeBased {
                         timedFields(index: index)
                     } else {
                         strengthFields(index: index)
+                    }
+
+                    if !exercises[index].isCardio {
+                        weightField(index: index)
                     }
 
                     noteField(index: index)
@@ -122,33 +133,16 @@ struct EditWorkoutSheet: View {
     }
 
     private func strengthFields(index: Int) -> some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 16) {
-                intStepperField(title: "Sets", value: Binding(
-                    get: { exercises[index].sets },
-                    set: { exercises[index].sets = $0 }
-                ), range: 1...20)
+        HStack(spacing: 16) {
+            intStepperField(title: "Sets", value: Binding(
+                get: { exercises[index].sets },
+                set: { exercises[index].sets = $0 }
+            ), range: 1...20)
 
-                intStepperField(title: "Reps", value: Binding(
-                    get: { exercises[index].reps },
-                    set: { exercises[index].reps = $0 }
-                ), range: 1...100)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Weight")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(MVMTheme.secondaryText)
-
-                TextField("e.g. 135 lbs", text: $exercises[index].weight)
-                    .font(.subheadline)
-                    .padding(.horizontal, 12)
-                    .frame(height: 44)
-                    .background(MVMTheme.cardSoft)
-                    .foregroundStyle(MVMTheme.primaryText)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
-            }
+            intStepperField(title: "Reps", value: Binding(
+                get: { exercises[index].reps },
+                set: { exercises[index].reps = $0 }
+            ), range: 1...100)
         }
     }
 
@@ -272,6 +266,33 @@ struct EditWorkoutSheet: View {
                         .foregroundStyle(MVMTheme.secondaryText)
                 }
             }
+        }
+    }
+
+    private func weightField(index: Int) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "scalemass.fill")
+                    .font(.caption2)
+                    .foregroundStyle(MVMTheme.accent)
+                Text("Weight / Load")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(MVMTheme.secondaryText)
+                if ExerciseLibrary.isWeightedExercise(exercises[index].name) {
+                    Text("(recommended)")
+                        .font(.caption2)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+            }
+
+            TextField("e.g. 135 lbs, 20 lb vest", text: $exercises[index].weight)
+                .font(.subheadline)
+                .padding(.horizontal, 12)
+                .frame(height: 44)
+                .background(MVMTheme.cardSoft)
+                .foregroundStyle(MVMTheme.primaryText)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
         }
     }
 

@@ -16,6 +16,8 @@ struct WODPlanDayDetailSheet: View {
         self.day = day
     }
 
+    private let wodAccent = Color(hex: "#F59E0B")
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -45,7 +47,7 @@ struct WODPlanDayDetailSheet: View {
                             }
                             dismiss()
                         }
-                        .foregroundStyle(Color(hex: "#F59E0B"))
+                        .foregroundStyle(wodAccent)
                         .fontWeight(.semibold)
                     } else {
                         Button("Done") { dismiss() }
@@ -68,7 +70,7 @@ struct WODPlanDayDetailSheet: View {
             VStack(spacing: 16) {
                 Image(systemName: "leaf.fill")
                     .font(.system(size: 44))
-                    .foregroundStyle(Color(hex: "#F59E0B").opacity(0.5))
+                    .foregroundStyle(wodAccent.opacity(0.5))
 
                 Text("Rest & Recovery")
                     .font(.title2.weight(.bold))
@@ -96,7 +98,7 @@ struct WODPlanDayDetailSheet: View {
                 .frame(height: 52)
                 .background(
                     LinearGradient(
-                        colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706")],
+                        colors: [wodAccent, Color(hex: "#D97706")],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -201,7 +203,7 @@ struct WODPlanDayDetailSheet: View {
             HStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color(hex: "#F59E0B"))
+                    .foregroundStyle(wodAccent)
                 Text(value)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
@@ -240,13 +242,13 @@ struct WODPlanDayDetailSheet: View {
                 HStack(spacing: 8) {
                     Image(systemName: "info.circle")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color(hex: "#F59E0B"))
+                        .foregroundStyle(wodAccent)
                     Text(notes)
                         .font(.caption)
                         .foregroundStyle(MVMTheme.secondaryText)
                 }
                 .padding(12)
-                .background(Color(hex: "#F59E0B").opacity(0.08))
+                .background(wodAccent.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
@@ -264,9 +266,9 @@ struct WODPlanDayDetailSheet: View {
                 HStack(spacing: 12) {
                     Text("\(index + 1)")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(Color(hex: "#F59E0B"))
+                        .foregroundStyle(wodAccent)
                         .frame(width: 24, height: 24)
-                        .background(Color(hex: "#F59E0B").opacity(0.12))
+                        .background(wodAccent.opacity(0.12))
                         .clipShape(Circle())
 
                     VStack(alignment: .leading, spacing: 3) {
@@ -278,12 +280,17 @@ struct WODPlanDayDetailSheet: View {
                             if let reps = movement.reps {
                                 Text(reps)
                                     .font(.caption.weight(.medium))
-                                    .foregroundStyle(Color(hex: "#F59E0B"))
+                                    .foregroundStyle(wodAccent)
                             }
                             if let dur = movement.duration {
                                 Text(dur)
                                     .font(.caption.weight(.medium))
-                                    .foregroundStyle(Color(hex: "#F59E0B"))
+                                    .foregroundStyle(wodAccent)
+                            }
+                            if let w = movement.weight, !w.isEmpty {
+                                Text("@ \(w)")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(MVMTheme.secondaryText)
                             }
                             if let notes = movement.notes, !notes.isEmpty {
                                 Text(notes)
@@ -297,7 +304,7 @@ struct WODPlanDayDetailSheet: View {
 
                     Image(systemName: isExpanded ? "chevron.up" : "pencil")
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(Color(hex: "#F59E0B").opacity(0.6))
+                        .foregroundStyle(wodAccent.opacity(0.6))
                 }
                 .padding(14)
             }
@@ -307,10 +314,16 @@ struct WODPlanDayDetailSheet: View {
                 Divider().overlay(MVMTheme.border)
 
                 VStack(alignment: .leading, spacing: 12) {
-                    movementField(title: "Name", text: Binding(
-                        get: { movements[index].name },
-                        set: { movements[index].name = $0; hasChanges = true }
-                    ))
+                    ExerciseAutocompleteField(
+                        title: "Name",
+                        text: Binding(
+                            get: { movements[index].name },
+                            set: { movements[index].name = $0; hasChanges = true }
+                        ),
+                        accentColor: wodAccent,
+                        onChanged: { hasChanges = true }
+                    )
+                    .zIndex(10)
 
                     HStack(spacing: 12) {
                         movementField(title: "Reps", text: Binding(
@@ -321,6 +334,34 @@ struct WODPlanDayDetailSheet: View {
                             get: { movements[index].duration ?? "" },
                             set: { movements[index].duration = $0.isEmpty ? nil : $0; hasChanges = true }
                         ))
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "scalemass.fill")
+                                .font(.caption2)
+                                .foregroundStyle(wodAccent)
+                            Text("Weight / Load")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(MVMTheme.secondaryText)
+                            if ExerciseLibrary.isWeightedExercise(movements[index].name) {
+                                Text("(recommended)")
+                                    .font(.caption2)
+                                    .foregroundStyle(MVMTheme.tertiaryText)
+                            }
+                        }
+
+                        TextField("e.g. 135 lbs, 20 lb vest", text: Binding(
+                            get: { movements[index].weight ?? "" },
+                            set: { movements[index].weight = $0.isEmpty ? nil : $0; hasChanges = true }
+                        ))
+                        .font(.subheadline)
+                        .padding(.horizontal, 12)
+                        .frame(height: 44)
+                        .background(MVMTheme.cardSoft)
+                        .foregroundStyle(MVMTheme.primaryText)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
                     }
 
                     movementField(title: "Notes", text: Binding(
@@ -401,10 +442,10 @@ struct WODPlanDayDetailSheet: View {
                     Text("Replace with Different Workout")
                         .font(.subheadline.weight(.semibold))
                 }
-                .foregroundStyle(Color(hex: "#F59E0B"))
+                .foregroundStyle(wodAccent)
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
-                .background(Color(hex: "#F59E0B").opacity(0.12))
+                .background(wodAccent.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 14))
             }
             .buttonStyle(PressScaleButtonStyle())
