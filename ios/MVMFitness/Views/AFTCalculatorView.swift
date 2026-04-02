@@ -28,6 +28,12 @@ struct AFTCalculatorView: View {
     @State private var showAFTShareSheet: Bool = false
     @FocusState private var focusedField: CalculatorField?
 
+    @State private var lastHapticDeadlift: Double = 180
+    @State private var lastHapticPushUp: Double = 25
+    @State private var lastHapticSDC: Double = 120
+    @State private var lastHapticPlank: Double = 120
+    @State private var lastHapticRun: Double = 960
+
     private enum CalculatorField: Hashable {
         case name, age
         case deadlift, pushUp
@@ -464,6 +470,7 @@ struct AFTCalculatorView: View {
                 .onChange(of: value.wrappedValue) { _, _ in
                     onSliderChange()
                 }
+                .sensoryFeedback(.selection, trigger: value.wrappedValue)
 
             HStack {
                 Text(abbreviation)
@@ -584,6 +591,7 @@ struct AFTCalculatorView: View {
                     minText.wrappedValue = "\(secs / 60)"
                     secText.wrappedValue = String(format: "%02d", secs % 60)
                 }
+                .sensoryFeedback(.selection, trigger: Int(totalSeconds.wrappedValue) / 5)
 
             HStack {
                 Text(abbreviation)

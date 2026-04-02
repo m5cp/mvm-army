@@ -22,8 +22,6 @@ enum DAForm705PDFService {
             y = drawTestInfo(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, data: data)
             y = drawEventScores(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, data: data)
             y = drawTotalAndResult(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, data: data)
-            y = drawBodyComposition(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, data: data)
-            y = drawAuthentication(in: context.cgContext, at: y, margin: margin, contentWidth: contentWidth, data: data)
 
             drawFooter(in: context.cgContext, margin: margin, pageWidth: pageWidth, pageHeight: pageHeight)
         }
@@ -102,17 +100,12 @@ enum DAForm705PDFService {
         let halfWidth = (contentWidth - 8) / 2
         let thirdWidth = (contentWidth - 16) / 3
 
-        currentY = drawLabeledField(in: ctx, at: currentY, x: margin, width: contentWidth, label: "1. NAME (Last, First, MI)", value: data.soldierName)
-        currentY = drawLabeledField(in: ctx, at: currentY, x: margin, width: contentWidth, label: "2. UNIT / LOCATION", value: data.unit)
+        currentY = drawLabeledField(in: ctx, at: currentY, x: margin, width: contentWidth, label: "1. NAME", value: data.soldierName)
 
         let row3Y = currentY
-        drawLabeledField(in: ctx, at: row3Y, x: margin, width: thirdWidth, label: "3. AGE", value: "\(data.age)")
-        drawLabeledField(in: ctx, at: row3Y, x: margin + thirdWidth + 8, width: thirdWidth, label: "4. SEX", value: data.sex.rawValue)
-        currentY = drawLabeledField(in: ctx, at: row3Y, x: margin + (thirdWidth + 8) * 2, width: thirdWidth, label: "5. MOS", value: data.mos)
-
-        let row4Y = currentY
-        drawLabeledField(in: ctx, at: row4Y, x: margin, width: halfWidth, label: "6. RANK / PAY GRADE", value: data.payGrade)
-        currentY = drawLabeledField(in: ctx, at: row4Y, x: margin + halfWidth + 8, width: halfWidth, label: "7. STANDARD", value: data.standard.rawValue)
+        drawLabeledField(in: ctx, at: row3Y, x: margin, width: thirdWidth, label: "2. AGE", value: "\(data.age)")
+        drawLabeledField(in: ctx, at: row3Y, x: margin + thirdWidth + 8, width: thirdWidth, label: "3. SEX", value: data.sex.rawValue)
+        currentY = drawLabeledField(in: ctx, at: row3Y, x: margin + (thirdWidth + 8) * 2, width: thirdWidth, label: "4. STANDARD", value: data.standard.rawValue)
 
         currentY += 6
         return currentY
@@ -125,10 +118,10 @@ enum DAForm705PDFService {
 
         let halfWidth = (contentWidth - 8) / 2
         let row1Y = currentY
-        drawLabeledField(in: ctx, at: row1Y, x: margin, width: halfWidth, label: "8. TEST TYPE", value: data.testType.rawValue)
+        drawLabeledField(in: ctx, at: row1Y, x: margin, width: halfWidth, label: "5. TYPE", value: "Example Score")
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd MMM yyyy"
-        currentY = drawLabeledField(in: ctx, at: row1Y, x: margin + halfWidth + 8, width: halfWidth, label: "9. DATE OF TEST", value: dateFormatter.string(from: data.testDate))
+        currentY = drawLabeledField(in: ctx, at: row1Y, x: margin + halfWidth + 8, width: halfWidth, label: "6. DATE", value: dateFormatter.string(from: data.testDate))
 
         currentY += 6
         return currentY

@@ -25,8 +25,6 @@ struct DAForm705ExportView: View {
                         soldierInfoSection
                         testInfoSection
                         scoresSummary
-                        bodyCompSection
-                        authenticationSection
                         exportButton
                     }
                     .padding(20)
@@ -79,9 +77,6 @@ struct DAForm705ExportView: View {
             sectionLabel("SOLDIER INFORMATION")
 
             fieldRow(label: "Name", text: $exportData.soldierName, placeholder: "Last, First MI")
-            fieldRow(label: "MOS", text: $exportData.mos, placeholder: "e.g. 11B")
-            fieldRow(label: "Pay Grade", text: $exportData.payGrade, placeholder: "e.g. E-5")
-            fieldRow(label: "Unit / Location", text: $exportData.unit, placeholder: "e.g. 1-505 PIR, Ft. Liberty")
 
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
@@ -121,57 +116,40 @@ struct DAForm705ExportView: View {
         VStack(alignment: .leading, spacing: 14) {
             sectionLabel("TEST INFORMATION")
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Test Type")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(MVMTheme.secondaryText)
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Type")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(MVMTheme.secondaryText)
 
-                HStack(spacing: 0) {
-                    ForEach(DAForm705ExportData.TestType.allCases) { type in
-                        Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                exportData.testType = type
-                            }
-                        } label: {
-                            Text(type.rawValue)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(exportData.testType == type ? .white : MVMTheme.secondaryText)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 44)
-                                .background(exportData.testType == type ? MVMTheme.accent : MVMTheme.cardSoft)
-                        }
-                        .buttonStyle(.plain)
-                    }
+                    Text("Example Score")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                        .padding(.horizontal, 12)
+                        .frame(height: 44)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(MVMTheme.cardSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 10).stroke(MVMTheme.border)
-                }
-            }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Standard")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(MVMTheme.secondaryText)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Standard")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(MVMTheme.secondaryText)
 
-                HStack(spacing: 8) {
                     Text(exportData.standard.rawValue)
                         .font(.body.weight(.semibold))
                         .foregroundStyle(MVMTheme.primaryText)
-
-                    Text("Min \(exportData.standard.minimumPerEvent)/event, \(exportData.standard.minimumTotal) total")
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .padding(.horizontal, 12)
+                        .frame(height: 44)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(MVMTheme.cardSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
-                .padding(.horizontal, 12)
-                .frame(height: 44)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(MVMTheme.cardSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Test Date")
+                Text("Date")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(MVMTheme.secondaryText)
 
@@ -218,46 +196,6 @@ struct DAForm705ExportView: View {
                     .font(.subheadline.weight(.bold))
             }
             .foregroundStyle(exportData.passed ? MVMTheme.success : MVMTheme.danger)
-        }
-        .padding(18)
-        .premiumCard()
-    }
-
-    private var bodyCompSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sectionLabel("BODY COMPOSITION (Optional)")
-
-            HStack(spacing: 12) {
-                fieldRow(label: "Height", text: $exportData.height, placeholder: "e.g. 70\"")
-                fieldRow(label: "Weight", text: $exportData.weight, placeholder: "e.g. 175 lbs")
-            }
-
-            HStack(spacing: 12) {
-                fieldRow(label: "Body Fat %", text: $exportData.bodyFatPercent, placeholder: "e.g. 18%")
-                fieldRow(label: "BC Date", text: $exportData.bodyCompDate, placeholder: "e.g. 15 Mar 2026")
-            }
-        }
-        .padding(18)
-        .premiumCard()
-    }
-
-    private var authenticationSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sectionLabel("AUTHENTICATION (Optional)")
-
-            Text("Signature lines will appear on the exported form. Enter names below or leave blank.")
-                .font(.caption)
-                .foregroundStyle(MVMTheme.tertiaryText)
-
-            HStack(spacing: 12) {
-                fieldRow(label: "OIC Name", text: $exportData.oicName, placeholder: "Typed name")
-                fieldRow(label: "OIC Date", text: $exportData.oicDate, placeholder: "e.g. 28 Mar 2026")
-            }
-
-            HStack(spacing: 12) {
-                fieldRow(label: "NCOIC Name", text: $exportData.ncoicName, placeholder: "Typed name")
-                fieldRow(label: "NCOIC Date", text: $exportData.ncoicDate, placeholder: "e.g. 28 Mar 2026")
-            }
         }
         .padding(18)
         .premiumCard()
