@@ -781,6 +781,11 @@ struct MyPTPlanSheet: View {
             refreshTrigger.toggle()
             animateCards = false
             vm.generateWeeklyPlan()
+            if vm.isCalendarSyncEnabled, let plan = vm.currentPlan {
+                Task {
+                    _ = await calendarService.resyncWeeklyPlanFromDate(plan, from: .now)
+                }
+            }
             withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.1)) {
                 animateCards = true
             }

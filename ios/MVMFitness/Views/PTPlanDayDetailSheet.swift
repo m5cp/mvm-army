@@ -9,6 +9,7 @@ struct PTPlanDayDetailSheet: View {
     @State private var exercises: [WorkoutExercise] = []
     @State private var expandedID: UUID?
     @State private var hasChanges: Bool = false
+    @State private var calendarService = CalendarExportService()
 
     var body: some View {
         NavigationStack {
@@ -32,6 +33,11 @@ struct PTPlanDayDetailSheet: View {
                     if hasChanges {
                         Button("Save") {
                             vm.updateDayExercises(dayIndex: day.dayIndex, exercises: exercises)
+                            if vm.isCalendarSyncEnabled, let plan = vm.currentPlan {
+                                Task {
+                                    _ = await calendarService.resyncWeeklyPlanFromDate(plan, from: day.date)
+                                }
+                            }
                             dismiss()
                         }
                         .foregroundStyle(MVMTheme.accent)
@@ -72,6 +78,11 @@ struct PTPlanDayDetailSheet: View {
 
             Button {
                 vm.replaceRestDayWithWorkout(dayIndex: day.dayIndex)
+                if vm.isCalendarSyncEnabled, let plan = vm.currentPlan {
+                    Task {
+                        _ = await calendarService.resyncWeeklyPlanFromDate(plan, from: day.date)
+                    }
+                }
                 dismiss()
             } label: {
                 HStack(spacing: 8) {

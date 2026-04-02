@@ -251,6 +251,12 @@ enum AFTCardRenderer {
         }
     }
 
+    private static func formatTime(seconds: Int) -> String {
+        let mins = seconds / 60
+        let secs = seconds % 60
+        return String(format: "%d:%02d", mins, secs)
+    }
+
     private static func drawEventBreakdown(context: CGContext, score: AFTScoreRecord, width: CGFloat) {
         let startY: CGFloat = 480
         let sectionLabel: [NSAttributedString.Key: Any] = [
@@ -262,12 +268,12 @@ enum AFTCardRenderer {
         let sectionSize = sectionStr.size()
         sectionStr.draw(at: CGPoint(x: (width - sectionSize.width) / 2, y: startY))
 
-        let events: [(String, String, Int)] = [
-            ("MDL", "3RM Deadlift", score.deadliftPoints),
-            ("HRP", "Push-Up", score.pushUpPoints),
-            ("SDC", "Sprint-Drag-Carry", score.sdcPoints),
-            ("PLK", "Plank", score.plankPoints),
-            ("2MR", "2-Mile Run", score.runPoints)
+        let events: [(abbr: String, name: String, rawValue: String, points: Int)] = [
+            ("MDL", "3RM Deadlift", "\(score.deadliftLbs) lbs", score.deadliftPoints),
+            ("HRP", "Push-Up", "\(score.pushUpReps) reps", score.pushUpPoints),
+            ("SDC", "Sprint-Drag-Carry", formatTime(seconds: score.sdcSeconds), score.sdcPoints),
+            ("PLK", "Plank", formatTime(seconds: score.plankSeconds), score.plankPoints),
+            ("2MR", "2-Mile Run", formatTime(seconds: score.runSeconds), score.runPoints)
         ]
 
         let rowHeight: CGFloat = 90
@@ -277,7 +283,7 @@ enum AFTCardRenderer {
         for (index, event) in events.enumerated() {
             let y = rowStartY + CGFloat(index) * rowHeight
 
-            let pillColor = eventColor(event.2)
+            let pillColor = eventColor(event.points)
             let pillRect = CGRect(x: marginX, y: y + 8, width: 70, height: 40)
             let pillPath = UIBezierPath(roundedRect: pillRect, cornerRadius: 10)
             context.setFillColor(pillColor.withAlphaComponent(0.18).cgColor)
@@ -288,7 +294,7 @@ enum AFTCardRenderer {
                 .font: UIFont.systemFont(ofSize: 18, weight: .heavy),
                 .foregroundColor: pillColor
             ]
-            let abbrStr = NSAttributedString(string: event.0, attributes: abbrAttrs)
+            let abbrStr = NSAttributedString(string: event.abbr, attributes: abbrAttrs)
             let abbrSize = abbrStr.size()
             abbrStr.draw(at: CGPoint(x: pillRect.midX - abbrSize.width / 2, y: pillRect.midY - abbrSize.height / 2))
 
@@ -296,18 +302,25 @@ enum AFTCardRenderer {
                 .font: UIFont.systemFont(ofSize: 24, weight: .semibold),
                 .foregroundColor: UIColor.white.withAlphaComponent(0.8)
             ]
-            let nameStr = NSAttributedString(string: event.1, attributes: nameAttrs)
-            nameStr.draw(at: CGPoint(x: marginX + 85, y: y + 14))
+            let nameStr = NSAttributedString(string: event.name, attributes: nameAttrs)
+            nameStr.draw(at: CGPoint(x: marginX + 85, y: y + 6))
+
+            let rawAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 18, weight: .medium),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.4)
+            ]
+            let rawStr = NSAttributedString(string: event.rawValue, attributes: rawAttrs)
+            rawStr.draw(at: CGPoint(x: marginX + 85, y: y + 34))
 
             let pointsAttrs: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: 36, weight: .bold),
                 .foregroundColor: pillColor
             ]
-            let pointsStr = NSAttributedString(string: "\(event.2)", attributes: pointsAttrs)
+            let pointsStr = NSAttributedString(string: "\(event.points)", attributes: pointsAttrs)
             let pointsSize = pointsStr.size()
             pointsStr.draw(at: CGPoint(x: width - marginX - pointsSize.width, y: y + 6))
 
-            let barY = y + 56
+            let barY = y + 64
             let barWidth = width - marginX * 2
             let barHeight: CGFloat = 6
             let barBgRect = CGRect(x: marginX, y: barY, width: barWidth, height: barHeight)
@@ -316,7 +329,7 @@ enum AFTCardRenderer {
             context.addPath(barBgPath.cgPath)
             context.fillPath()
 
-            let fillWidth = barWidth * CGFloat(min(event.2, 100)) / 100.0
+            let fillWidth = barWidth * CGFloat(min(event.points, 100)) / 100.0
             let barFillRect = CGRect(x: marginX, y: barY, width: fillWidth, height: barHeight)
             let barFillPath = UIBezierPath(roundedRect: barFillRect, cornerRadius: 3)
             context.setFillColor(pillColor.cgColor)
@@ -326,7 +339,7 @@ enum AFTCardRenderer {
     }
 
     private static func drawPassFail(context: CGContext, score: AFTScoreRecord, width: CGFloat) {
-        let y: CGFloat = 1020
+        let y: CGFloat = 1040
         let passed = score.totalScore >= 360 && score.deadliftPoints >= 60 && score.pushUpPoints >= 60 && score.sdcPoints >= 60 && score.plankPoints >= 60 && score.runPoints >= 60
         let statusColor: UIColor = passed
             ? UIColor(red: 0.133, green: 0.773, blue: 0.369, alpha: 1.0)

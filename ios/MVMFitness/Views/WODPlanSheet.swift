@@ -694,6 +694,11 @@ struct WODPlanSheet: View {
             refreshTrigger.toggle()
             animateCards = false
             vm.refreshWODPlan()
+            if vm.isCalendarSyncEnabled, let plan = vm.wodPlan {
+                Task {
+                    _ = await calendarService.resyncWODPlanFromDate(plan, from: .now)
+                }
+            }
             withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.1)) {
                 animateCards = true
             }

@@ -10,6 +10,7 @@ struct WODPlanDayDetailSheet: View {
     @State private var expandedID: UUID?
     @State private var hasChanges: Bool = false
     @State private var editTrigger: Bool = false
+    @State private var calendarService = CalendarExportService()
 
     init(day: WODPlanDay) {
         self.day = day
@@ -37,6 +38,11 @@ struct WODPlanDayDetailSheet: View {
                     if hasChanges {
                         Button("Save") {
                             vm.updateWODDayMovements(dayId: day.id, movements: movements)
+                            if vm.isCalendarSyncEnabled, let plan = vm.wodPlan {
+                                Task {
+                                    _ = await calendarService.resyncWODPlanFromDate(plan, from: day.date)
+                                }
+                            }
                             dismiss()
                         }
                         .foregroundStyle(Color(hex: "#F59E0B"))
@@ -355,6 +361,11 @@ struct WODPlanDayDetailSheet: View {
         VStack(spacing: 10) {
             Button {
                 vm.convertWODDayToRest(dayId: day.id)
+                if vm.isCalendarSyncEnabled, let plan = vm.wodPlan {
+                    Task {
+                        _ = await calendarService.resyncWODPlanFromDate(plan, from: day.date)
+                    }
+                }
                 dismiss()
             } label: {
                 HStack(spacing: 8) {
@@ -377,6 +388,11 @@ struct WODPlanDayDetailSheet: View {
 
             Button {
                 vm.regenerateWODDay(dayId: day.id)
+                if vm.isCalendarSyncEnabled, let plan = vm.wodPlan {
+                    Task {
+                        _ = await calendarService.resyncWODPlanFromDate(plan, from: day.date)
+                    }
+                }
                 dismiss()
             } label: {
                 HStack(spacing: 8) {
