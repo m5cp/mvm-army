@@ -125,6 +125,7 @@ struct LegalDetailView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(MVMTheme.border)
         }
+        .accessibilityElement(children: .combine)
     }
 
     private var footerBadge: some View {
@@ -178,6 +179,7 @@ enum LegalPages {
         case "Disclaimer": return disclaimerPage
         case "Risks": return risksPage
         case "Accessibility": return accessibilityPage
+        case "EULA": return eulaPage
         default: return disclaimerPage
         }
     }
@@ -186,19 +188,19 @@ enum LegalPages {
         title: "Privacy Policy",
         icon: "lock.shield.fill",
         accent: MVMTheme.accent,
-        subtitle: "Your data is locked down tighter than a wall locker during inspection. Zero tracking, zero accounts, zero nonsense.",
+        subtitle: "Your data stays on your device. No tracking, no accounts, no data sharing.",
         updated: "April 2026",
         sections: [
-            LegalSection(icon: "externaldrive.fill", title: "Data Collection", body: "This app stores user fitness data locally on the device. No personal data is sold or shared. MVM Fitness runs fully offline — the AFT Calculator, workouts, plans, logs, progress, share cards, and QR codes all work without a single bar of signal.", tint: MVMTheme.accent),
-            LegalSection(icon: "chart.bar.fill", title: "Data Usage", body: "Data is used solely to provide fitness tracking and performance features. Every workout plan, completed session, AFT score, step count, and preference lives right here on your device. Nothing gets shipped to a server, sold to a data broker, or shared with a third party.", tint: MVMTheme.slateAccent),
-            LegalSection(icon: "person.badge.minus", title: "No Sign-Up Required", body: "No email, no password, no username, no registration form. Just open the app and get to work. We don't need to know who you are to help you get stronger.", tint: MVMTheme.accent2),
-            LegalSection(icon: "heart.text.square", title: "Apple Health", body: "If you choose to connect Apple Health, we'll read your steps, calories, cycling, elliptical, running/walking distance, and other activity data, and save your workout sessions. Your health data never leaves the app, never gets sold, and never ends up in an ad.\n\nIf you decline Apple Health access, the app still works — your daily steps will still be tracked using your device's built-in pedometer (no Apple Health needed). You just won't see the extra activity data like cycling or calories.", tint: Color(hex: "#EF4444")),
-            LegalSection(icon: "cart", title: "Third-Party Services", body: "If in-app purchases are available, subscription handling is managed through RevenueCat, which processes transactions via Apple's App Store. RevenueCat does not receive your fitness data. No other third-party analytics, advertising, or tracking SDKs are used in this app.", tint: MVMTheme.accent2),
-            LegalSection(icon: "apps.iphone", title: "What We Access & Why", body: "• Apple Health — steps, calories, cycling, elliptical, running/walking, and other activities (you grant permission)\n• Pedometer — daily step count via your device's motion sensor (always available, no permission needed, stays on device)\n• Camera — QR scanning only\n• Calendar — sync workouts if you enable it\n• Photo Library — save share cards & score images\n• Notifications — your daily PT reminder\n\nEvery feature asks first. The pedometer is the one exception — it uses your device's built-in motion sensor and doesn't require any permission.", tint: MVMTheme.warning),
-            LegalSection(icon: "lock.shield", title: "Data Security", body: "All data is stored securely on-device using iOS's built-in data protection. No data is transmitted to external servers. When you share content (export a scorecard, share a QR code, or sync to your calendar), that content leaves through standard iOS sharing mechanisms.", tint: MVMTheme.slateAccent),
-            LegalSection(icon: "hand.raised.slash", title: "Zero Trackers", body: "No analytics. No ad SDKs. No sneaky third-party code watching you. Your workout data doesn't secretly fund someone's startup. We built this clean.", tint: MVMTheme.accent),
-            LegalSection(icon: "person.2.slash", title: "Kids & This App", body: "MVM Fitness isn't built for anyone under 13, and we don't knowingly collect info from minors. If your kid wants to do burpees, they can — but this app is for the grown-ups.", tint: MVMTheme.tertiaryText),
-            LegalSection(icon: "envelope", title: "Contact", body: "For privacy-related questions or concerns, reach out through the App Store listing or email support.\n\nThis app is not affiliated with, endorsed by, or sponsored by the U.S. Department of War, the Department of the Army, or any government agency.", tint: MVMTheme.accent2)
+            LegalSection(icon: "externaldrive.fill", title: "Data Collection", body: "MVM Fitness is a fitness tracking and accountability tool. All user data — including workout logs, AFT scores, step counts, plans, and preferences — is stored locally on your device. No personal data is collected, transmitted, sold, or shared. The app functions fully offline.", tint: MVMTheme.accent),
+            LegalSection(icon: "chart.bar.fill", title: "Data Usage", body: "Your data is used solely to display your fitness activity, visualize progress, and track workouts you choose to log. Every workout record, AFT score, step count, and preference stays on your device. Nothing is sent to external servers, analytics platforms, or third parties.", tint: MVMTheme.slateAccent),
+            LegalSection(icon: "person.badge.minus", title: "No Account Required", body: "MVM Fitness does not require registration, email, password, or any personally identifiable information. You use the app anonymously on your own device.", tint: MVMTheme.accent2),
+            LegalSection(icon: "heart.text.square", title: "Apple Health Integration", body: "If you choose to grant Apple Health access, MVM Fitness reads the following data types for display and tracking purposes only:\n\n• Step count\n• Active energy burned (calories)\n• Walking + running distance\n• Cycling distance\n• Workout sessions by activity type\n\nYour health data is read locally, displayed within the app, and never transmitted, stored externally, sold, or shared with any third party.\n\nIf you decline Apple Health access, the app still functions — steps are tracked via your device's built-in pedometer. You simply won't see additional activity data like calories or cycling distance.", tint: Color(hex: "#EF4444")),
+            LegalSection(icon: "cart", title: "Third-Party Services", body: "If in-app purchases are available, subscription handling is managed through RevenueCat, which processes transactions via Apple's App Store infrastructure. RevenueCat does not receive your fitness data, health data, or any personally identifiable information from MVM Fitness. No other third-party analytics, advertising, or tracking SDKs are included in this app.", tint: MVMTheme.accent2),
+            LegalSection(icon: "apps.iphone", title: "Permissions & Access", body: "MVM Fitness may request the following device permissions:\n\n• Apple Health — read steps, calories, distance, and workout sessions (user-granted)\n• Pedometer — step count via built-in motion sensor (no permission required, stays on device)\n• Camera — QR code scanning only\n• Calendar — sync workout schedule if you enable it\n• Photo Library — save share cards and score images\n• Notifications — optional daily training reminder\n\nAll permissions are requested only when needed. No permission is required to use the core app.", tint: MVMTheme.warning),
+            LegalSection(icon: "lock.shield", title: "Data Security", body: "All data is stored securely on-device using iOS data protection. No data is transmitted to external servers. When you share content — such as exporting a scorecard, sharing a QR code, or syncing to your calendar — that content leaves through standard iOS sharing mechanisms under your control.", tint: MVMTheme.slateAccent),
+            LegalSection(icon: "hand.raised.slash", title: "No Tracking", body: "MVM Fitness contains no analytics SDKs, no advertising frameworks, no user tracking, and no telemetry. Your usage data is not monitored, recorded, or transmitted.", tint: MVMTheme.accent),
+            LegalSection(icon: "person.2.slash", title: "Children", body: "MVM Fitness is not designed for or directed at children under 13. We do not knowingly collect information from minors.", tint: MVMTheme.tertiaryText),
+            LegalSection(icon: "envelope", title: "Contact", body: "For privacy-related questions or concerns, contact us through the App Store listing or via email.\n\nMVM Fitness is not affiliated with, endorsed by, or sponsored by the U.S. Department of Defense, the Department of the Army, or any government agency.", tint: MVMTheme.accent2)
         ]
     )
 
@@ -206,19 +208,20 @@ enum LegalPages {
         title: "Terms of Use",
         icon: "doc.text.fill",
         accent: MVMTheme.slateAccent,
-        subtitle: "The ground rules — plain English, no lawyer decoder ring required.",
+        subtitle: "Clear terms for using MVM Fitness. Plain language, no ambiguity.",
         updated: "April 2026",
         sections: [
-            LegalSection(icon: "hand.thumbsup", title: "Standard Apple EULA", body: "By downloading or using MVM Fitness, you're agreeing to these terms and Apple's Standard End User License Agreement (EULA):\nhttps://www.apple.com/legal/internet-services/itunes/dev/stdeula/\n\nQuick note: All workout content is based on publicly available fitness standards and is provided for general fitness and educational purposes only.", tint: MVMTheme.slateAccent),
-            LegalSection(icon: "figure.run", title: "What We Built", body: "MVM Fitness is a planning and accountability tool — not a personal trainer in your pocket. We generate workout templates from publicly available exercise formats and your preferences. We don't prescribe exercises, give medical advice, or claim to know your body better than you do.", tint: MVMTheme.accent),
-            LegalSection(icon: "cross.case", title: "Fitness Disclaimer", body: "This app is intended for general fitness tracking purposes only. Users should consult a qualified professional before beginning any physical training program. Use of this app is at your own risk. This app doesn't diagnose, treat, cure, or prevent anything. If something hurts, stop. If you're unsure, ask your doc.", tint: Color(hex: "#EF4444")),
-            LegalSection(icon: "number", title: "Accuracy Disclaimer", body: "Scores and calculations are provided for personal tracking and estimation only. Users are responsible for verifying official results through authorized testing channels. Actual scores may differ due to rounding, table variations, or testing conditions.", tint: MVMTheme.warning),
-            LegalSection(icon: "heart.text.square", title: "Health Data", body: "Grant us Apple Health access and we'll read your steps, calories, and save your workouts. That data stays in the app — never sold, never advertised against, never used for anything sketchy.", tint: MVMTheme.accent2),
-            LegalSection(icon: "person.fill.checkmark", title: "You Own Your Reps", body: "You're responsible for knowing your limits, using proper form, and stopping when something feels wrong. Pain, dizziness, seeing stars? Drop the weight, take a knee, and listen to your body.", tint: MVMTheme.accent),
-            LegalSection(icon: "shield.slash", title: "Limitation of Liability", body: "The developer is not responsible for injuries, damages, or outcomes resulting from use of this app. The app is provided \"as is\" — no warranties, no guarantees. All workout content is based on publicly available fitness standards and is provided for informational purposes only.", tint: MVMTheme.tertiaryText),
-            LegalSection(icon: "lock.doc", title: "Our Work", body: "All content, design, and code belong to the developer. Workout formats are based on publicly available fitness standards. Built with love, caffeine, and an unreasonable number of burpees.", tint: MVMTheme.slateAccent),
-            LegalSection(icon: "building.columns", title: "Independence Disclaimer", body: "This app is not affiliated with, endorsed by, or sponsored by the U.S. Department of War, the Department of the Army, or any government agency. All fitness standards referenced are based on publicly available information.", tint: MVMTheme.accent2),
-            LegalSection(icon: "envelope", title: "Talk to Us", body: "Questions, concerns, or just want to say hooah? Reach out through the App Store listing.", tint: MVMTheme.accent2)
+            LegalSection(icon: "hand.thumbsup", title: "Apple Standard EULA", body: "By downloading or using MVM Fitness, you agree to these Terms of Use and Apple's Standard End User License Agreement (EULA):\nhttps://www.apple.com/legal/internet-services/itunes/dev/stdeula/\n\nThis EULA governs your use of the app as distributed through the Apple App Store.", tint: MVMTheme.slateAccent),
+            LegalSection(icon: "figure.run", title: "What This App Is", body: "MVM Fitness is a fitness tracking and accountability tool. It allows you to:\n\n• Log and track workouts you perform\n• Calculate estimated AFT scores\n• Build workout plans from template libraries\n• View activity data from Apple Health\n• Track daily steps and training streaks\n\nYou choose your own exercises, routines, and training schedule. The app does not prescribe, recommend, or coach any specific exercise program.", tint: MVMTheme.accent),
+            LegalSection(icon: "xmark.shield", title: "What This App Is Not", body: "MVM Fitness is not a personal trainer, coach, medical advisor, or fitness instructor. It does not evaluate your physical readiness, diagnose conditions, or provide individualized exercise prescriptions. All workout content consists of templates based on publicly available fitness formats — not personalized guidance.", tint: Color(hex: "#EF4444")),
+            LegalSection(icon: "number", title: "Accuracy", body: "AFT scores and calculations are estimates for personal tracking and planning purposes only. Actual scores may differ due to rounding, table variations, or official testing conditions. Users are responsible for verifying results through authorized testing channels.", tint: MVMTheme.warning),
+            LegalSection(icon: "heart.text.square", title: "Health Data", body: "If you grant Apple Health access, MVM Fitness reads your activity data for display within the app. This data is never sold, shared, or transmitted externally. Your health data stays on your device at all times.", tint: MVMTheme.accent2),
+            LegalSection(icon: "person.fill.checkmark", title: "User Responsibility", body: "You are solely responsible for:\n\n• Knowing your physical capabilities and limitations\n• Using proper exercise form and technique\n• Stopping activity if you experience pain, dizziness, or discomfort\n• Consulting a qualified medical professional before starting any exercise program\n• Ensuring exercises you select are appropriate for your fitness level\n\nMVM Fitness provides tools — your safety decisions are your own.", tint: MVMTheme.accent),
+            LegalSection(icon: "shield.slash", title: "Limitation of Liability", body: "The developer is not responsible for any injuries, damages, health outcomes, or losses resulting from use of this app. MVM Fitness is provided \"as is\" without warranties of any kind, express or implied. All workout content is based on publicly available fitness standards and is provided for informational and tracking purposes only.", tint: MVMTheme.tertiaryText),
+            LegalSection(icon: "exclamationmark.triangle", title: "Misuse", body: "You agree not to use MVM Fitness for any purpose that is unlawful, harmful, or inconsistent with its intended use as a personal fitness tracking tool. The developer reserves the right to update these terms at any time.", tint: MVMTheme.warning),
+            LegalSection(icon: "lock.doc", title: "Intellectual Property", body: "All content, design, code, and branding within MVM Fitness belong to the developer. Workout templates are based on publicly available fitness standards and exercise formats.", tint: MVMTheme.slateAccent),
+            LegalSection(icon: "building.columns", title: "Independence Disclaimer", body: "MVM Fitness is not affiliated with, endorsed by, or sponsored by the U.S. Department of Defense, the Department of the Army, or any government agency. All fitness standards referenced are based on publicly available information.", tint: MVMTheme.accent2),
+            LegalSection(icon: "envelope", title: "Contact", body: "Questions about these terms? Reach out through the App Store listing or via email.", tint: MVMTheme.accent2)
         ]
     )
 
@@ -226,16 +229,17 @@ enum LegalPages {
         title: "Disclaimer",
         icon: "exclamationmark.triangle.fill",
         accent: MVMTheme.warning,
-        subtitle: "Real talk about what this app does, what it doesn't, and why you should still see your doc.",
+        subtitle: "Important information about what this app does and does not do.",
         updated: "April 2026",
         sections: [
-            LegalSection(icon: "info.circle", title: "What You're Getting", body: "MVM Fitness gives you workout templates, planning tools, and a way to hold yourself accountable. That's it. It's not a personal trainer, not a prescription, and not a green light to start a new exercise program without checking with your doc first. Think of it as your organized battle buddy — not your medic.", tint: MVMTheme.warning),
-            LegalSection(icon: "list.clipboard", title: "About the Workouts", body: "Every workout comes from a library of templates — Army fitness structures, H2F drill categories, general fitness formats, and your selected preferences like focus area, equipment, and duration.\n\nWe don't know your injury history, your 1RM, or that one knee that clicks when it rains. The app doesn't evaluate your physical condition or readiness. That part's on you.", tint: MVMTheme.accent),
-            LegalSection(icon: "flag.fill", title: "Workout Content", body: "All workouts in this app use original naming and are based on publicly available exercise formats and fitness standards. Workout structures are designed for general fitness training purposes.\n\nThis app is not affiliated with, endorsed by, or sponsored by the U.S. Department of War, the Department of the Army, or any government agency.", tint: MVMTheme.accent),
-            LegalSection(icon: "cross.case", title: "Not Your Doctor", body: "MVM Fitness doesn't diagnose, treat, cure, or prevent anything. Nothing here is medical advice — not even a little bit. When in doubt, talk to an actual human with a medical degree.", tint: Color(hex: "#EF4444")),
-            LegalSection(icon: "number", title: "AFT Scores", body: "The calculator gives you estimates for planning purposes. Your actual score may differ due to rounding, table variations, or that extra rep the grader may or may not have counted. Official scores come from authorized Army personnel under real testing conditions.", tint: MVMTheme.slateAccent),
-            LegalSection(icon: "doc.richtext", title: "Score Reports", body: "Exported score reports are formatted convenience documents built from your input — not official military records. They are for personal reference only. Double-check everything before sharing.", tint: MVMTheme.accent2),
-            LegalSection(icon: "exclamationmark.shield", title: "Bottom Line", body: "We built this app with care, but we make no guarantees about perfect accuracy or suitability for your specific situation. Use it at your own risk — and use your head while you're at it.", tint: MVMTheme.tertiaryText)
+            LegalSection(icon: "info.circle", title: "Purpose of This App", body: "MVM Fitness is a fitness tracking and accountability tool. It provides workout templates, an AFT score calculator, activity tracking, and planning features. The app is designed to help you log, organize, and visualize your own training — not to coach, instruct, or prescribe exercises.", tint: MVMTheme.warning),
+            LegalSection(icon: "list.clipboard", title: "Workout Content", body: "Workouts in this app are templates based on publicly available exercise formats and fitness standards. They are organized by category, equipment, and duration for your convenience.\n\nThe app does not assess your physical condition, injury history, or readiness for any exercise. Selecting and performing any workout is entirely your decision and responsibility.", tint: MVMTheme.accent),
+            LegalSection(icon: "cross.case", title: "No Medical Advice", body: "MVM Fitness does not provide medical advice, diagnosis, or treatment. Nothing in this app should be interpreted as a substitute for professional medical guidance. Always consult a qualified healthcare provider before beginning any exercise program or if you have concerns about your health.", tint: Color(hex: "#EF4444")),
+            LegalSection(icon: "figure.run", title: "No Coaching or Instruction", body: "This app does not provide personal training, coaching, exercise instruction, or individualized fitness recommendations. It is a self-directed tool — you build your own workouts, choose your own exercises, and manage your own training schedule.", tint: MVMTheme.slateAccent),
+            LegalSection(icon: "flag.fill", title: "Content Origin", body: "All workouts use original naming and are based on publicly available exercise formats and fitness standards. Workout structures are designed for general fitness tracking purposes.\n\nThis app is not affiliated with, endorsed by, or sponsored by the U.S. Department of Defense, the Department of the Army, or any government agency.", tint: MVMTheme.accent),
+            LegalSection(icon: "number", title: "AFT Score Estimates", body: "The AFT calculator provides estimates for personal tracking and planning. Actual scores may differ due to rounding, table variations, or official testing conditions. Official scores come from authorized Army personnel under real testing conditions.", tint: MVMTheme.slateAccent),
+            LegalSection(icon: "doc.richtext", title: "Exported Documents", body: "Exported score reports and share cards are formatted documents built from your input. They are not official military records and are for personal reference only.", tint: MVMTheme.accent2),
+            LegalSection(icon: "exclamationmark.shield", title: "No Warranties", body: "MVM Fitness is provided \"as is\" without guarantees of accuracy, completeness, or suitability for any specific purpose. Use the app at your own risk and exercise your own judgment at all times.", tint: MVMTheme.tertiaryText)
         ]
     )
 
@@ -243,14 +247,14 @@ enum LegalPages {
         title: "Risks",
         icon: "bolt.heart.fill",
         accent: Color(hex: "#EF4444"),
-        subtitle: "PT makes you stronger — but it can also break you if you're not smart about it. Read this.",
+        subtitle: "Physical activity carries inherent risks. Read this before training.",
         updated: "April 2026",
         sections: [
-            LegalSection(icon: "stethoscope", title: "Doc First, Reps Second", body: "Before you start any new workout or exercise program, talk to a doctor or qualified medical professional. MVM Fitness is a planning and tracking tool — it doesn't know if you tore your ACL last year or if your blood pressure runs high. That's between you and your provider.", tint: Color(hex: "#EF4444")),
-            LegalSection(icon: "exclamationmark.triangle", title: "The Real Talk", body: "Physical training comes with real risks, including:\n\n• Muscle strains, sprains, and tears\n• Joint and bone injuries\n• Overexertion and heat-related illness\n• Cardiovascular complications\n• Stress fractures\n• Aggravation of existing conditions\n\nThis isn't meant to scare you — it's meant to make you train smart.", tint: MVMTheme.warning),
-            LegalSection(icon: "person.fill.checkmark", title: "Your Lane", body: "You're the one in charge of:\n\n• Knowing your fitness level and limits\n• Using proper form (ego lifting doesn't count)\n• Warming up and cooling down\n• Staying within safe exertion levels\n• Following medical and command guidance\n• Stopping immediately if something feels wrong\n\nNo app can replace your own judgment.", tint: MVMTheme.accent),
-            LegalSection(icon: "cross.case", title: "Not a Replacement", body: "MVM Fitness doesn't replace your doctor, your unit medic, your physical therapist, or your NCO telling you to hydrate. Always prioritize your health and safety over any workout plan or PR goal.", tint: MVMTheme.slateAccent),
-            LegalSection(icon: "checkmark.circle", title: "Roger That", body: "By using this app, you're acknowledging that you understand the risks of physical training and accept full responsibility for your participation in any activity guided by or tracked within MVM Fitness. Train hard, train smart, stay in the fight.", tint: MVMTheme.accent2)
+            LegalSection(icon: "stethoscope", title: "Consult a Professional", body: "Before beginning any exercise program, consult a qualified medical professional. MVM Fitness is a tracking tool — it does not evaluate your physical readiness, medical history, or health status. That assessment should come from your healthcare provider.", tint: Color(hex: "#EF4444")),
+            LegalSection(icon: "exclamationmark.triangle", title: "Inherent Risks of Exercise", body: "Physical training carries real risks, including but not limited to:\n\n• Muscle strains, sprains, and tears\n• Joint and bone injuries\n• Overexertion and heat-related illness\n• Cardiovascular complications\n• Stress fractures\n• Aggravation of pre-existing conditions\n\nThese risks exist regardless of fitness level or experience.", tint: MVMTheme.warning),
+            LegalSection(icon: "person.fill.checkmark", title: "Assumption of Risk", body: "By using MVM Fitness to track, log, or plan physical activity, you acknowledge that:\n\n• Physical exercise involves inherent risk of injury\n• You participate voluntarily in any activity you choose to perform\n• You are responsible for knowing your physical capabilities and limitations\n• You will use proper form and technique\n• You will stop immediately if you experience pain, dizziness, or discomfort\n• You will follow medical guidance from qualified professionals\n\nMVM Fitness is not responsible for any injury, illness, or adverse outcome resulting from physical activity tracked or planned using this app.", tint: MVMTheme.accent),
+            LegalSection(icon: "cross.case", title: "Not a Substitute", body: "This app does not replace a doctor, physical therapist, athletic trainer, or any qualified professional. Always prioritize your health and safety over any training goal or workout plan.", tint: MVMTheme.slateAccent),
+            LegalSection(icon: "checkmark.circle", title: "Acknowledgment", body: "By using MVM Fitness, you acknowledge that you have read and understand this risk disclosure, that you accept full responsibility for your participation in any physical activity, and that you use this app at your own risk.", tint: MVMTheme.accent2)
         ]
     )
 
@@ -258,16 +262,32 @@ enum LegalPages {
         title: "Accessibility",
         icon: "accessibility",
         accent: MVMTheme.accent2,
-        subtitle: "Every soldier deserves full access to their tools. We built this for everyone — no exceptions.",
+        subtitle: "MVM Fitness is built for everyone. Accessibility is a priority, not an afterthought.",
         updated: "April 2026",
         sections: [
-            LegalSection(icon: "speaker.wave.3", title: "VoiceOver Ready", body: "Every button, control, and screen has been labeled for VoiceOver. If you navigate by ear, we've got your six. Accessibility labels and hints are baked in throughout the entire app.", tint: MVMTheme.accent),
-            LegalSection(icon: "textformat.size", title: "Your Font, Your Size", body: "Crank up that text size in iOS Settings and MVM Fitness scales right with you. Dynamic Type support means you can read everything comfortably — no squinting at tiny numbers during your AFT.", tint: MVMTheme.slateAccent),
-            LegalSection(icon: "moon.fill", title: "Dark Mode Native", body: "Built dark-first with high-contrast text because staring at a bright screen at 0430 is nobody's idea of a good time. Light mode is supported too — we respect your system setting.", tint: MVMTheme.accent2),
-            LegalSection(icon: "hand.tap", title: "Big Tap Targets", body: "Every button meets Apple's 44x44pt minimum — because tapping a tiny button with sweaty hands after a set of deadlifts is a UX nightmare we refused to ship.", tint: MVMTheme.warning),
-            LegalSection(icon: "arrow.left.arrow.right", title: "Reduce Motion", body: "If you've turned on Reduce Motion in iOS Settings, we tone down the animations. Smooth experience without the extra visual noise.", tint: MVMTheme.tertiaryText),
-            LegalSection(icon: "circle.lefthalf.filled", title: "Contrast That Pops", body: "Text and interactive elements maintain strong contrast ratios in both light and dark modes. If you can see it, you can use it — that's the standard.", tint: MVMTheme.accent),
-            LegalSection(icon: "envelope", title: "Found a Barrier?", body: "If something isn't working for you, tell us. Reach out through the App Store listing — we take accessibility feedback seriously and will work to fix it.", tint: MVMTheme.accent2)
+            LegalSection(icon: "speaker.wave.3", title: "VoiceOver Support", body: "All interactive elements — buttons, cards, controls, and screens — include VoiceOver accessibility labels and hints. The app is designed to be fully navigable using VoiceOver.", tint: MVMTheme.accent),
+            LegalSection(icon: "textformat.size", title: "Dynamic Type", body: "MVM Fitness supports Dynamic Type. Increase your preferred text size in iOS Settings and the app scales text throughout to match your preference.", tint: MVMTheme.slateAccent),
+            LegalSection(icon: "moon.fill", title: "Dark Mode", body: "The app is built dark-first with high-contrast text for comfortable use in any lighting condition. The interface respects your system appearance settings.", tint: MVMTheme.accent2),
+            LegalSection(icon: "hand.tap", title: "Touch Targets", body: "All interactive elements meet Apple's minimum 44×44 point touch target requirement for comfortable and accurate interaction.", tint: MVMTheme.warning),
+            LegalSection(icon: "arrow.left.arrow.right", title: "Reduce Motion", body: "When Reduce Motion is enabled in iOS Settings, the app reduces animations and transitions for a more comfortable experience.", tint: MVMTheme.tertiaryText),
+            LegalSection(icon: "circle.lefthalf.filled", title: "Color Contrast", body: "Text and interactive elements maintain sufficient contrast ratios against their backgrounds, meeting accessibility standards for readability.", tint: MVMTheme.accent),
+            LegalSection(icon: "ipad.and.iphone", title: "Device Support", body: "MVM Fitness is optimized for both iPhone and iPad with responsive layouts that adapt cleanly to different screen sizes and orientations.", tint: MVMTheme.slateAccent),
+            LegalSection(icon: "envelope", title: "Feedback", body: "If you encounter an accessibility barrier, please let us know through the App Store listing. We take accessibility feedback seriously and work to address it.", tint: MVMTheme.accent2)
+        ]
+    )
+
+    static let eulaPage = LegalPage(
+        title: "EULA",
+        icon: "doc.badge.gearshape",
+        accent: MVMTheme.slateAccent,
+        subtitle: "End User License Agreement — governed by Apple's Standard EULA.",
+        updated: "April 2026",
+        sections: [
+            LegalSection(icon: "apple.logo", title: "Apple Standard EULA", body: "MVM Fitness is licensed under Apple's Standard End User License Agreement (EULA) for apps distributed through the Apple App Store.\n\nYou can review the full EULA here:\nhttps://www.apple.com/legal/internet-services/itunes/dev/stdeula/", tint: MVMTheme.slateAccent),
+            LegalSection(icon: "doc.text", title: "License Grant", body: "Subject to the terms of the Apple Standard EULA, you are granted a limited, non-exclusive, non-transferable license to use MVM Fitness on any Apple-branded device that you own or control, as permitted by the Usage Rules set forth in the Apple Media Services Terms and Conditions.", tint: MVMTheme.accent),
+            LegalSection(icon: "xmark.circle", title: "Restrictions", body: "You may not:\n\n• Reverse-engineer, decompile, or disassemble the app\n• Redistribute, sublicense, or rent the app\n• Use the app for any unlawful purpose\n• Remove or alter any proprietary notices", tint: MVMTheme.warning),
+            LegalSection(icon: "shield.checkered", title: "Disclaimer of Warranties", body: "MVM Fitness is provided \"as is\" and \"as available\" without warranties of any kind. The developer does not warrant that the app will be error-free, uninterrupted, or suitable for any particular purpose.", tint: MVMTheme.tertiaryText),
+            LegalSection(icon: "building.columns", title: "Governing Terms", body: "This license is governed by the terms of the Apple Standard EULA. In the event of any conflict between these terms and the Apple Standard EULA, the Apple Standard EULA prevails.", tint: MVMTheme.accent2)
         ]
     )
 }
@@ -278,4 +298,5 @@ enum LegalContent {
     static let disclaimer = ""
     static let accessibilityStatement = ""
     static let risks = ""
+    static let eula = ""
 }

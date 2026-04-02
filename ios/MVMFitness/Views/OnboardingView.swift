@@ -263,7 +263,7 @@ struct OnboardingView: View {
         VStack(spacing: 32) {
             sectionHeader(icon: "shield.checkered", title: "Before You Begin")
 
-            Text("MVM Army is a planning and accountability tool only. All exercises, WODs, AFT grading, and training plans are based on publicly available U.S. Army regulations. This app does not provide medical, fitness, or health advice.")
+            Text("MVM Fitness is a fitness tracking and accountability tool. All workout templates and AFT scoring are based on publicly available fitness standards. This app does not provide medical advice, coaching, or exercise instruction. You choose and perform all exercises at your own risk.")
                 .font(.subheadline)
                 .foregroundStyle(MVMTheme.secondaryText)
                 .multilineTextAlignment(.center)

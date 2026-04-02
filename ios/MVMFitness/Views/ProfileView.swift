@@ -465,6 +465,15 @@ struct ProfileView: View {
                 settingsRow(icon: "accessibility", title: "Accessibility", color: MVMTheme.accent, showChevron: true)
             }
             .accessibilityHint("View the accessibility statement")
+
+            sectionDivider
+
+            NavigationLink {
+                LegalTextView(title: "EULA", content: LegalContent.eula)
+            } label: {
+                settingsRow(icon: "doc.badge.gearshape", title: "EULA", color: MVMTheme.slateAccent, showChevron: true)
+            }
+            .accessibilityHint("View the end user license agreement")
         }
     }
 

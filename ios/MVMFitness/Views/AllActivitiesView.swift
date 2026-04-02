@@ -1,10 +1,12 @@
 import SwiftUI
+import HealthKit
 
 struct AllActivitiesView: View {
     @Environment(AppViewModel.self) private var vm
 
     @State private var selectedActivity: ActivitySummary?
     @State private var showActivityDetail: Bool = false
+    @State private var appeared: Bool = false
 
     var body: some View {
         ZStack {
@@ -12,6 +14,7 @@ struct AllActivitiesView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
+                    summaryRow
                     stepsCard
                     caloriesCard
 
@@ -20,16 +23,7 @@ struct AllActivitiesView: View {
                     } else if vm.healthKit.activities.isEmpty {
                         emptyCard
                     } else {
-                        ForEach(vm.healthKit.activities) { activity in
-                            Button {
-                                selectedActivity = activity
-                                showActivityDetail = true
-                            } label: {
-                                activityCard(activity)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityHint("Tap to view daily breakdown for \(activity.name)")
-                        }
+                        activitiesSection
                     }
 
                     healthKitNotice
@@ -52,52 +46,144 @@ struct AllActivitiesView: View {
         .task {
             await vm.healthKit.fetchTodayActiveCalories()
             await vm.healthKit.fetchAllActivities()
+            withAnimation(.easeOut(duration: 0.4)) {
+                appeared = true
+            }
         }
     }
 
-    private var stepsCard: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 10) {
-                Image(systemName: "figure.walk")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(MVMTheme.success)
-                    .frame(width: 40, height: 40)
-                    .background(MVMTheme.success.opacity(0.15))
-                    .clipShape(Circle())
+    // MARK: - Summary Row
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Steps")
-                        .font(.headline)
-                        .foregroundStyle(MVMTheme.primaryText)
-                    Text("Pedometer + HealthKit")
-                        .font(.caption2.weight(.medium))
+    private var summaryRow: some View {
+        HStack(spacing: 12) {
+            summaryPill(
+                icon: "figure.mixed.cardio",
+                value: "\(vm.healthKit.activities.count)",
+                label: "Activities",
+                color: MVMTheme.accent
+            )
+
+            summaryPill(
+                icon: "calendar",
+                value: "7 Days",
+                label: "Tracked",
+                color: MVMTheme.slateAccent
+            )
+
+            let totalSessions = vm.healthKit.activities.reduce(0) { $0 + $1.todayCount }
+            summaryPill(
+                icon: "checkmark.circle.fill",
+                value: "\(totalSessions)",
+                label: "Today",
+                color: MVMTheme.success
+            )
+        }
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 10)
+    }
+
+    private func summaryPill(icon: String, value: String, label: String, color: Color) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(color)
+                .frame(width: 28, height: 28)
+                .background(color.opacity(0.12))
+                .clipShape(Circle())
+
+            Text(value)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(MVMTheme.primaryText)
+
+            Text(label)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(MVMTheme.tertiaryText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .background(MVMTheme.card)
+        .clipShape(.rect(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(MVMTheme.border)
+        }
+    }
+
+    // MARK: - Steps Card
+
+    private var stepsCard: some View {
+        Button {
+            let stepActivity = ActivitySummary(
+                id: "steps-overview",
+                activityType: .walking,
+                name: "Steps",
+                icon: "figure.walk",
+                todayDuration: 0,
+                todayCalories: 0,
+                todayDistance: 0,
+                weeklyAvgDuration: 0,
+                weeklyAvgCalories: 0,
+                weeklyAvgDistance: 0,
+                todayCount: 0,
+                hasData: true
+            )
+            selectedActivity = stepActivity
+            showActivityDetail = true
+        } label: {
+            VStack(spacing: 16) {
+                HStack(spacing: 10) {
+                    Image(systemName: "figure.walk")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(MVMTheme.success)
+                        .frame(width: 40, height: 40)
+                        .background(MVMTheme.success.opacity(0.15))
+                        .clipShape(Circle())
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Steps")
+                            .font(.headline)
+                            .foregroundStyle(MVMTheme.primaryText)
+                        Text("Pedometer + HealthKit")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
                         .foregroundStyle(MVMTheme.tertiaryText)
                 }
 
-                Spacer()
+                HStack(spacing: 0) {
+                    metricBlock(
+                        value: vm.healthKit.todaySteps.formatted(),
+                        label: "Today",
+                        color: MVMTheme.success
+                    )
+
+                    Rectangle()
+                        .fill(MVMTheme.border)
+                        .frame(width: 1, height: 40)
+
+                    metricBlock(
+                        value: vm.healthKit.weeklyAvgSteps.formatted(),
+                        label: "7-Day Avg",
+                        color: MVMTheme.accent
+                    )
+                }
             }
-
-            HStack(spacing: 0) {
-                metricBlock(
-                    value: "\(vm.healthKit.todaySteps)",
-                    label: "Today",
-                    color: MVMTheme.success
-                )
-
-                Rectangle()
-                    .fill(MVMTheme.border)
-                    .frame(width: 1, height: 40)
-
-                metricBlock(
-                    value: "\(vm.healthKit.weeklyAvgSteps)",
-                    label: "7-Day Avg",
-                    color: MVMTheme.accent
-                )
-            }
+            .padding(18)
+            .premiumCard()
         }
-        .padding(18)
-        .premiumCard()
+        .buttonStyle(.plain)
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 10)
+        .accessibilityLabel("Steps, \(vm.healthKit.todaySteps) today, \(vm.healthKit.weeklyAvgSteps) seven day average")
+        .accessibilityHint("Tap to view daily step breakdown")
     }
+
+    // MARK: - Calories Card
 
     private var caloriesCard: some View {
         VStack(spacing: 16) {
@@ -134,6 +220,39 @@ struct AllActivitiesView: View {
         }
         .padding(18)
         .premiumCard()
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 10)
+        .accessibilityLabel("Active calories, \(Int(vm.healthKit.todayActiveCalories)) kilocalories today")
+    }
+
+    // MARK: - Activities Section
+
+    private var activitiesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "figure.mixed.cardio")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+                Text("WORKOUT ACTIVITIES")
+                    .font(.caption.weight(.bold))
+                    .tracking(0.8)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+            .padding(.leading, 4)
+
+            ForEach(vm.healthKit.activities) { activity in
+                Button {
+                    selectedActivity = activity
+                    showActivityDetail = true
+                } label: {
+                    activityCard(activity)
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Tap to view daily breakdown for \(activity.name)")
+            }
+        }
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 10)
     }
 
     private func activityCard(_ activity: ActivitySummary) -> some View {
@@ -239,6 +358,8 @@ struct AllActivitiesView: View {
         .premiumCard()
     }
 
+    // MARK: - Loading / Empty
+
     private var loadingCard: some View {
         VStack(spacing: 16) {
             ProgressView()
@@ -273,6 +394,8 @@ struct AllActivitiesView: View {
         .premiumCard()
     }
 
+    // MARK: - Health Notice
+
     private var healthKitNotice: some View {
         VStack(spacing: 10) {
             HStack(spacing: 6) {
@@ -284,14 +407,17 @@ struct AllActivitiesView: View {
                     .foregroundStyle(MVMTheme.secondaryText)
             }
 
-            Text("MVM Fitness only displays activities that have recorded data. Your health data stays on-device and is never shared with third parties or used for advertising.")
+            Text("MVM Fitness only displays activities that have recorded data. Your health data stays on-device and is never shared with third parties.")
                 .font(.caption2)
                 .foregroundStyle(MVMTheme.tertiaryText)
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
         }
         .padding(16)
+        .accessibilityElement(children: .combine)
     }
+
+    // MARK: - Helpers
 
     private func metricBlock(value: String, label: String, color: Color) -> some View {
         VStack(spacing: 4) {

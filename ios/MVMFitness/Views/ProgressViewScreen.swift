@@ -15,6 +15,8 @@ struct ProgressViewScreen: View {
     @State private var showDayDetail: Bool = false
     @State private var showTrainingCalendar: Bool = false
     @State private var showAllActivities: Bool = false
+    @State private var selectedActivity: ActivitySummary?
+    @State private var showActivityDetail: Bool = false
     @AppStorage("hasRequestedHealthKit") private var hasRequestedHealthKit: Bool = false
 
     var body: some View {
@@ -71,6 +73,11 @@ struct ProgressViewScreen: View {
         }
         .navigationDestination(isPresented: $showAllActivities) {
             AllActivitiesView()
+        }
+        .navigationDestination(isPresented: $showActivityDetail) {
+            if let activity = selectedActivity {
+                ActivityDetailView(activity: activity)
+            }
         }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
@@ -699,10 +706,10 @@ struct ProgressViewScreen: View {
     // MARK: - Activity Card
 
     private var activityCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 8) {
-                Image(systemName: "figure.walk")
-                    .foregroundStyle(MVMTheme.accent)
+                Image(systemName: "heart.fill")
+                    .foregroundStyle(.red)
                     .font(.subheadline.weight(.semibold))
                 Text("Activity")
                     .font(.headline)
@@ -710,7 +717,7 @@ struct ProgressViewScreen: View {
 
                 Spacer()
 
-                if !vm.healthKit.permissionDenied {
+                if hasRequestedHealthKit && !vm.healthKit.permissionDenied {
                     Button {
                         showAllActivities = true
                     } label: {
@@ -785,75 +792,10 @@ struct ProgressViewScreen: View {
                 let todaySteps = max(vm.pedometer.todaySteps, vm.healthKit.todaySteps)
                 let avgSteps = max(vm.weeklyStepAverage, vm.healthKit.weeklyAvgSteps)
 
-                HStack(spacing: 0) {
-                    VStack(spacing: 6) {
-                        Image(systemName: "shoeprints.fill")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(MVMTheme.success)
-                            .frame(width: 28, height: 28)
-                            .background(MVMTheme.success.opacity(0.12))
-                            .clipShape(Circle())
-
-                        Text("\(todaySteps)")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundStyle(MVMTheme.primaryText)
-                            .contentTransition(.numericText())
-
-                        Text("Steps Today")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(MVMTheme.secondaryText)
-                    }
-                    .frame(maxWidth: .infinity)
-
-                    Rectangle()
-                        .fill(MVMTheme.border)
-                        .frame(width: 1, height: 48)
-
-                    VStack(spacing: 6) {
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(MVMTheme.accent)
-                            .frame(width: 28, height: 28)
-                            .background(MVMTheme.accent.opacity(0.12))
-                            .clipShape(Circle())
-
-                        Text("\(avgSteps)")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundStyle(MVMTheme.primaryText)
-                            .contentTransition(.numericText())
-
-                        Text("7-Day Avg")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(MVMTheme.secondaryText)
-                    }
-                    .frame(maxWidth: .infinity)
-
-                    Rectangle()
-                        .fill(MVMTheme.border)
-                        .frame(width: 1, height: 48)
-
-                    VStack(spacing: 6) {
-                        Image(systemName: "flame.fill")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(MVMTheme.warning)
-                            .frame(width: 28, height: 28)
-                            .background(MVMTheme.warning.opacity(0.12))
-                            .clipShape(Circle())
-
-                        Text("\(Int(vm.healthKit.todayActiveCalories))")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundStyle(MVMTheme.primaryText)
-                            .contentTransition(.numericText())
-
-                        Text("Calories")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(MVMTheme.secondaryText)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
+                activityRingRow(todaySteps: todaySteps, avgSteps: avgSteps)
 
                 if !vm.healthKit.activities.isEmpty {
-                    activityPills
+                    activityQuickCards
                 }
 
                 Button {
@@ -878,31 +820,111 @@ struct ProgressViewScreen: View {
         .premiumCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Activity tracking")
     }
 
-    private var activityPills: some View {
-        let topActivities = Array(vm.healthKit.activities.prefix(3))
-        return HStack(spacing: 8) {
+    private func activityRingRow(todaySteps: Int, avgSteps: Int) -> some View {
+        HStack(spacing: 0) {
+            activityMetric(
+                icon: "shoeprints.fill",
+                iconColor: MVMTheme.success,
+                value: todaySteps.formatted(),
+                label: "Steps"
+            )
+
+            Rectangle()
+                .fill(MVMTheme.border)
+                .frame(width: 1, height: 52)
+
+            activityMetric(
+                icon: "flame.fill",
+                iconColor: MVMTheme.warning,
+                value: "\(Int(vm.healthKit.todayActiveCalories))",
+                label: "Calories"
+            )
+
+            Rectangle()
+                .fill(MVMTheme.border)
+                .frame(width: 1, height: 52)
+
+            activityMetric(
+                icon: "chart.line.uptrend.xyaxis",
+                iconColor: MVMTheme.accent,
+                value: avgSteps.formatted(),
+                label: "7-Day Avg"
+            )
+        }
+        .padding(14)
+        .background(MVMTheme.cardSoft)
+        .clipShape(.rect(cornerRadius: 16))
+    }
+
+    private func activityMetric(icon: String, iconColor: Color, value: String, label: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(iconColor)
+                .frame(width: 28, height: 28)
+                .background(iconColor.opacity(0.12))
+                .clipShape(Circle())
+
+            Text(value)
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundStyle(MVMTheme.primaryText)
+                .contentTransition(.numericText())
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Text(label)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(MVMTheme.secondaryText)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label), \(value)")
+    }
+
+    private var activityQuickCards: some View {
+        let topActivities = Array(vm.healthKit.activities.prefix(4))
+        return LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
             ForEach(topActivities) { activity in
-                HStack(spacing: 5) {
-                    Image(systemName: activity.icon)
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(MVMTheme.accent)
-                    Text(activity.name)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(MVMTheme.secondaryText)
-                    if activity.todayCount > 0 {
-                        Text("\(activity.todayCount)")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(MVMTheme.success)
+                Button {
+                    selectedActivity = activity
+                    showActivityDetail = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: activity.icon)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(MVMTheme.accent)
+                            .frame(width: 28, height: 28)
+                            .background(MVMTheme.accent.opacity(0.12))
+                            .clipShape(Circle())
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(activity.name)
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(MVMTheme.primaryText)
+                                .lineLimit(1)
+                            Text(activity.todayCount > 0 ? "\(activity.todayCount) today" : "—")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(activity.todayCount > 0 ? MVMTheme.success : MVMTheme.tertiaryText)
+                        }
+
+                        Spacer(minLength: 0)
+
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(MVMTheme.tertiaryText)
                     }
+                    .padding(10)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(.rect(cornerRadius: 12))
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .background(MVMTheme.cardSoft)
-                .clipShape(Capsule())
+                .buttonStyle(.plain)
+                .accessibilityHint("Tap to view daily breakdown for \(activity.name)")
             }
-            Spacer()
         }
     }
 
