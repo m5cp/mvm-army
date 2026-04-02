@@ -18,7 +18,7 @@ struct ActivityDetailView: View {
             MVMTheme.background.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 16) {
+                VStack(spacing: 20) {
                     heroHeader
                     weeklyTrendChart
                     weekStrip
@@ -32,17 +32,17 @@ struct ActivityDetailView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
-                .padding(.bottom, 40)
+                .padding(.bottom, 48)
                 .adaptiveContainer()
             }
         }
         .navigationTitle(activity.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             await loadWeekData()
-            withAnimation(.easeOut(duration: 0.4)) {
+            withAnimation(.easeOut(duration: 0.5)) {
                 appeared = true
             }
         }
@@ -51,12 +51,12 @@ struct ActivityDetailView: View {
     // MARK: - Hero Header
 
     private var heroHeader: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 20) {
             HStack(spacing: 14) {
                 Image(systemName: activity.icon)
                     .font(.title2.weight(.bold))
                     .foregroundStyle(.white)
-                    .frame(width: 52, height: 52)
+                    .frame(width: 56, height: 56)
                     .background(
                         LinearGradient(
                             colors: [MVMTheme.accent, MVMTheme.accent2],
@@ -65,6 +65,7 @@ struct ActivityDetailView: View {
                         )
                     )
                     .clipShape(Circle())
+                    .shadow(color: MVMTheme.accent.opacity(0.3), radius: 10, y: 4)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(activity.name)
@@ -84,98 +85,103 @@ struct ActivityDetailView: View {
                 Spacer()
             }
 
-            HStack(spacing: 0) {
-                heroMetric(
+            HStack(spacing: 8) {
+                heroMetricPill(
+                    icon: "clock.fill",
                     value: formatDuration(activity.todayDuration),
                     label: "Today",
                     color: MVMTheme.accent
                 )
 
-                Rectangle()
-                    .fill(MVMTheme.border)
-                    .frame(width: 1, height: 44)
-
-                heroMetric(
+                heroMetricPill(
+                    icon: "chart.line.uptrend.xyaxis",
                     value: formatDuration(activity.weeklyAvgDuration),
                     label: "7-Day Avg",
                     color: MVMTheme.slateAccent
                 )
 
                 if activity.todayDistance > 0 || activity.weeklyAvgDistance > 0 {
-                    Rectangle()
-                        .fill(MVMTheme.border)
-                        .frame(width: 1, height: 44)
-
-                    heroMetric(
+                    heroMetricPill(
+                        icon: "map.fill",
                         value: String(format: "%.1f mi", activity.todayDistance),
                         label: "Distance",
                         color: MVMTheme.success
                     )
                 }
             }
-            .padding(14)
-            .background(MVMTheme.cardSoft)
-            .clipShape(.rect(cornerRadius: 14))
 
             if activity.todayCalories > 0 {
                 HStack(spacing: 6) {
                     Image(systemName: "flame.fill")
-                        .font(.caption2)
-                        .foregroundStyle(MVMTheme.warning)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color(hex: "#FF6B35"))
                     Text("\(Int(activity.todayCalories)) kcal today")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(MVMTheme.secondaryText)
                     Spacer()
-                    Text("Avg \(Int(activity.weeklyAvgCalories)) kcal")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                    if activity.weeklyAvgCalories > 0 {
+                        Text("Avg \(Int(activity.weeklyAvgCalories)) kcal")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .background(MVMTheme.cardSoft)
-                .clipShape(.rect(cornerRadius: 10))
+                .clipShape(.rect(cornerRadius: 12))
             }
         }
-        .padding(18)
+        .padding(20)
         .premiumCard()
         .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 10)
+        .offset(y: appeared ? 0 : 12)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(activity.name), \(activity.todayCount) sessions today, \(formatDuration(activity.todayDuration)) total duration")
     }
 
-    private func heroMetric(value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 4) {
+    private func heroMetricPill(icon: String, value: String, label: String, color: Color) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(color)
+
             Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.system(size: 18, weight: .bold, design: .rounded))
                 .foregroundStyle(MVMTheme.primaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
+
             Text(label)
                 .font(.caption2.weight(.bold))
-                .foregroundStyle(color)
+                .foregroundStyle(MVMTheme.tertiaryText)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(MVMTheme.cardSoft)
+        .clipShape(.rect(cornerRadius: 14))
     }
 
     // MARK: - Weekly Trend Chart
 
     private var weeklyTrendChart: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: "chart.bar.fill")
                     .foregroundStyle(MVMTheme.accent)
                     .font(.caption.weight(.bold))
                 Text("7-Day Trend")
-                    .font(.subheadline.weight(.bold))
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
+                Spacer()
+                Text("Duration (min)")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(MVMTheme.tertiaryText)
             }
 
             if weekDetails.isEmpty {
-                Text("Loading...")
-                    .font(.caption)
-                    .foregroundStyle(MVMTheme.tertiaryText)
-                    .frame(maxWidth: .infinity, minHeight: 120)
+                ProgressView()
+                    .tint(MVMTheme.accent)
+                    .frame(maxWidth: .infinity, minHeight: 140)
             } else {
                 let hasAnyData = weekDetails.contains { !$0.sessions.isEmpty }
 
@@ -183,13 +189,35 @@ struct ActivityDetailView: View {
                     Chart {
                         ForEach(weekDetails, id: \.date) { day in
                             let isSelected = selectedDate.map { Calendar.current.isDate($0, inSameDayAs: day.date) } ?? false
+                            let minutes = Int(day.totalDuration) / 60
 
                             BarMark(
                                 x: .value("Day", dayChartLabel(day.date)),
-                                y: .value("Duration", Int(day.totalDuration) / 60)
+                                y: .value("Duration", minutes)
                             )
-                            .foregroundStyle(isSelected ? MVMTheme.accent : MVMTheme.accent.opacity(0.5))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .foregroundStyle(
+                                isSelected
+                                    ? AnyShapeStyle(LinearGradient(colors: [MVMTheme.accent, MVMTheme.accent.opacity(0.7)], startPoint: .top, endPoint: .bottom))
+                                    : AnyShapeStyle(MVMTheme.accent.opacity(0.35))
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 5))
+
+                            if isSelected && minutes > 0 {
+                                PointMark(
+                                    x: .value("Day", dayChartLabel(day.date)),
+                                    y: .value("Duration", minutes)
+                                )
+                                .annotation(position: .top, spacing: 4) {
+                                    Text("\(minutes)m")
+                                        .font(.caption2.weight(.bold))
+                                        .foregroundStyle(MVMTheme.accent)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(MVMTheme.cardSoft)
+                                        .clipShape(.rect(cornerRadius: 6))
+                                }
+                                .symbolSize(0)
+                            }
                         }
                     }
                     .chartYAxis {
@@ -206,39 +234,38 @@ struct ActivityDetailView: View {
                                 .foregroundStyle(MVMTheme.secondaryText)
                         }
                     }
-                    .chartYAxisLabel("min", position: .trailing)
-                    .frame(height: 130)
+                    .frame(height: 160)
                 } else {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 10) {
                         Image(systemName: "chart.bar")
                             .font(.title2)
                             .foregroundStyle(MVMTheme.tertiaryText)
                         Text("No data this week")
-                            .font(.caption)
+                            .font(.subheadline.weight(.medium))
                             .foregroundStyle(MVMTheme.tertiaryText)
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 120)
+                    .frame(height: 140)
                 }
             }
         }
-        .padding(18)
+        .padding(20)
         .premiumCard()
         .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 10)
+        .offset(y: appeared ? 0 : 12)
     }
 
     // MARK: - Week Strip
 
     private var weekStrip: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("LAST 7 DAYS")
                 .font(.caption.weight(.heavy))
                 .tracking(1.0)
                 .foregroundStyle(MVMTheme.tertiaryText)
                 .padding(.leading, 4)
 
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 ForEach(weekDetails, id: \.date) { detail in
                     let isSelected = selectedDate.map { Calendar.current.isDate($0, inSameDayAs: detail.date) } ?? false
                     let hasData = !detail.sessions.isEmpty
@@ -258,7 +285,7 @@ struct ActivityDetailView: View {
                             ZStack {
                                 Circle()
                                     .fill(dayDotColor(isSelected: isSelected, hasData: hasData))
-                                    .frame(width: 36, height: 36)
+                                    .frame(width: 38, height: 38)
 
                                 if hasData {
                                     Text("\(detail.sessions.count)")
@@ -285,31 +312,38 @@ struct ActivityDetailView: View {
             .premiumCard()
         }
         .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 10)
+        .offset(y: appeared ? 0 : 12)
     }
 
     // MARK: - Day Detail Card
 
     private func dayDetailCard(_ detail: HealthKitManager.DayActivityDetail) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 8) {
-                Text(fullDateString(detail.date))
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(fullDateString(detail.date))
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    if Calendar.current.isDateInToday(detail.date) {
+                        Text("Today")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(MVMTheme.accent)
+                    }
+                }
                 Spacer()
                 if !detail.sessions.isEmpty {
                     Text("\(detail.sessions.count) session\(detail.sessions.count == 1 ? "" : "s")")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(MVMTheme.accent)
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 5)
                         .background(MVMTheme.accent.opacity(0.12))
                         .clipShape(Capsule())
                 }
             }
 
             if detail.sessions.isEmpty {
-                VStack(spacing: 10) {
+                VStack(spacing: 12) {
                     Image(systemName: "moon.zzz.fill")
                         .font(.title2)
                         .foregroundStyle(MVMTheme.tertiaryText)
@@ -318,7 +352,7 @@ struct ActivityDetailView: View {
                         .foregroundStyle(MVMTheme.secondaryText)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
+                .padding(.vertical, 24)
             } else {
                 dayStatsRow(detail)
 
@@ -329,10 +363,10 @@ struct ActivityDetailView: View {
                 }
             }
         }
-        .padding(18)
+        .padding(20)
         .premiumCard()
         .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 10)
+        .offset(y: appeared ? 0 : 12)
     }
 
     private func dayStatsRow(_ detail: HealthKitManager.DayActivityDetail) -> some View {
@@ -345,7 +379,7 @@ struct ActivityDetailView: View {
             )
 
             if detail.totalDistance > 0 {
-                Rectangle().fill(MVMTheme.border).frame(width: 1, height: 40)
+                Rectangle().fill(MVMTheme.border).frame(width: 1, height: 44)
                 dayStat(
                     icon: "map.fill",
                     value: String(format: "%.2f mi", detail.totalDistance),
@@ -355,17 +389,17 @@ struct ActivityDetailView: View {
             }
 
             if detail.totalCalories > 0 {
-                Rectangle().fill(MVMTheme.border).frame(width: 1, height: 40)
+                Rectangle().fill(MVMTheme.border).frame(width: 1, height: 44)
                 dayStat(
                     icon: "flame.fill",
                     value: "\(Int(detail.totalCalories))",
                     label: "Calories",
-                    color: MVMTheme.warning
+                    color: Color(hex: "#FF6B35")
                 )
             }
 
             if detail.totalSteps > 0 {
-                Rectangle().fill(MVMTheme.border).frame(width: 1, height: 40)
+                Rectangle().fill(MVMTheme.border).frame(width: 1, height: 44)
                 dayStat(
                     icon: "shoeprints.fill",
                     value: detail.totalSteps.formatted(),
@@ -374,15 +408,15 @@ struct ActivityDetailView: View {
                 )
             }
         }
-        .padding(12)
+        .padding(14)
         .background(MVMTheme.cardSoft)
-        .clipShape(.rect(cornerRadius: 14))
+        .clipShape(.rect(cornerRadius: 16))
     }
 
     private func dayStat(icon: String, value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 5) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(color)
             Text(value)
                 .font(.caption.weight(.bold))
@@ -399,10 +433,16 @@ struct ActivityDetailView: View {
     private func sessionRow(_ session: HealthKitManager.DaySessionInfo) -> some View {
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 2)
-                .fill(MVMTheme.accent)
-                .frame(width: 4, height: 36)
+                .fill(
+                    LinearGradient(
+                        colors: [MVMTheme.accent, MVMTheme.accent.opacity(0.4)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 4, height: 40)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(timeString(session.startDate))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(MVMTheme.primaryText)
@@ -422,7 +462,7 @@ struct ActivityDetailView: View {
                         HStack(spacing: 2) {
                             Image(systemName: "flame.fill")
                                 .font(.system(size: 9))
-                                .foregroundStyle(MVMTheme.warning)
+                                .foregroundStyle(Color(hex: "#FF6B35"))
                             Text("\(Int(session.calories)) kcal")
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(MVMTheme.secondaryText)
@@ -442,9 +482,9 @@ struct ActivityDetailView: View {
                 .background(MVMTheme.cardSoft)
                 .clipShape(Capsule())
         }
-        .padding(12)
+        .padding(14)
         .background(MVMTheme.cardSoft)
-        .clipShape(.rect(cornerRadius: 12))
+        .clipShape(.rect(cornerRadius: 14))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Session at \(timeString(session.startDate)), \(formatDuration(session.duration)), from \(session.sourceName)")
     }
@@ -498,9 +538,8 @@ struct ActivityDetailView: View {
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
         let totalMinutes = Int(seconds) / 60
-        if totalMinutes < 60 {
-            return "\(totalMinutes)m"
-        }
+        if totalMinutes == 0 { return "0m" }
+        if totalMinutes < 60 { return "\(totalMinutes)m" }
         let hours = totalMinutes / 60
         let mins = totalMinutes % 60
         return "\(hours)h \(mins)m"
