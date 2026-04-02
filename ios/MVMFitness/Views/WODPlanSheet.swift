@@ -98,12 +98,17 @@ struct WODPlanSheet: View {
                         selectedTrainingGoal = tGoal
                     }
                     showGoalSetup = false
-                    isPlanApproved = true
+                    isPlanApproved = !vm.wodPlanNeedsSync
                 } else {
                     showGoalSetup = true
                 }
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.15)) {
                     animateCards = true
+                }
+            }
+            .onChange(of: vm.wodPlanNeedsSync) { _, needsSync in
+                if needsSync {
+                    isPlanApproved = false
                 }
             }
         }
@@ -121,6 +126,7 @@ struct WODPlanSheet: View {
                     approveCalendarTrigger.toggle()
                     vm.saveWODPlanSnapshot()
                     isPlanApproved = true
+                    vm.wodPlanNeedsSync = false
                     if let plan = vm.wodPlan {
                         Task {
                             let result = await calendarService.exportWODPlan(plan)
@@ -155,20 +161,52 @@ struct WODPlanSheet: View {
                 .sensoryFeedback(.success, trigger: approveCalendarTrigger)
                 .buttonStyle(PressScaleButtonStyle())
             } else {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .foregroundStyle(MVMTheme.success)
-                    Text("Plan Approved & Synced")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(MVMTheme.success)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(MVMTheme.success.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(MVMTheme.success.opacity(0.3))
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundStyle(MVMTheme.success)
+                        Text("Plan Approved & Synced")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(MVMTheme.success)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(MVMTheme.success.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(MVMTheme.success.opacity(0.3))
+                    }
+
+                    Button {
+                        approveCalendarTrigger.toggle()
+                        vm.wodPlanNeedsSync = false
+                        Task {
+                            if let plan = vm.wodPlan {
+                                let result = await calendarService.resyncWODPlanFromDate(plan, from: .now)
+                                handleExportResult(result)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            if calendarService.isExporting {
+                                ProgressView().tint(Color(hex: "#F59E0B"))
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.caption.weight(.bold))
+                            }
+                            Text("Re-Sync to Calendar")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .foregroundStyle(Color(hex: "#F59E0B"))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(Color(hex: "#F59E0B").opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .disabled(calendarService.isExporting)
+                    .sensoryFeedback(.success, trigger: approveCalendarTrigger)
+                    .buttonStyle(PressScaleButtonStyle())
                 }
             }
 

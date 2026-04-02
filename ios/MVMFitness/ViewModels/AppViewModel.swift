@@ -18,6 +18,8 @@ final class AppViewModel {
     var wodPlan: WODPlan?
     var todayFunctionalWOD: WODTemplate?
     var activeRecap: InstantRecap?
+    var ptPlanNeedsSync: Bool = false
+    var wodPlanNeedsSync: Bool = false
 
     var performanceHighlights: [PerformanceHighlight] {
         PerformanceHighlightsService.generateHighlights(
@@ -668,6 +670,7 @@ final class AppViewModel {
               let idx = plan.days.firstIndex(where: { $0.dayIndex == dayIndex }) else { return }
         plan.days[idx].exercises = exercises
         currentPlan = plan
+        ptPlanNeedsSync = true
         persistAll()
     }
 
@@ -730,6 +733,7 @@ final class AppViewModel {
             )
         }
         currentPlan = plan
+        ptPlanNeedsSync = true
         persistAll()
     }
 
@@ -765,6 +769,7 @@ final class AppViewModel {
             )
         }
         currentPlan = plan
+        ptPlanNeedsSync = true
         persistAll()
     }
 
@@ -781,6 +786,7 @@ final class AppViewModel {
             templateTag: "recovery"
         )
         currentPlan = plan
+        ptPlanNeedsSync = true
         persistAll()
     }
 
@@ -1103,6 +1109,7 @@ final class AppViewModel {
         )
         plan.days[idx] = WODPlanDay(date: plan.days[idx].date, template: restTemplate, isRestDay: true)
         wodPlan = plan
+        wodPlanNeedsSync = true
         persistAll()
     }
 
@@ -1120,6 +1127,7 @@ final class AppViewModel {
         ) {
             plan.days[idx] = WODPlanDay(date: plan.days[idx].date, template: newTemplate)
             wodPlan = plan
+            wodPlanNeedsSync = true
             persistAll()
         }
     }
@@ -1129,6 +1137,7 @@ final class AppViewModel {
               let idx = plan.days.firstIndex(where: { $0.id == dayId }) else { return }
         plan.days[idx].template.movements = movements
         wodPlan = plan
+        wodPlanNeedsSync = true
         persistAll()
     }
 
@@ -1147,6 +1156,7 @@ final class AppViewModel {
         ) {
             plan.days[idx] = WODPlanDay(date: plan.days[idx].date, template: newTemplate)
             wodPlan = plan
+            wodPlanNeedsSync = true
             persistAll()
         }
     }

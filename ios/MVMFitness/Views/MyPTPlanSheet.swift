@@ -111,9 +111,14 @@ struct MyPTPlanSheet: View {
                     showGoalSetup = true
                 }
                 selectedWeeks = vm.currentPlanWeeks
-                isPlanApproved = vm.currentPlan != nil && vm.currentPTGoal != nil
+                isPlanApproved = vm.currentPlan != nil && vm.currentPTGoal != nil && !vm.ptPlanNeedsSync
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.15)) {
                     animateCards = true
+                }
+            }
+            .onChange(of: vm.ptPlanNeedsSync) { _, needsSync in
+                if needsSync {
+                    isPlanApproved = false
                 }
             }
         }
@@ -131,6 +136,7 @@ struct MyPTPlanSheet: View {
                     approveCalendarTrigger.toggle()
                     vm.savePlanSnapshot()
                     isPlanApproved = true
+                    vm.ptPlanNeedsSync = false
                     Task {
                         let result = await calendarService.exportWeeklyPlan(vm.currentPlan!)
                         handleExportResult(result)
@@ -157,20 +163,52 @@ struct MyPTPlanSheet: View {
                 .sensoryFeedback(.success, trigger: approveCalendarTrigger)
                 .buttonStyle(PressScaleButtonStyle())
             } else {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .foregroundStyle(MVMTheme.success)
-                    Text("Plan Approved & Synced")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(MVMTheme.success)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(MVMTheme.success.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(MVMTheme.success.opacity(0.3))
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundStyle(MVMTheme.success)
+                        Text("Plan Approved & Synced")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(MVMTheme.success)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(MVMTheme.success.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(MVMTheme.success.opacity(0.3))
+                    }
+
+                    Button {
+                        approveCalendarTrigger.toggle()
+                        vm.ptPlanNeedsSync = false
+                        Task {
+                            if let plan = vm.currentPlan {
+                                let result = await calendarService.resyncWeeklyPlanFromDate(plan, from: .now)
+                                handleExportResult(result)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            if calendarService.isExporting {
+                                ProgressView().tint(MVMTheme.accent)
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.caption.weight(.bold))
+                            }
+                            Text("Re-Sync to Calendar")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .foregroundStyle(MVMTheme.accent)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(MVMTheme.accent.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .disabled(calendarService.isExporting)
+                    .sensoryFeedback(.success, trigger: approveCalendarTrigger)
+                    .buttonStyle(PressScaleButtonStyle())
                 }
             }
 
