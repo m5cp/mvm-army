@@ -146,40 +146,6 @@ nonisolated struct WorkoutExercise: Codable, Identifiable, Hashable, Sendable {
     }
 }
 
-nonisolated enum SessionCardioType: String, Codable, CaseIterable, Identifiable, Sendable {
-    case run = "Run"
-    case walk = "Walk"
-    case hike = "Hike"
-    case elliptical = "Elliptical"
-    case bike = "Bike"
-    case swim = "Swim"
-
-    var id: String { rawValue }
-
-    var icon: String {
-        switch self {
-        case .run: return "figure.run"
-        case .walk: return "figure.walk"
-        case .hike: return "figure.hiking"
-        case .elliptical: return "figure.elliptical"
-        case .bike: return "bicycle"
-        case .swim: return "figure.pool.swim"
-        }
-    }
-}
-
-nonisolated struct CardioAddOn: Codable, Hashable, Sendable {
-    var type: SessionCardioType
-    var durationMinutes: Int
-    var isCompleted: Bool
-
-    init(type: SessionCardioType = .run, durationMinutes: Int = 20, isCompleted: Bool = false) {
-        self.type = type
-        self.durationMinutes = durationMinutes
-        self.isCompleted = isCompleted
-    }
-}
-
 nonisolated struct WorkoutDay: Codable, Identifiable, Hashable, Sendable {
     let id: UUID
     var dayIndex: Int
@@ -193,7 +159,6 @@ nonisolated struct WorkoutDay: Codable, Identifiable, Hashable, Sendable {
     var source: WorkoutSource
     var startTime: Date?
     var endTime: Date?
-    var cardioAddOn: CardioAddOn?
 
     var completedExerciseCount: Int {
         exercises.filter(\.isCompleted).count
@@ -228,7 +193,6 @@ nonisolated struct WorkoutDay: Codable, Identifiable, Hashable, Sendable {
         self.source = source
         self.startTime = startTime
         self.endTime = endTime
-        self.cardioAddOn = nil
     }
 
     init(from decoder: Decoder) throws {
@@ -245,7 +209,6 @@ nonisolated struct WorkoutDay: Codable, Identifiable, Hashable, Sendable {
         source = try container.decodeIfPresent(WorkoutSource.self, forKey: .source) ?? .individual
         startTime = try container.decodeIfPresent(Date.self, forKey: .startTime)
         endTime = try container.decodeIfPresent(Date.self, forKey: .endTime)
-        cardioAddOn = try container.decodeIfPresent(CardioAddOn.self, forKey: .cardioAddOn)
     }
 }
 

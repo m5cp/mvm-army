@@ -19,9 +19,6 @@ struct WorkoutDetailView: View {
     @State private var showExportAlert: Bool = false
     @State private var exportAlertMessage: String = ""
     @State private var showSavedToast: Bool = false
-    @State private var showCardioAddOn: Bool = false
-    @State private var cardioAddOn: CardioAddOn?
-    @State private var cardioCompleteTrigger: Bool = false
 
     private var workout: WorkoutDay? {
         if isStandalone { return nil }
@@ -40,8 +37,6 @@ struct WorkoutDetailView: View {
                     ForEach(Array(exercises.enumerated()), id: \.element.id) { index, _ in
                         exerciseCard(index: index)
                     }
-
-                    cardioAddOnSection
 
                     actionButtons
                 }
@@ -143,21 +138,10 @@ struct WorkoutDetailView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showSavedToast)
             }
         }
-        .sheet(isPresented: $showCardioAddOn) {
-            CardioAddOnSheet(cardioAddOn: $cardioAddOn)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .presentationBackground(MVMTheme.background)
-        }
         .onAppear {
             if let w = workout {
                 exercises = w.exercises
-                cardioAddOn = w.cardioAddOn
             }
-        }
-        .onChange(of: cardioAddOn) { _, newValue in
-            vm.updateCardioAddOn(dayIndex: dayIndex, cardioAddOn: newValue)
-            hasChanges = false
         }
     }
 
@@ -628,82 +612,6 @@ struct WorkoutDetailView: View {
         .background(MVMTheme.cardSoft)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
-    }
-
-    private var cardioAddOnSection: some View {
-        VStack(spacing: 0) {
-            if let cardio = cardioAddOn {
-                HStack(spacing: 14) {
-                    Button {
-                        cardioCompleteTrigger.toggle()
-                        cardioAddOn?.isCompleted.toggle()
-                        vm.updateCardioAddOn(dayIndex: dayIndex, cardioAddOn: cardioAddOn)
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .fill(cardio.isCompleted ? MVMTheme.success : MVMTheme.cardSoft)
-                                .frame(width: 36, height: 36)
-                            if cardio.isCompleted {
-                                Image(systemName: "checkmark")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(.white)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .sensoryFeedback(.impact(weight: .medium), trigger: cardioCompleteTrigger)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) {
-                            Image(systemName: cardio.type.icon)
-                                .font(.caption)
-                                .foregroundStyle(MVMTheme.accent)
-                            Text("\(cardio.type.rawValue) — Cardio Add-On")
-                                .font(.headline)
-                                .foregroundStyle(cardio.isCompleted ? MVMTheme.secondaryText : MVMTheme.primaryText)
-                                .strikethrough(cardio.isCompleted, color: MVMTheme.secondaryText)
-                        }
-                        Text("\(cardio.durationMinutes) min")
-                            .font(.subheadline)
-                            .foregroundStyle(MVMTheme.secondaryText)
-                    }
-
-                    Spacer()
-
-                    Button {
-                        showCardioAddOn = true
-                    } label: {
-                        Image(systemName: "pencil")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(MVMTheme.accent)
-                    }
-                }
-                .padding(16)
-                .premiumCard()
-            }
-
-            Button {
-                showCardioAddOn = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: cardioAddOn == nil ? "plus.circle.fill" : "arrow.triangle.2.circlepath")
-                        .font(.subheadline.weight(.semibold))
-                    Text(cardioAddOn == nil ? "Add Cardio" : "Change Cardio")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(MVMTheme.accent)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(MVMTheme.accent.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(MVMTheme.accent.opacity(0.2))
-                }
-            }
-            .buttonStyle(PressScaleButtonStyle())
-            .padding(.top, cardioAddOn != nil ? 8 : 0)
-        }
     }
 
     private var actionButtons: some View {

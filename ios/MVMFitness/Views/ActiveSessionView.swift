@@ -21,9 +21,6 @@ struct ActiveSessionView: View {
     @State private var nextExerciseTrigger: Bool = false
     @State private var markDoneTrigger: Bool = false
     @State private var showCompletionShareSheet: Bool = false
-    @State private var cardioAddOn: CardioAddOn?
-    @State private var showCardioAddOn: Bool = false
-    @State private var cardioCompleteTrigger: Bool = false
 
     private var workout: WorkoutDay? {
         if isStandalone { return nil }
@@ -76,16 +73,9 @@ struct ActiveSessionView: View {
                 exerciseCount: exercises.count
             )
         }
-        .sheet(isPresented: $showCardioAddOn) {
-            CardioAddOnSheet(cardioAddOn: $cardioAddOn)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .presentationBackground(MVMTheme.background)
-        }
         .onAppear {
             if let w = workout {
                 exercises = w.exercises
-                cardioAddOn = w.cardioAddOn
                 if let firstIncomplete = exercises.firstIndex(where: { !$0.isCompleted }) {
                     currentIndex = firstIncomplete
                 } else {
@@ -94,9 +84,6 @@ struct ActiveSessionView: View {
                 configureTimerForCurrentExercise()
             }
             sessionStartDate = .now
-        }
-        .onChange(of: cardioAddOn) { _, newValue in
-            vm.updateCardioAddOn(dayIndex: dayIndex, cardioAddOn: newValue)
         }
         .onChange(of: currentIndex) { _, _ in
             configureTimerForCurrentExercise()
@@ -152,7 +139,6 @@ struct ActiveSessionView: View {
                         timerSection
                     }
                     navigationControls
-                    sessionCardioSection
                     exerciseList
                 }
                 .padding(.horizontal, 20)
@@ -612,90 +598,6 @@ struct ActiveSessionView: View {
                     }
                     .buttonStyle(PressScaleButtonStyle())
                 }
-            }
-        }
-    }
-
-    // MARK: - Cardio Add-On
-
-    private var sessionCardioSection: some View {
-        Group {
-            if let cardio = cardioAddOn {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("CARDIO ADD-ON")
-                        .font(.caption.weight(.bold))
-                        .tracking(1.0)
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                        .padding(.leading, 4)
-
-                    HStack(spacing: 14) {
-                        Button {
-                            cardioCompleteTrigger.toggle()
-                            cardioAddOn?.isCompleted.toggle()
-                        } label: {
-                            ZStack {
-                                Circle()
-                                    .fill(cardio.isCompleted ? MVMTheme.success : MVMTheme.cardSoft)
-                                    .frame(width: 32, height: 32)
-                                if cardio.isCompleted {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundStyle(.white)
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .sensoryFeedback(.impact(weight: .medium), trigger: cardioCompleteTrigger)
-
-                        HStack(spacing: 8) {
-                            Image(systemName: cardio.type.icon)
-                                .font(.subheadline)
-                                .foregroundStyle(MVMTheme.accent)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(cardio.type.rawValue)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(cardio.isCompleted ? MVMTheme.secondaryText : MVMTheme.primaryText)
-                                    .strikethrough(cardio.isCompleted, color: MVMTheme.secondaryText)
-                                Text("\(cardio.durationMinutes) min")
-                                    .font(.caption)
-                                    .foregroundStyle(MVMTheme.tertiaryText)
-                            }
-                        }
-
-                        Spacer()
-
-                        if cardio.isCompleted {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.body)
-                                .foregroundStyle(MVMTheme.success)
-                        }
-                    }
-                    .padding(12)
-                    .background(MVMTheme.accent.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(MVMTheme.accent.opacity(0.15))
-                    }
-                }
-            } else {
-                Button {
-                    showCardioAddOn = true
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.caption.weight(.semibold))
-                        Text("Add Cardio")
-                            .font(.caption.weight(.semibold))
-                    }
-                    .foregroundStyle(MVMTheme.accent)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 36)
-                    .background(MVMTheme.accent.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                }
-                .buttonStyle(PressScaleButtonStyle())
             }
         }
     }
