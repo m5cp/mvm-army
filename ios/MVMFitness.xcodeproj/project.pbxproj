@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		XXC1003CB96D61CABF4F40XX /* MVMFitnessWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = XX266854D8D95C71CDA804XX /* MVMFitnessWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		105FC58A2E9EAD3200EA8BCF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,29 +25,54 @@
 			remoteGlobalIDString = 105FC5792E9EAD3100EA8BCF;
 			remoteInfo = MVMFitness;
 		};
+		XX4C7BC24BF0C8790182D0XX /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 105FC5722E9EAD3100EA8BCF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = XX9662579B05C3D0A04682XX;
+			remoteInfo = MVMFitnessWidget;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		XXC49F570598E5486B1D97XX /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				XXC1003CB96D61CABF4F40XX /* MVMFitnessWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		105FC57A2E9EAD3100EA8BCF /* MVMFitness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MVMFitness.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		105FC5892E9EAD3200EA8BCF /* MVMFitnessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MVMFitnessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		105FC5932E9EAD3200EA8BCF /* MVMFitnessUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MVMFitnessUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		XX266854D8D95C71CDA804XX /* MVMFitnessWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MVMFitnessWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		XX2764503E520D2C0AAA71XX /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = XX9662579B05C3D0A04682XX /* MVMFitnessWidget */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		105FC57C2E9EAD3100EA8BCF /* MVMFitness */ = {
+		XX3EBE0810CD8D752D6C50XX /* MVMFitnessWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MVMFitness;
+			path = MVMFitnessWidget;
 			sourceTree = "<group>";
-		};
-		105FC58C2E9EAD3200EA8BCF /* MVMFitnessTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MVMFitnessTests;
-			sourceTree = "<group>";
-		};
-		105FC5962E9EAD3200EA8BCF /* MVMFitnessUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MVMFitnessUITests;
-			sourceTree = "<group>";
+			exceptions = (
+				XX2764503E520D2C0AAA71XX /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -69,7 +98,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		XX75B8358D2242CEB782C5XX /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		105FC57C2E9EAD3100EA8BCF /* MVMFitness */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MVMFitness;
+			sourceTree = "<group>";
+		};
+		105FC58C2E9EAD3200EA8BCF /* MVMFitnessTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MVMFitnessTests;
+			sourceTree = "<group>";
+		};
+		105FC5962E9EAD3200EA8BCF /* MVMFitnessUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MVMFitnessUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXGroup section */
 		105FC5712E9EAD3100EA8BCF = {
@@ -79,6 +133,7 @@
 				105FC58C2E9EAD3200EA8BCF /* MVMFitnessTests */,
 				105FC5962E9EAD3200EA8BCF /* MVMFitnessUITests */,
 				105FC57B2E9EAD3100EA8BCF /* Products */,
+				XX3EBE0810CD8D752D6C50XX /* MVMFitnessWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -88,6 +143,7 @@
 				105FC57A2E9EAD3100EA8BCF /* MVMFitness.app */,
 				105FC5892E9EAD3200EA8BCF /* MVMFitnessTests.xctest */,
 				105FC5932E9EAD3200EA8BCF /* MVMFitnessUITests.xctest */,
+				XX266854D8D95C71CDA804XX /* MVMFitnessWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -102,10 +158,12 @@
 				105FC5762E9EAD3100EA8BCF /* Sources */,
 				105FC5772E9EAD3100EA8BCF /* Frameworks */,
 				105FC5782E9EAD3100EA8BCF /* Resources */,
+				XXC49F570598E5486B1D97XX /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				XXA1BF3F65738F8E841D45XX /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				105FC57C2E9EAD3100EA8BCF /* MVMFitness */,
@@ -163,6 +221,26 @@
 			productReference = 105FC5932E9EAD3200EA8BCF /* MVMFitnessUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		XX9662579B05C3D0A04682XX /* MVMFitnessWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = XXBA4E749809584C8F3C75XX /* Build configuration list for PBXNativeTarget "MVMFitnessWidget" */;
+			buildPhases = (
+				XXE0FD6AFA7551401BFCEBXX /* Sources */,
+				XX75B8358D2242CEB782C5XX /* Frameworks */,
+				XX8DEE49FEB104205DDA8DXX /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MVMFitnessWidget;
+			productName = MVMFitnessWidget;
+			productReference = XX266854D8D95C71CDA804XX /* MVMFitnessWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+			fileSystemSynchronizedGroups = (
+				XX3EBE0810CD8D752D6C50XX /* MVMFitnessWidget */,
+			);
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -203,6 +281,7 @@
 				105FC5792E9EAD3100EA8BCF /* MVMFitness */,
 				105FC5882E9EAD3200EA8BCF /* MVMFitnessTests */,
 				105FC5922E9EAD3200EA8BCF /* MVMFitnessUITests */,
+				XX9662579B05C3D0A04682XX /* MVMFitnessWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -223,6 +302,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		105FC5912E9EAD3200EA8BCF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		XX8DEE49FEB104205DDA8DXX /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -253,6 +339,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		XXE0FD6AFA7551401BFCEBXX /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -265,6 +358,11 @@
 			isa = PBXTargetDependency;
 			target = 105FC5792E9EAD3100EA8BCF /* MVMFitness */;
 			targetProxy = 105FC5942E9EAD3200EA8BCF /* PBXContainerItemProxy */;
+		};
+		XXA1BF3F65738F8E841D45XX /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = XX9662579B05C3D0A04682XX /* MVMFitnessWidget */;
+			targetProxy = XX4C7BC24BF0C8790182D0XX /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -413,6 +511,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -453,6 +552,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -480,7 +580,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "app.rork.sf0lrvsw5r0bpccfi1669.tests";
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.sf0lrvsw5r0bpccfi1669.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -502,7 +602,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "app.rork.sf0lrvsw5r0bpccfi1669.tests";
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.sf0lrvsw5r0bpccfi1669.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -522,7 +622,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "app.rork.sf0lrvsw5r0bpccfi1669.uitests";
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.sf0lrvsw5r0bpccfi1669.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -542,7 +642,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "app.rork.sf0lrvsw5r0bpccfi1669.uitests";
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.sf0lrvsw5r0bpccfi1669.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -551,6 +651,54 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = MVMFitness;
+			};
+			name = Release;
+		};
+		XX3B92523B0605D6B34C61XX /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.sf0lrvsw5r0bpccfi1669.mvmfitnesswidget;
+				PRODUCT_NAME = MVMFitnessWidget;
+				SWIFT_VERSION = 5.0;
+				SDKROOT = iphoneos;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MVMFitnessWidget/Info.plist;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 1.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				INFOPLIST_KEY_CFBundleDisplayName = "$(PRODUCT_NAME)";
+				CODE_SIGN_ENTITLEMENTS = MVMFitnessWidget/MVMFitnessWidget.entitlements;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+			};
+			name = Debug;
+		};
+		XXDF7C5F61E9DE09BD1EC6XX /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.sf0lrvsw5r0bpccfi1669.mvmfitnesswidget;
+				PRODUCT_NAME = MVMFitnessWidget;
+				SWIFT_VERSION = 5.0;
+				SDKROOT = iphoneos;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MVMFitnessWidget/Info.plist;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 1.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				INFOPLIST_KEY_CFBundleDisplayName = "$(PRODUCT_NAME)";
+				CODE_SIGN_ENTITLEMENTS = MVMFitnessWidget/MVMFitnessWidget.entitlements;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 			};
 			name = Release;
 		};
@@ -589,6 +737,15 @@
 			buildConfigurations = (
 				105FC5A42E9EAD3200EA8BCF /* Debug */,
 				105FC5A52E9EAD3200EA8BCF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		XXBA4E749809584C8F3C75XX /* Build configuration list for PBXNativeTarget "MVMFitnessWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XX3B92523B0605D6B34C61XX /* Debug */,
+				XXDF7C5F61E9DE09BD1EC6XX /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

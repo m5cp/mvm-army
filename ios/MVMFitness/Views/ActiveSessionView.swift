@@ -82,6 +82,11 @@ struct ActiveSessionView: View {
                     currentIndex = 0
                 }
                 configureTimerForCurrentExercise()
+                LiveActivityManager.startWorkout(
+                    title: w.title,
+                    exerciseName: exercises.isEmpty ? "" : exercises[currentIndex].name,
+                    totalExercises: exercises.count
+                )
             }
             sessionStartDate = .now
         }
@@ -98,6 +103,7 @@ struct ActiveSessionView: View {
                     }
                 }
             }
+            updateLiveActivity()
         }
         .onChange(of: workoutTimer.showRestTimer) { oldValue, newValue in
             if oldValue && !newValue {
@@ -117,6 +123,7 @@ struct ActiveSessionView: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
             currentIndex += 1
         }
+        updateLiveActivity()
     }
 
     private func advanceWithRest() {
@@ -857,9 +864,21 @@ struct ActiveSessionView: View {
     private func finishSession() {
         syncExercises()
         vm.markDayCompleted(dayIndex: dayIndex)
+        LiveActivityManager.endWorkout()
         withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
             showCompletion = true
         }
+    }
+
+    private func updateLiveActivity() {
+        guard currentIndex < exercises.count else { return }
+        LiveActivityManager.updateWorkout(
+            exerciseName: exercises[currentIndex].name,
+            exerciseIndex: currentIndex + 1,
+            totalExercises: exercises.count,
+            timeRemaining: workoutTimer.timeRemaining,
+            isRunning: workoutTimer.isRunning
+        )
     }
 
     private var sessionDuration: String {

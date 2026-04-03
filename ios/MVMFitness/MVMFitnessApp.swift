@@ -1,4 +1,5 @@
 import SwiftUI
+import AppIntents
 
 @main
 struct MVMFitnessApp: App {
@@ -6,6 +7,10 @@ struct MVMFitnessApp: App {
     @AppStorage("hasRequestedHealthKit") private var hasRequestedHealthKit: Bool = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel = AppViewModel()
+
+    init() {
+        MVMFitnessShortcuts.updateAppShortcutParameters()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -24,6 +29,7 @@ struct MVMFitnessApp: App {
                                 await viewModel.healthKit.refreshAll()
                             }
                         }
+                        viewModel.syncWidgetData()
                     }
                 }
         }

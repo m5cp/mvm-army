@@ -68,6 +68,25 @@ final class AppViewModel {
         LocalStore.save(aftScores, forKey: "aftScores")
         LocalStore.save(aftCalculatorResults, forKey: "aftCalculatorResults")
         LocalStore.save(wodPlan, forKey: "wodPlan")
+        syncWidgetData()
+    }
+
+    func syncWidgetData() {
+        let today = Calendar.current.startOfDay(for: .now)
+        let todayWork = currentPlan?.days.first { Calendar.current.isDate($0.date, inSameDayAs: today) && !$0.isRestDay }
+        let completedToday = todayWork?.isCompleted ?? false
+
+        SharedDataManager.writeWidgetData(
+            todayWorkoutTitle: todayWork?.title,
+            todayWorkoutExerciseCount: todayWork?.exercises.count ?? 0,
+            aftScore: latestAFTScore?.totalScore,
+            aftPassed: latestAFTScore.map { $0.totalScore >= 300 && $0.deadliftPoints >= 60 && $0.pushUpPoints >= 60 && $0.sdcPoints >= 60 && $0.plankPoints >= 60 && $0.runPoints >= 60 },
+            streak: streak,
+            stepsToday: pedometer.todaySteps,
+            completedToday: completedToday,
+            planWeek: currentPlan?.currentWeek ?? 0,
+            planTotalWeeks: currentPlan?.totalWeeks ?? 0
+        )
     }
 
     func syncTodaySteps() {
