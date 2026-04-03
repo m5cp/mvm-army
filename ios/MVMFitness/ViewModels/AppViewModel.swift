@@ -674,6 +674,15 @@ final class AppViewModel {
         persistAll()
     }
 
+    func updateCardioAddOn(dayIndex: Int, cardioAddOn: CardioAddOn?) {
+        guard var plan = currentPlan,
+              let idx = plan.days.firstIndex(where: { $0.dayIndex == dayIndex }) else { return }
+        plan.days[idx].cardioAddOn = cardioAddOn
+        currentPlan = plan
+        ptPlanNeedsSync = true
+        persistAll()
+    }
+
     func updateCompletedRecord(id: UUID, exercises: [WorkoutExercise]) {
         guard let idx = completedRecords.firstIndex(where: { $0.id == id }) else { return }
         completedRecords[idx].exercises = exercises

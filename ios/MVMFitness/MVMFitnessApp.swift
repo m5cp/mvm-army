@@ -1,4 +1,5 @@
 import SwiftUI
+import AppIntents
 
 @main
 struct MVMFitnessApp: App {
@@ -6,6 +7,10 @@ struct MVMFitnessApp: App {
     @AppStorage("hasRequestedHealthKit") private var hasRequestedHealthKit: Bool = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel = AppViewModel()
+
+    init() {
+        MVMAppShortcuts.updateAppShortcutParameters()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -25,6 +30,9 @@ struct MVMFitnessApp: App {
                             }
                         }
                     }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .workoutLoggedViaSiri)) { _ in
+                    viewModel.loadLocalData()
                 }
         }
     }
