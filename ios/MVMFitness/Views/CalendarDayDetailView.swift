@@ -12,6 +12,10 @@ struct CalendarDayDetailView: View {
     @State private var showExportAlert: Bool = false
     @State private var exportAlertMessage: String = ""
     @State private var actionTrigger: Bool = false
+    @State private var showDeleteTodayConfirm: Bool = false
+    @State private var showDeletePlanPicker: Bool = false
+    @State private var showDeletePlanConfirm: Bool = false
+    @State private var selectedPlanToDelete: AppViewModel.DeletablePlan?
 
     private let calendar = Calendar.current
 
@@ -90,6 +94,30 @@ struct CalendarDayDetailView: View {
                             Label("Convert to Rest Day", systemImage: "bed.double.fill")
                         }
                     }
+
+                    Divider()
+
+                    if !allWorkouts.isEmpty {
+                        Button(role: .destructive) {
+                            showDeleteTodayConfirm = true
+                        } label: {
+                            Label("Delete Today's Workout", systemImage: "trash")
+                        }
+                    }
+
+                    if !vm.activePlans.isEmpty {
+                        Button(role: .destructive) {
+                            let plans = vm.activePlans
+                            if plans.count == 1 {
+                                selectedPlanToDelete = plans[0]
+                                showDeletePlanConfirm = true
+                            } else {
+                                showDeletePlanPicker = true
+                            }
+                        } label: {
+                            Label("Delete Entire Plan", systemImage: "trash.fill")
+                        }
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .font(.body.weight(.semibold))
@@ -111,6 +139,36 @@ struct CalendarDayDetailView: View {
             Button("OK") {}
         } message: {
             Text(exportAlertMessage)
+        }
+        .alert("Delete Today's Workout?", isPresented: $showDeleteTodayConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                vm.deleteTodaysWorkout(on: date, calendarService: calendarService)
+                actionTrigger.toggle()
+            }
+        } message: {
+            Text("This will remove all workouts scheduled for this day and delete any synced calendar events.")
+        }
+        .alert("Delete Entire Plan?", isPresented: $showDeletePlanConfirm) {
+            Button("Cancel", role: .cancel) {
+                selectedPlanToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let plan = selectedPlanToDelete {
+                    vm.deleteEntirePlan(plan, calendarService: calendarService)
+                    selectedPlanToDelete = nil
+                    actionTrigger.toggle()
+                }
+            }
+        } message: {
+            if let plan = selectedPlanToDelete {
+                Text("This will permanently delete your \(plan.label) and remove all synced calendar events.")
+            } else {
+                Text("This will permanently delete the selected plan.")
+            }
+        }
+        .sheet(isPresented: $showDeletePlanPicker) {
+            deletePlanPickerSheet
         }
     }
 
@@ -394,6 +452,79 @@ struct CalendarDayDetailView: View {
 
                 Button {
                     showCalendarSync = false
+                } label: {
+                    Text("Cancel")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                .padding(.top, 4)
+            }
+            .padding(.horizontal, 20)
+        }
+        .padding(.vertical, 20)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(MVMTheme.background)
+    }
+
+    private var deletePlanPickerSheet: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 8) {
+                Image(systemName: "trash.fill")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.red)
+                    .padding(.top, 8)
+
+                Text("Delete Entire Plan")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Text("Choose which plan to delete. This will also remove synced calendar events.")
+                    .font(.subheadline)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+            }
+
+            VStack(spacing: 12) {
+                ForEach(vm.activePlans) { plan in
+                    Button {
+                        showDeletePlanPicker = false
+                        selectedPlanToDelete = plan
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            showDeletePlanConfirm = true
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: plan.icon)
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(.red)
+                                .frame(width: 36, height: 36)
+                                .background(Color.red.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                            Text(plan.label)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(MVMTheme.primaryText)
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
+                        .padding(14)
+                        .background(MVMTheme.cardSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(MVMTheme.border)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Button {
+                    showDeletePlanPicker = false
                 } label: {
                     Text("Cancel")
                         .font(.subheadline.weight(.medium))

@@ -1263,6 +1263,121 @@ final class AppViewModel {
         }
     }
 
+    // MARK: - Plan Deletion
+
+    nonisolated enum DeletablePlan: Identifiable, Sendable {
+        case pt
+        case functionalFitness
+        case unitPT
+
+        var id: String {
+            switch self {
+            case .pt: return "pt"
+            case .functionalFitness: return "wod"
+            case .unitPT: return "unitPT"
+            }
+        }
+
+        var label: String {
+            switch self {
+            case .pt: return "Individual PT Plan"
+            case .functionalFitness: return "Functional Fitness Plan"
+            case .unitPT: return "Unit PT Plan"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .pt: return "figure.strengthtraining.traditional"
+            case .functionalFitness: return "flame.fill"
+            case .unitPT: return "person.3.fill"
+            }
+        }
+
+        var calendarPrefix: String {
+            switch self {
+            case .pt: return "PT:"
+            case .functionalFitness: return "WOD:"
+            case .unitPT: return "Unit PT:"
+            }
+        }
+    }
+
+    var activePlans: [DeletablePlan] {
+        var plans: [DeletablePlan] = []
+        if currentPlan != nil { plans.append(.pt) }
+        if wodPlan != nil { plans.append(.functionalFitness) }
+        if unitPTFullPlan != nil || !scheduledUnitPT.isEmpty { plans.append(.unitPT) }
+        return plans
+    }
+
+    func deleteTodaysWorkout(on date: Date, calendarService: CalendarExportService) {
+        let cal = Calendar.current
+
+        if var plan = currentPlan,
+           let idx = plan.days.firstIndex(where: { cal.isDate($0.date, inSameDayAs: date) && !$0.isRestDay }) {
+            plan.days[idx] = WorkoutDay(
+                dayIndex: plan.days[idx].dayIndex,
+                date: plan.days[idx].date,
+                title: "Rest Day",
+                exercises: [],
+                isRestDay: true,
+                templateTag: "deleted"
+            )
+            currentPlan = plan
+        }
+
+        if var wPlan = wodPlan,
+           let idx = wPlan.days.firstIndex(where: { cal.isDate($0.date, inSameDayAs: date) && !$0.isRestDay }) {
+            let restTemplate = WODTemplate(
+                title: "Rest & Recovery",
+                category: .bodyweight,
+                format: .circuit,
+                durationMinutes: 0,
+                equipment: .none,
+                movements: [],
+                workoutDescription: "Rest day"
+            )
+            wPlan.days[idx] = WODPlanDay(date: wPlan.days[idx].date, template: restTemplate, isRestDay: true)
+            wodPlan = wPlan
+        }
+
+        scheduledUnitPT.removeAll { cal.isDate($0.date, inSameDayAs: date) }
+
+        calendarService.removeAllMVMEventsOnDate(date)
+        persistAll()
+    }
+
+    func deleteEntirePlan(_ plan: DeletablePlan, calendarService: CalendarExportService) {
+        switch plan {
+        case .pt:
+            if let p = currentPlan {
+                let dates = p.days.map(\.date)
+                calendarService.removeAllMVMEventsForPlan(dates: dates, prefix: plan.calendarPrefix)
+            }
+            currentPlan = nil
+
+        case .functionalFitness:
+            if let p = wodPlan {
+                let dates = p.days.map(\.date)
+                calendarService.removeAllMVMEventsForPlan(dates: dates, prefix: plan.calendarPrefix)
+            }
+            wodPlan = nil
+            todayFunctionalWOD = nil
+
+        case .unitPT:
+            if let p = unitPTFullPlan {
+                let dates = p.allDays.map(\.date)
+                calendarService.removeAllMVMEventsForPlan(dates: dates, prefix: plan.calendarPrefix)
+            }
+            let unitDates = scheduledUnitPT.map(\.date)
+            calendarService.removeAllMVMEventsForPlan(dates: unitDates, prefix: plan.calendarPrefix)
+            unitPTFullPlan = nil
+            scheduledUnitPT = []
+        }
+        persistAll()
+    }
+
     func resetAllData() {
         currentPlan = nil
         completedRecords = []

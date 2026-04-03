@@ -327,6 +327,20 @@ final class CalendarExportService {
         }
     }
 
+    func removeAllMVMEventsForPlan(dates: [Date], prefix: String) {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return }
+        for date in dates {
+            removeMVMEvents(on: date, prefix: prefix)
+        }
+    }
+
+    func removeAllMVMEventsOnDate(_ date: Date) {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return }
+        removeMVMEvents(on: date, prefix: "PT:")
+        removeMVMEvents(on: date, prefix: "WOD:")
+        removeMVMEvents(on: date, prefix: "Unit PT:")
+    }
+
     private func removeMVMEvents(on date: Date, prefix: String) {
         let cal = Calendar.current
         let dayStart = cal.startOfDay(for: date)
