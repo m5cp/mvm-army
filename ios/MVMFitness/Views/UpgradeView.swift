@@ -20,6 +20,7 @@ struct UpgradeView: View {
 
     private let freeFeatures: [(icon: String, title: String)] = [
         ("figure.run", "AFT Score Calculator"),
+        ("bolt.fill", "Quick Start Activities"),
         ("dumbbell.fill", "Basic Workouts"),
         ("chart.bar.fill", "Step Tracking")
     ]

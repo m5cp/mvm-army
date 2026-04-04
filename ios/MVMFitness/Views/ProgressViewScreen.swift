@@ -30,6 +30,9 @@ struct ProgressViewScreen: View {
                     thisWeekHero
                     interactiveWeekStrip
                     activityCardsSection
+                    if !vm.quickStartRecords.isEmpty {
+                        quickStartHistoryCard
+                    }
                     weeklyFrequencyChart
                     aftCard
                     if !vm.aftScores.isEmpty {
@@ -1036,6 +1039,84 @@ struct ProgressViewScreen: View {
     private func aftHistoryDateString(_ date: Date) -> String {
         let f = DateFormatter()
         f.dateFormat = "MMM d, yyyy"
+        return f.string(from: date)
+    }
+
+    // MARK: - Quick Start History
+
+    private var quickStartHistoryCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "bolt.fill")
+                    .foregroundStyle(Color(hex: "#059669"))
+                    .font(.subheadline.weight(.semibold))
+                Text("Quick Start")
+                    .font(.headline)
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Spacer()
+
+                Text("\(vm.quickStartRecords.count) sessions")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+
+            ForEach(vm.quickStartRecords.prefix(5)) { record in
+                quickStartRow(record)
+            }
+
+            if vm.quickStartRecords.count > 5 {
+                Text("\(vm.quickStartRecords.count - 5) more sessions")
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(20)
+        .premiumCard()
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
+    }
+
+    private func quickStartRow(_ record: QuickStartRecord) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: record.activity.icon)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color(hex: record.activity.gradientHex.0))
+                .frame(width: 32, height: 32)
+                .background(Color(hex: record.activity.gradientHex.0).opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(record.activity.rawValue)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.primaryText)
+                Text(quickStartDateString(record.startDate))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(record.formattedDuration)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+                if record.activity.usesGPS {
+                    Text(record.formattedDistance)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+            }
+        }
+        .padding(12)
+        .background(MVMTheme.cardSoft)
+        .clipShape(.rect(cornerRadius: 14))
+    }
+
+    private func quickStartDateString(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d, h:mm a"
         return f.string(from: date)
     }
 

@@ -41,6 +41,10 @@ final class HealthKitManager {
         [stepType, activeEnergyType, distanceWalkRunType, distanceCyclingType, workoutType]
     }
 
+    var writeTypes: Set<HKSampleType> {
+        [HKObjectType.workoutType(), activeEnergyType, distanceWalkRunType, distanceCyclingType]
+    }
+
 
 
     private let trackedActivityTypes: [(HKWorkoutActivityType, String, String)] = [
@@ -68,7 +72,7 @@ final class HealthKitManager {
         }
 
         do {
-            try await store.requestAuthorization(toShare: [], read: readTypes)
+            try await store.requestAuthorization(toShare: writeTypes, read: readTypes)
             hasRequestedAuthorization = true
             authorizationStatus = store.authorizationStatus(for: stepType)
             if authorizationStatus == .sharingDenied {
@@ -266,6 +270,54 @@ final class HealthKitManager {
     }
 
 
+
+    func saveQuickStartWorkout(_ record: QuickStartRecord) async -> Bool {
+        guard isAvailable else { return false }
+
+        let activityType: HKWorkoutActivityType
+        switch record.activity {
+        case .outdoorRun, .indoorRun: activityType = .running
+        case .outdoorBike, .indoorBike: activityType = .cycling
+        case .outdoorHike: activityType = .hiking
+        case .functionalFitness: activityType = .functionalStrengthTraining
+        }
+
+        let config = HKWorkoutConfiguration()
+        config.activityType = activityType
+        if record.activity == .indoorRun || record.activity == .indoorBike {
+            config.locationType = .indoor
+        } else {
+            config.locationType = .outdoor
+        }
+
+        let builder = HKWorkoutBuilder(healthStore: store, configuration: config, device: .local())
+
+        do {
+            try await builder.beginCollection(at: record.startDate)
+
+            if record.distanceMeters > 0 {
+                let distType: HKQuantityType
+                if record.activity == .outdoorBike || record.activity == .indoorBike {
+                    distType = distanceCyclingType
+                } else {
+                    distType = distanceWalkRunType
+                }
+                let distSample = HKQuantitySample(
+                    type: distType,
+                    quantity: HKQuantity(unit: .meter(), doubleValue: record.distanceMeters),
+                    start: record.startDate,
+                    end: record.endDate
+                )
+                try await builder.addSamples([distSample])
+            }
+
+            try await builder.endCollection(at: record.endDate)
+            try await builder.finishWorkout()
+            return true
+        } catch {
+            return false
+        }
+    }
 
     func refreshAll() async {
         _ = await requestAuthorization()

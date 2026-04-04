@@ -1441,6 +1441,27 @@ final class AppViewModel {
         )
         showRecap(PerformanceHighlightsService.workoutRecap(title: record.activity.rawValue, exerciseCount: 1))
         persistAll()
+
+        Task {
+            await healthKit.saveQuickStartWorkout(record)
+        }
+    }
+
+    func exportQuickStartToCalendar(_ record: QuickStartRecord, calendarService: CalendarExportService) async -> CalendarExportService.ExportResult {
+        let durationMinutes = max(record.elapsedSeconds / 60, 1)
+        var notes = record.activity.rawValue
+        notes += "\nDuration: \(record.formattedDuration)"
+        if record.activity.usesGPS {
+            notes += "\nDistance: \(record.formattedDistance)"
+            notes += "\nPace: \(record.formattedPace)"
+        }
+        return await calendarService.resyncSingleDay(
+            on: record.startDate,
+            title: record.activity.rawValue,
+            prefix: "Quick Start:",
+            notes: notes,
+            durationMinutes: durationMinutes
+        )
     }
 
     func resetAllData() {

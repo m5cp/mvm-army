@@ -3,12 +3,16 @@ import MapKit
 
 struct QuickStartCompletionView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppViewModel.self) private var vm
     let record: QuickStartRecord
     let onDismiss: () -> Void
 
     @State private var checkScale: CGFloat = 0
     @State private var cardScale: CGFloat = 0.9
     @State private var cardOpacity: Double = 0
+    @State private var calendarService = CalendarExportService()
+    @State private var calendarExported: Bool = false
+    @State private var calendarExportMessage: String = ""
 
     private var hex: (String, String) {
         record.activity.gradientHex
@@ -25,6 +29,8 @@ struct QuickStartCompletionView: View {
                     }
 
                     statsCard
+
+                    calendarSyncRow
 
                     doneButton
                 }
@@ -170,6 +176,62 @@ struct QuickStartCompletionView: View {
         let f = DateFormatter()
         f.dateFormat = "MMM d, h:mm a"
         return f.string(from: record.startDate)
+    }
+
+    private var calendarSyncRow: some View {
+        Button {
+            Task {
+                let result = await vm.exportQuickStartToCalendar(record, calendarService: calendarService)
+                switch result {
+                case .success:
+                    calendarExported = true
+                    calendarExportMessage = "Added to Calendar"
+                case .denied:
+                    calendarExportMessage = "Calendar access denied"
+                case .error(let msg):
+                    calendarExportMessage = msg
+                case .partial:
+                    calendarExportMessage = "Partially exported"
+                }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: calendarExported ? "checkmark.circle.fill" : "calendar.badge.plus")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(calendarExported ? MVMTheme.success : MVMTheme.accent)
+                    .frame(width: 36, height: 36)
+                    .background((calendarExported ? MVMTheme.success : MVMTheme.accent).opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(calendarExported ? "Added to Calendar" : "Add to Calendar")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text(calendarExported ? calendarExportMessage : "Save this session to your iOS Calendar")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+
+                Spacer(minLength: 0)
+
+                if !calendarExported {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+            }
+            .padding(14)
+            .background(MVMTheme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(MVMTheme.border)
+            }
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .disabled(calendarExported)
+        .scaleEffect(cardScale)
+        .opacity(cardOpacity)
     }
 
     private var doneButton: some View {

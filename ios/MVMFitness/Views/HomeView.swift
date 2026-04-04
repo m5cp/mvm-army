@@ -59,9 +59,9 @@ struct HomeView: View {
                 VStack(spacing: 24) {
                     greetingHeader
 
-                    quickStartSection
-
                     aftCalculatorHero
+
+                    quickStartSection
 
                     todayWorkoutSection
                     todayFunctionalSection
@@ -926,91 +926,52 @@ struct HomeView: View {
     // MARK: - Quick Start Section
 
     private var quickStartSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("QUICK START")
-                .font(.caption.weight(.heavy))
-                .tracking(1.2)
-                .foregroundStyle(MVMTheme.tertiaryText)
-                .padding(.leading, 4)
-
-            Button {
-                toolTapTrigger.toggle()
-                showQuickStartSheet = true
-            } label: {
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "bolt.fill")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 28, height: 28)
-                                .background(.white.opacity(0.15))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                            Text("START AN ACTIVITY")
-                                .font(.caption2.weight(.heavy))
-                                .tracking(0.8)
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
-
-                        Text("Run, Bike, Hike\nor Functional Fitness")
-                            .font(.headline.weight(.bold))
-                            .foregroundStyle(.white)
-                            .lineSpacing(2)
-                            .multilineTextAlignment(.leading)
-
-                        HStack(spacing: 6) {
-                            quickStartMiniIcon("figure.run")
-                            quickStartMiniIcon("figure.outdoor.cycle")
-                            quickStartMiniIcon("figure.hiking")
-                            quickStartMiniIcon("figure.strengthtraining.functional")
-                        }
-                    }
-
-                    Spacer(minLength: 0)
-
-                    VStack(spacing: 6) {
-                        Image(systemName: "play.fill")
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 48, height: 48)
-                            .background(.white.opacity(0.15))
-                            .clipShape(Circle())
-
-                        Text("Go")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.white.opacity(0.6))
-                    }
-                }
-                .padding(18)
-                .background {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "#059669"), Color(hex: "#047857")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+        Button {
+            toolTapTrigger.toggle()
+            showQuickStartSheet = true
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "bolt.fill")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(hex: "#059669"), Color(hex: "#047857")],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Quick Start")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text("Run · Bike · Hike · Fitness")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .shadow(color: Color(hex: "#059669").opacity(0.25), radius: 16, y: 10)
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "play.circle.fill")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(Color(hex: "#059669"))
             }
-            .buttonStyle(PressScaleButtonStyle())
-            .accessibilityLabel("Quick Start an activity")
-            .accessibilityHint("Choose from run, bike, hike or functional fitness")
+            .padding(14)
+            .background(MVMTheme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color(hex: "#059669").opacity(0.2))
+            }
         }
+        .buttonStyle(PressScaleButtonStyle())
+        .accessibilityLabel("Quick Start an activity")
+        .accessibilityHint("Choose from run, bike, hike or functional fitness")
         .opacity(animateHero ? 1 : 0)
         .offset(y: animateHero ? 0 : 8)
-    }
-
-    private func quickStartMiniIcon(_ name: String) -> some View {
-        Image(systemName: name)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.6))
-            .frame(width: 24, height: 24)
-            .background(.white.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
     // MARK: - Planning Section (PRIORITY 3)
