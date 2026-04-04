@@ -1,5 +1,6 @@
 import SwiftUI
 import AppIntents
+import RevenueCat
 
 @main
 struct MVMFitnessApp: App {
@@ -7,8 +8,15 @@ struct MVMFitnessApp: App {
     @AppStorage("hasRequestedHealthKit") private var hasRequestedHealthKit: Bool = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel = AppViewModel()
+    @State private var store = StoreViewModel()
 
     init() {
+        #if DEBUG
+        Purchases.logLevel = .debug
+        Purchases.configure(withAPIKey: Config.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY)
+        #else
+        Purchases.configure(withAPIKey: Config.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY)
+        #endif
         MVMFitnessShortcuts.updateAppShortcutParameters()
     }
 
@@ -16,6 +24,7 @@ struct MVMFitnessApp: App {
         WindowGroup {
             RootView()
                 .environment(viewModel)
+                .environment(store)
                 .preferredColorScheme(AppearanceMode(rawValue: appearanceModeRaw)?.colorScheme)
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
