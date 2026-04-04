@@ -70,10 +70,6 @@ struct ActiveQuickStartView: View {
             Button("End \(activity.rawValue)", role: .destructive) {
                 endTrigger.toggle()
                 quickStart.endSession()
-                let record = quickStart.completedRecord
-                if let record {
-                    vm.saveQuickStartRecord(record)
-                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {

@@ -8,6 +8,7 @@ enum ShareCardType {
     case unitPT(plan: UnitPTPlan)
     case completion(title: String, exerciseCount: Int, duration: String)
     case completedWorkout(record: CompletedWorkoutRecord)
+    case quickStart(record: QuickStartRecord)
 }
 
 @MainActor
@@ -21,6 +22,8 @@ enum ShareCardRenderer {
             return CompletionCardCGRenderer.render(title: title, exerciseCount: exerciseCount, duration: duration, date: date)
         case .completedWorkout(let record):
             return CompletedWorkoutCGRenderer.render(record: record, date: date)
+        case .quickStart(let record):
+            return QuickStartCardCGRenderer.render(record: record, date: date)
         case .aft(let score, let previous):
             return AFTCardRenderer.render(score: score, previous: previous)
         case .progress(let completed, let planned, let streak, let steps):
@@ -79,6 +82,8 @@ enum ShareCardRenderer {
         case .completedWorkout(let record):
             let prefix = record.source == .wod ? "FunctionFitness: " : ""
             return "MVM Fitness — \(prefix)\(record.title)\n\(record.exerciseCount) exercises\n#MVMFitness"
+        case .quickStart(let record):
+            return "MVM Fitness — \(record.activity.rawValue)\nDuration: \(record.formattedDuration)\n#MVMFitness"
         }
     }
 }
@@ -651,6 +656,71 @@ enum UnitPTCardCGRenderer {
                     rowY += 50
                 }
             }
+
+            ShareCardCGHelpers.drawFooter(context: context, width: w, height: h)
+        }
+    }
+}
+
+@MainActor
+enum QuickStartCardCGRenderer {
+    static func render(record: QuickStartRecord, date: Date) -> UIImage? {
+        let w = ShareCardCGHelpers.width
+        let hasGPS = record.activity.usesGPS
+        let h: CGFloat = hasGPS ? 1000 : 900
+        let renderer = ShareCardCGHelpers.makeRenderer(width: w, height: h)
+
+        return renderer.image { ctx in
+            let context = ctx.cgContext
+            ShareCardCGHelpers.drawBackground(context: context, width: w, height: h)
+            ShareCardCGHelpers.drawHeader(context: context, width: w, date: date)
+
+            let badgeCY: CGFloat = 260
+            ShareCardCGHelpers.drawCheckmarkBadge(context: context, centerX: w / 2, centerY: badgeCY, radius: 55)
+
+            let missionAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 22, weight: .heavy),
+                .foregroundColor: ShareCardCGHelpers.successGreen,
+                .kern: 3.0
+            ]
+            let missionStr = NSAttributedString(string: "ACTIVITY COMPLETE", attributes: missionAttrs)
+            let missionSize = missionStr.size()
+            missionStr.draw(at: CGPoint(x: (w - missionSize.width) / 2, y: 345))
+
+            let titleAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 44, weight: .bold),
+                .foregroundColor: UIColor.white
+            ]
+            let titleStr = NSAttributedString(string: record.activity.rawValue, attributes: titleAttrs)
+            let titleBounds = titleStr.boundingRect(with: CGSize(width: w - 120, height: 120), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
+            let titleX = (w - titleBounds.width) / 2
+            titleStr.draw(with: CGRect(x: titleX, y: 390, width: titleBounds.width, height: 120), options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], context: nil)
+
+            let hexColor = ShareCardCGHelpers.successGreen
+            let durationAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.monospacedSystemFont(ofSize: 56, weight: .bold),
+                .foregroundColor: hexColor
+            ]
+            let durationStr = NSAttributedString(string: record.formattedDuration, attributes: durationAttrs)
+            let durationSize = durationStr.size()
+            durationStr.draw(at: CGPoint(x: (w - durationSize.width) / 2, y: 460))
+
+            var statsY: CGFloat = 560
+            let boxWidth = (w - 140) / 2
+            let boxHeight: CGFloat = 110
+
+            if hasGPS {
+                ShareCardCGHelpers.drawStatBox(context: context, x: 60, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: record.formattedDistance, label: "Distance", valueColor: ShareCardCGHelpers.accentBlue)
+                ShareCardCGHelpers.drawStatBox(context: context, x: 60 + boxWidth + 20, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: record.formattedPace, label: "Avg Pace", valueColor: ShareCardCGHelpers.warningAmber)
+                statsY += boxHeight + 16
+            }
+
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "MMM d, h:mm a"
+            let dateStr = dateFormatter.string(from: record.startDate)
+
+            ShareCardCGHelpers.drawStatBox(context: context, x: 60, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: record.formattedDuration, label: "Duration", valueColor: ShareCardCGHelpers.accentBlue)
+            ShareCardCGHelpers.drawStatBox(context: context, x: 60 + boxWidth + 20, y: statsY, boxWidth: boxWidth, boxHeight: boxHeight, value: dateStr, label: "Date", valueColor: ShareCardCGHelpers.warningAmber)
 
             ShareCardCGHelpers.drawFooter(context: context, width: w, height: h)
         }

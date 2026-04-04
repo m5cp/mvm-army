@@ -13,6 +13,9 @@ struct QuickStartCompletionView: View {
     @State private var calendarService = CalendarExportService()
     @State private var calendarExported: Bool = false
     @State private var calendarExportMessage: String = ""
+    @State private var showShareCardEditor: Bool = false
+    @State private var shareCardImage: UIImage?
+    @State private var logged: Bool = false
 
     private var hex: (String, String) {
         record.activity.gradientHex
@@ -30,7 +33,11 @@ struct QuickStartCompletionView: View {
 
                     statsCard
 
+                    shareCardRow
+
                     calendarSyncRow
+
+                    logToProgressRow
 
                     doneButton
                 }
@@ -51,6 +58,11 @@ struct QuickStartCompletionView: View {
             }
             .toolbarBackground(MVMTheme.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .fullScreenCover(isPresented: $showShareCardEditor) {
+                if let image = shareCardImage {
+                    ShareCardEditorView(baseImage: image)
+                }
+            }
         }
         .onAppear {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
@@ -178,6 +190,49 @@ struct QuickStartCompletionView: View {
         return f.string(from: record.startDate)
     }
 
+    private var shareCardRow: some View {
+        Button {
+            if let rendered = ShareCardRenderer.renderImage(cardType: .quickStart(record: record), date: record.startDate) {
+                shareCardImage = rendered
+                showShareCardEditor = true
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "square.and.arrow.up.fill")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 36, height: 36)
+                    .background(MVMTheme.accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Share Activity")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text("Create a share card with photo, filters & text")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+            .padding(14)
+            .background(MVMTheme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(MVMTheme.border)
+            }
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .scaleEffect(cardScale)
+        .opacity(cardOpacity)
+    }
+
     private var calendarSyncRow: some View {
         Button {
             Task {
@@ -230,6 +285,54 @@ struct QuickStartCompletionView: View {
         }
         .buttonStyle(PressScaleButtonStyle())
         .disabled(calendarExported)
+        .scaleEffect(cardScale)
+        .opacity(cardOpacity)
+    }
+
+    private var logToProgressRow: some View {
+        Button {
+            guard !logged else { return }
+            vm.saveQuickStartRecord(record)
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                logged = true
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: logged ? "checkmark.circle.fill" : "chart.line.uptrend.xyaxis")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(logged ? MVMTheme.success : Color(hex: "#FF6B35"))
+                    .frame(width: 36, height: 36)
+                    .background((logged ? MVMTheme.success : Color(hex: "#FF6B35")).opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(logged ? "Logged to Progress" : "Log to Progress")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text(logged ? "Session saved to your training history" : "Save this session to your progress tracker")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+
+                Spacer(minLength: 0)
+
+                if !logged {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+            }
+            .padding(14)
+            .background(MVMTheme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(logged ? MVMTheme.success.opacity(0.3) : MVMTheme.border)
+            }
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .disabled(logged)
+        .sensoryFeedback(.success, trigger: logged)
         .scaleEffect(cardScale)
         .opacity(cardOpacity)
     }
