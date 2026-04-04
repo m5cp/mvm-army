@@ -50,6 +50,7 @@ struct HomeView: View {
     @State private var showQuickStartSheet: Bool = false
     @State private var showActiveQuickStart: Bool = false
     @State private var quickStartVM: QuickStartViewModel = QuickStartViewModel()
+    @State private var showPDFUploadSheet: Bool = false
 
     private let calendar = Calendar.current
 
@@ -300,6 +301,9 @@ struct HomeView: View {
             if showCompletion {
                 showActiveQuickStart = false
             }
+        }
+        .sheet(isPresented: $showPDFUploadSheet) {
+            PDFUploadView()
         }
         .sheet(isPresented: $showFunctionalWODSheet) {
             if let template = vm.todayFunctionalWOD {
@@ -1013,6 +1017,16 @@ struct HomeView: View {
                 ) {
                     toolTapTrigger.toggle()
                     showUnitPTSheet = true
+                }
+
+                planRow(
+                    title: "Import Workout PDF",
+                    subtitle: "Upload & extract any workout",
+                    icon: "doc.text.fill",
+                    color: Color(hex: "#8B5CF6")
+                ) {
+                    toolTapTrigger.toggle()
+                    showPDFUploadSheet = true
                 }
             }
         }
