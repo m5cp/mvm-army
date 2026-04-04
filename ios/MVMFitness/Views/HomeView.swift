@@ -47,6 +47,9 @@ struct HomeView: View {
     @State private var showTodaySavedToast: Bool = false
     @State private var todayCompleteTrigger: Bool = false
     @State private var showFunctionalWODSheet: Bool = false
+    @State private var showQuickStartSheet: Bool = false
+    @State private var showActiveQuickStart: Bool = false
+    @State private var quickStartVM: QuickStartViewModel = QuickStartViewModel()
 
     private let calendar = Calendar.current
 
@@ -55,6 +58,8 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 VStack(spacing: 24) {
                     greetingHeader
+
+                    quickStartSection
 
                     aftCalculatorHero
 
@@ -271,6 +276,30 @@ struct HomeView: View {
                 title: completedWorkoutTitle,
                 exerciseCount: completedExerciseCount
             )
+        }
+        .sheet(isPresented: $showQuickStartSheet) {
+            QuickStartSelectionView(quickStart: quickStartVM)
+        }
+        .sheet(item: Binding<QuickStartRecord?>(
+            get: { quickStartVM.completedRecord },
+            set: { _ in }
+        )) { record in
+            QuickStartCompletionView(record: record) {
+                quickStartVM.dismiss()
+            }
+        }
+        .navigationDestination(isPresented: $showActiveQuickStart) {
+            ActiveQuickStartView(quickStart: quickStartVM)
+        }
+        .onChange(of: quickStartVM.isActive) { _, isActive in
+            if isActive {
+                showActiveQuickStart = true
+            }
+        }
+        .onChange(of: quickStartVM.showCompletion) { _, showCompletion in
+            if showCompletion {
+                showActiveQuickStart = false
+            }
         }
         .sheet(isPresented: $showFunctionalWODSheet) {
             if let template = vm.todayFunctionalWOD {
@@ -892,6 +921,96 @@ struct HomeView: View {
             .premiumCard()
         }
         .buttonStyle(PressScaleButtonStyle())
+    }
+
+    // MARK: - Quick Start Section
+
+    private var quickStartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("QUICK START")
+                .font(.caption.weight(.heavy))
+                .tracking(1.2)
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .padding(.leading, 4)
+
+            Button {
+                toolTapTrigger.toggle()
+                showQuickStartSheet = true
+            } label: {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "bolt.fill")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 28, height: 28)
+                                .background(.white.opacity(0.15))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                            Text("START AN ACTIVITY")
+                                .font(.caption2.weight(.heavy))
+                                .tracking(0.8)
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+
+                        Text("Run, Bike, Hike\nor Functional Fitness")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(.white)
+                            .lineSpacing(2)
+                            .multilineTextAlignment(.leading)
+
+                        HStack(spacing: 6) {
+                            quickStartMiniIcon("figure.run")
+                            quickStartMiniIcon("figure.outdoor.cycle")
+                            quickStartMiniIcon("figure.hiking")
+                            quickStartMiniIcon("figure.strengthtraining.functional")
+                        }
+                    }
+
+                    Spacer(minLength: 0)
+
+                    VStack(spacing: 6) {
+                        Image(systemName: "play.fill")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 48, height: 48)
+                            .background(.white.opacity(0.15))
+                            .clipShape(Circle())
+
+                        Text("Go")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                }
+                .padding(18)
+                .background {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "#059669"), Color(hex: "#047857")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .shadow(color: Color(hex: "#059669").opacity(0.25), radius: 16, y: 10)
+            }
+            .buttonStyle(PressScaleButtonStyle())
+            .accessibilityLabel("Quick Start an activity")
+            .accessibilityHint("Choose from run, bike, hike or functional fitness")
+        }
+        .opacity(animateHero ? 1 : 0)
+        .offset(y: animateHero ? 0 : 8)
+    }
+
+    private func quickStartMiniIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.6))
+            .frame(width: 24, height: 24)
+            .background(.white.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
     // MARK: - Planning Section (PRIORITY 3)

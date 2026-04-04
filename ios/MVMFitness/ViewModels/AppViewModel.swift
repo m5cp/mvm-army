@@ -20,6 +20,7 @@ final class AppViewModel {
     var activeRecap: InstantRecap?
     var ptPlanNeedsSync: Bool = false
     var wodPlanNeedsSync: Bool = false
+    var quickStartRecords: [QuickStartRecord] = []
 
     var performanceHighlights: [PerformanceHighlight] {
         PerformanceHighlightsService.generateHighlights(
@@ -53,6 +54,7 @@ final class AppViewModel {
         aftScores = LocalStore.load([AFTScoreRecord].self, forKey: "aftScores", fallback: [])
         aftCalculatorResults = LocalStore.load([AFTCalculatorResult].self, forKey: "aftCalculatorResults", fallback: [])
         wodPlan = LocalStore.load(WODPlan?.self, forKey: "wodPlan", fallback: nil)
+        quickStartRecords = LocalStore.load([QuickStartRecord].self, forKey: "quickStartRecords", fallback: [])
         loadTodayFunctionalWOD()
     }
 
@@ -68,6 +70,7 @@ final class AppViewModel {
         LocalStore.save(aftScores, forKey: "aftScores")
         LocalStore.save(aftCalculatorResults, forKey: "aftCalculatorResults")
         LocalStore.save(wodPlan, forKey: "wodPlan")
+        LocalStore.save(quickStartRecords, forKey: "quickStartRecords")
         syncWidgetData()
     }
 
@@ -1421,6 +1424,22 @@ final class AppViewModel {
             unitPTFullPlan = nil
             scheduledUnitPT = []
         }
+        persistAll()
+    }
+
+    // MARK: - Quick Start
+
+    func saveQuickStartRecord(_ record: QuickStartRecord) {
+        quickStartRecords.insert(record, at: 0)
+        completedRecords.insert(
+            CompletedWorkoutRecord(
+                title: record.activity.rawValue,
+                exerciseCount: 1,
+                exercises: [],
+                source: .individual
+            ), at: 0
+        )
+        showRecap(PerformanceHighlightsService.workoutRecap(title: record.activity.rawValue, exerciseCount: 1))
         persistAll()
     }
 

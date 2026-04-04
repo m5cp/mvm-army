@@ -514,6 +514,7 @@
 				INFOPLIST_KEY_NSMotionUsageDescription = "MVM Fitness uses your device motion sensor to count your daily steps and display step totals on the home screen and progress charts.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "MVM Fitness adds your scheduled PT workouts to your iOS Calendar so they appear alongside your other events. Calendar sync is optional and controlled from the Training Calendar screen.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "MVM Fitness saves workout share cards and AFT score images to your photo library so you can share your achievements.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MVM Fitness uses your location to track your route and distance during outdoor runs, bike rides, and hikes. Location data stays on-device.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -555,6 +556,7 @@
 				INFOPLIST_KEY_NSMotionUsageDescription = "MVM Fitness uses your device motion sensor to count your daily steps and display step totals on the home screen and progress charts.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "MVM Fitness adds your scheduled PT workouts to your iOS Calendar so they appear alongside your other events. Calendar sync is optional and controlled from the Training Calendar screen.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "MVM Fitness saves workout share cards and AFT score images to your photo library so you can share your achievements.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MVM Fitness uses your location to track your route and distance during outdoor runs, bike rides, and hikes. Location data stays on-device.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
