@@ -10,6 +10,8 @@ struct PTPlanDayDetailSheet: View {
     @State private var expandedID: UUID?
     @State private var hasChanges: Bool = false
     @State private var calendarService = CalendarExportService()
+    @State private var showAddExercise: Bool = false
+    @State private var editMode: EditMode = .inactive
 
     var body: some View {
         NavigationStack {
@@ -106,18 +108,173 @@ struct PTPlanDayDetailSheet: View {
     }
 
     private var workoutContent: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
+        List {
+            Section {
                 headerCard
-                exercisesList
-                actionsSection
+                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 48)
+
+            Section {
+                ForEach(exercises) { exercise in
+                    let index = exercises.firstIndex(where: { $0.id == exercise.id }) ?? 0
+                    VStack(spacing: 0) {
+                        if editMode == .active {
+                            reorderRow(index: index, exercise: exercise)
+                        } else {
+                            exerciseRow(index: index, exercise: exercise)
+                        }
+                    }
+                    .listRowBackground(editMode == .active ? MVMTheme.card : Color.clear)
+                    .listRowSeparator(editMode == .active ? .automatic : .hidden)
+                    .listRowInsets(editMode == .active
+                        ? EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16)
+                        : EdgeInsets(top: 5, leading: 20, bottom: 5, trailing: 20))
+                }
+                .onMove { from, to in
+                    exercises.move(fromOffsets: from, toOffset: to)
+                    hasChanges = true
+                }
+                .onDelete { indexSet in
+                    exercises.remove(atOffsets: indexSet)
+                    hasChanges = true
+                }
+            } header: {
+                HStack {
+                    Text("EXERCISES")
+                        .font(.caption.weight(.bold))
+                        .tracking(1.0)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+
+                    Spacer()
+
+                    Button {
+                        withAnimation {
+                            expandedID = nil
+                            editMode = editMode == .active ? .inactive : .active
+                        }
+                    } label: {
+                        Text(editMode == .active ? "Done" : "Reorder")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(MVMTheme.accent)
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+
+            if editMode != .active {
+                Section {
+                    Button {
+                        showAddExercise = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.body)
+                            Text("Add Exercise")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .foregroundStyle(MVMTheme.accent)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(MVMTheme.accent.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(MVMTheme.accent.opacity(0.2))
+                        }
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                }
+
+                Section {
+                    VStack(spacing: 10) {
+                        Button {
+                            vm.convertDayToRecovery(dayIndex: day.dayIndex)
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "leaf.fill")
+                                    .font(.caption.weight(.bold))
+                                Text("Convert to Recovery Day")
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                            .foregroundStyle(MVMTheme.secondaryText)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(MVMTheme.cardSoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(MVMTheme.border)
+                            }
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
+
+                        Button {
+                            vm.regenerateSingleDay(dayIndex: day.dayIndex)
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.caption.weight(.bold))
+                                Text("Replace with Different Workout")
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                            .foregroundStyle(MVMTheme.accent)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(MVMTheme.accent.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                }
+            }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .environment(\.editMode, $editMode)
         .scrollDismissesKeyboard(.interactively)
         .sensoryFeedback(.selection, trigger: exercises.count)
+        .sheet(isPresented: $showAddExercise) {
+            ArmyPTExercisePickerSheet { exerciseName in
+                let exercise = WorkoutExercise(
+                    name: exerciseName,
+                    sets: 3,
+                    reps: 10
+                )
+                exercises.append(exercise)
+                hasChanges = true
+            }
+        }
+    }
+
+    private func reorderRow(index: Int, exercise: WorkoutExercise) -> some View {
+        HStack(spacing: 12) {
+            Text("\(index + 1)")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(MVMTheme.accent)
+                .frame(width: 24, height: 24)
+                .background(MVMTheme.accent.opacity(0.12))
+                .clipShape(Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(exercise.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.primaryText)
+                Text(exercise.displayDetail)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(MVMTheme.secondaryText)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 4)
     }
 
     private var headerCard: some View {
@@ -165,106 +322,6 @@ struct PTPlanDayDetailSheet: View {
                 )
         }
         .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: MVMTheme.accent.opacity(0.2), radius: 20, y: 12)
-    }
-
-    @State private var showAddExercise: Bool = false
-    @State private var editMode: EditMode = .inactive
-
-    private var exercisesList: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("EXERCISES")
-                    .font(.caption.weight(.bold))
-                    .tracking(1.0)
-                    .foregroundStyle(MVMTheme.tertiaryText)
-
-                Spacer()
-
-                Button {
-                    withAnimation {
-                        editMode = editMode == .active ? .inactive : .active
-                    }
-                } label: {
-                    Text(editMode == .active ? "Done" : "Reorder")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(MVMTheme.accent)
-                }
-            }
-            .padding(.leading, 4)
-
-            if editMode == .active {
-                List {
-                    ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
-                        HStack(spacing: 12) {
-                            Text("\(index + 1)")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(MVMTheme.accent)
-                                .frame(width: 24, height: 24)
-                                .background(MVMTheme.accent.opacity(0.12))
-                                .clipShape(Circle())
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(exercise.name)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(MVMTheme.primaryText)
-                                Text(exercise.displayDetail)
-                                    .font(.caption.weight(.medium))
-                                    .foregroundStyle(MVMTheme.secondaryText)
-                            }
-                        }
-                        .listRowBackground(MVMTheme.card)
-                    }
-                    .onMove { from, to in
-                        exercises.move(fromOffsets: from, toOffset: to)
-                        hasChanges = true
-                    }
-                    .onDelete { indexSet in
-                        exercises.remove(atOffsets: indexSet)
-                        hasChanges = true
-                    }
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .environment(\.editMode, .constant(.active))
-                .frame(height: CGFloat(exercises.count * 60 + 10))
-            } else {
-                ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
-                    exerciseRow(index: index, exercise: exercise)
-                }
-            }
-
-            Button {
-                showAddExercise = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.body)
-                    Text("Add Exercise")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(MVMTheme.accent)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(MVMTheme.accent.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(MVMTheme.accent.opacity(0.2))
-                }
-            }
-            .buttonStyle(PressScaleButtonStyle())
-        }
-        .sheet(isPresented: $showAddExercise) {
-            ArmyPTExercisePickerSheet { exerciseName in
-                let exercise = WorkoutExercise(
-                    name: exerciseName,
-                    sets: 3,
-                    reps: 10
-                )
-                exercises.append(exercise)
-                hasChanges = true
-            }
-        }
     }
 
     private func exerciseRow(index: Int, exercise: WorkoutExercise) -> some View {
@@ -586,49 +643,5 @@ struct PTPlanDayDetailSheet: View {
         .background(MVMTheme.cardSoft)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
-    }
-
-    private var actionsSection: some View {
-        VStack(spacing: 10) {
-            Button {
-                vm.convertDayToRecovery(dayIndex: day.dayIndex)
-                dismiss()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "leaf.fill")
-                        .font(.caption.weight(.bold))
-                    Text("Convert to Recovery Day")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(MVMTheme.secondaryText)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(MVMTheme.cardSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(MVMTheme.border)
-                }
-            }
-            .buttonStyle(PressScaleButtonStyle())
-
-            Button {
-                vm.regenerateSingleDay(dayIndex: day.dayIndex)
-                dismiss()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.caption.weight(.bold))
-                    Text("Replace with Different Workout")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(MVMTheme.accent)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(MVMTheme.accent.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-            .buttonStyle(PressScaleButtonStyle())
-        }
     }
 }

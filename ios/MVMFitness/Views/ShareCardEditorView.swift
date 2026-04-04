@@ -11,6 +11,7 @@ struct ShareCardEditorView: View {
     @State private var editedImage: UIImage?
     @State private var selectedFilter: ShareCardFilter = .none
     @State private var stickers: [StickerItem] = []
+    @State private var textOverlays: [TextOverlayItem] = []
     @State private var showStickerPicker: Bool = false
     @State private var showPhotoSource: Bool = false
     @State private var showCamera: Bool = false
@@ -22,6 +23,8 @@ struct ShareCardEditorView: View {
     @State private var showSavedToast: Bool = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var dragOffset: CGSize = .zero
+    @State private var editingTextID: UUID?
+    @State private var showTextEditor: Bool = false
 
     private let ciContext = CIContext()
 
@@ -38,6 +41,7 @@ struct ShareCardEditorView: View {
                                 .padding(.top, 12)
 
                             photoOverlaySection
+                            textSection
                             filterSection
                             stickerSection
                         }
@@ -60,6 +64,15 @@ struct ShareCardEditorView: View {
             .sheet(isPresented: $showStickerPicker) {
                 StickerPickerSheet { sticker in
                     stickers.append(sticker)
+                }
+            }
+            .sheet(isPresented: $showTextEditor) {
+                if let editID = editingTextID,
+                   let idx = textOverlays.firstIndex(where: { $0.id == editID }) {
+                    TextOverlayEditorSheet(item: $textOverlays[idx]) {
+                        textOverlays.removeAll { $0.id == editID }
+                        editingTextID = nil
+                    }
                 }
             }
             .onChange(of: selectedPhotoItem) { _, newItem in
@@ -178,6 +191,158 @@ struct ShareCardEditorView: View {
                 let y = sticker.position.y * base.size.height
                 stickerStr.draw(at: CGPoint(x: x, y: y))
             }
+
+            for item in textOverlays {
+                drawTextOverlay(item, on: base.size, in: ctx)
+            }
+        }
+    }
+
+    private func drawTextOverlay(_ item: TextOverlayItem, on size: CGSize, in ctx: UIGraphicsImageRendererContext) {
+        let scale = size.width / 350.0
+        let fontSize = item.size * scale
+
+        let uiFont: UIFont
+        switch item.fontOption {
+        case .system:
+            uiFont = item.isBold ? UIFont.systemFont(ofSize: fontSize, weight: .bold) : UIFont.systemFont(ofSize: fontSize, weight: .regular)
+        case .rounded:
+            let desc = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body).withDesign(.rounded)!
+            uiFont = UIFont(descriptor: desc, size: fontSize).withWeight(item.isBold ? .bold : .regular)
+        case .serif:
+            let desc = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body).withDesign(.serif)!
+            uiFont = UIFont(descriptor: desc, size: fontSize).withWeight(item.isBold ? .bold : .regular)
+        case .mono:
+            uiFont = UIFont.monospacedSystemFont(ofSize: fontSize, weight: item.isBold ? .bold : .regular)
+        }
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        switch item.alignment {
+        case .leading: paragraphStyle.alignment = .left
+        case .center: paragraphStyle.alignment = .center
+        case .trailing: paragraphStyle.alignment = .right
+        }
+
+        let shadow = NSShadow()
+        shadow.shadowColor = UIColor.black.withAlphaComponent(0.6)
+        shadow.shadowBlurRadius = 4 * scale
+        shadow.shadowOffset = CGSize(width: 0, height: 2 * scale)
+
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: uiFont,
+            .foregroundColor: item.colorOption.uiColor,
+            .paragraphStyle: paragraphStyle,
+            .shadow: shadow
+        ]
+
+        let margin: CGFloat = 30 * scale
+        let maxWidth = size.width - margin * 2
+        let textRect: CGRect
+        let boundingRect = (item.text as NSString).boundingRect(
+            with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: attrs,
+            context: nil
+        )
+
+        let y: CGFloat
+        switch item.verticalPosition {
+        case .top: y = margin + 20 * scale
+        case .center: y = (size.height - boundingRect.height) / 2
+        case .bottom: y = size.height - boundingRect.height - margin - 20 * scale
+        }
+
+        textRect = CGRect(x: margin, y: y, width: maxWidth, height: boundingRect.height)
+        (item.text as NSString).draw(in: textRect, withAttributes: attrs)
+    }
+
+    private var textSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("TEXT")
+                    .font(.caption.weight(.bold))
+                    .tracking(1.0)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                Spacer()
+
+                if !textOverlays.isEmpty {
+                    Button {
+                        textOverlays.removeAll()
+                    } label: {
+                        Text("Clear All")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.red)
+                    }
+                }
+            }
+            .padding(.horizontal, 24)
+
+            if !textOverlays.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(textOverlays) { item in
+                        Button {
+                            editingTextID = item.id
+                            showTextEditor = true
+                        } label: {
+                            HStack(spacing: 10) {
+                                Circle()
+                                    .fill(item.colorOption.color)
+                                    .frame(width: 16, height: 16)
+
+                                Text(item.text)
+                                    .font(.subheadline.weight(item.isBold ? .bold : .regular))
+                                    .foregroundStyle(MVMTheme.primaryText)
+                                    .lineLimit(1)
+
+                                Spacer()
+
+                                Text(item.fontOption.label)
+                                    .font(.caption2)
+                                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.caption2)
+                                    .foregroundStyle(MVMTheme.tertiaryText)
+                            }
+                            .padding(12)
+                            .background(MVMTheme.card)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(MVMTheme.border)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+
+            Button {
+                let newItem = TextOverlayItem()
+                textOverlays.append(newItem)
+                editingTextID = newItem.id
+                showTextEditor = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.body)
+                    Text("Add Text")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(MVMTheme.accent)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(MVMTheme.accent.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(MVMTheme.accent.opacity(0.2))
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
         }
     }
 
@@ -528,6 +693,378 @@ struct ShareCardEditorView: View {
         "\u{26A1}", "\u{1F4AF}", "\u{1F396}", "\u{1F6E1}", "\u{2694}\u{FE0F}",
         "\u{1F3CB}\u{FE0F}", "\u{1F947}"
     ]
+}
+
+struct TextOverlayItem: Identifiable {
+    let id = UUID()
+    var text: String = "Your Text"
+    var fontOption: TextFontOption = .system
+    var colorOption: TextColorOption = .white
+    var isBold: Bool = true
+    var size: CGFloat = 20
+    var alignment: TextAlignment = .center
+    var verticalPosition: TextVerticalPosition = .bottom
+}
+
+nonisolated enum TextFontOption: String, CaseIterable, Identifiable, Sendable {
+    case system = "system"
+    case rounded = "rounded"
+    case serif = "serif"
+    case mono = "mono"
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .system: return "SF Pro"
+        case .rounded: return "Rounded"
+        case .serif: return "Serif"
+        case .mono: return "Mono"
+        }
+    }
+}
+
+nonisolated enum TextColorOption: String, CaseIterable, Identifiable, Sendable {
+    case white = "White"
+    case black = "Black"
+    case red = "Red"
+    case orange = "Orange"
+    case yellow = "Yellow"
+    case green = "Green"
+    case blue = "Blue"
+    case purple = "Purple"
+    case pink = "Pink"
+
+    var id: String { rawValue }
+
+    var color: Color {
+        switch self {
+        case .white: return .white
+        case .black: return .black
+        case .red: return .red
+        case .orange: return .orange
+        case .yellow: return .yellow
+        case .green: return .green
+        case .blue: return .blue
+        case .purple: return .purple
+        case .pink: return .pink
+        }
+    }
+
+    var uiColor: UIColor {
+        switch self {
+        case .white: return .white
+        case .black: return .black
+        case .red: return .systemRed
+        case .orange: return .systemOrange
+        case .yellow: return .systemYellow
+        case .green: return .systemGreen
+        case .blue: return .systemBlue
+        case .purple: return .systemPurple
+        case .pink: return .systemPink
+        }
+    }
+}
+
+nonisolated enum TextVerticalPosition: String, CaseIterable, Identifiable, Sendable {
+    case top = "Top"
+    case center = "Center"
+    case bottom = "Bottom"
+
+    var id: String { rawValue }
+    var icon: String {
+        switch self {
+        case .top: return "arrow.up.to.line"
+        case .center: return "arrow.up.and.down"
+        case .bottom: return "arrow.down.to.line"
+        }
+    }
+}
+
+nonisolated enum TextAlignment: String, CaseIterable, Identifiable, Sendable {
+    case leading = "Left"
+    case center = "Center"
+    case trailing = "Right"
+
+    var id: String { rawValue }
+    var icon: String {
+        switch self {
+        case .leading: return "text.alignleft"
+        case .center: return "text.aligncenter"
+        case .trailing: return "text.alignright"
+        }
+    }
+}
+
+struct TextOverlayEditorSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var item: TextOverlayItem
+    let onDelete: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                MVMTheme.background.ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 20) {
+                        previewBar
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("TEXT")
+                                .font(.caption.weight(.bold))
+                                .tracking(0.8)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+
+                            TextField("Enter text...", text: $item.text, axis: .vertical)
+                                .font(.subheadline)
+                                .lineLimit(1...4)
+                                .padding(12)
+                                .background(MVMTheme.cardSoft)
+                                .foregroundStyle(MVMTheme.primaryText)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("FONT")
+                                .font(.caption.weight(.bold))
+                                .tracking(0.8)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+
+                            HStack(spacing: 8) {
+                                ForEach(TextFontOption.allCases) { font in
+                                    Button {
+                                        item.fontOption = font
+                                    } label: {
+                                        Text(font.label)
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(item.fontOption == font ? .white : MVMTheme.secondaryText)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(item.fontOption == font ? MVMTheme.accent : MVMTheme.cardSoft)
+                                            .clipShape(Capsule())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("COLOR")
+                                .font(.caption.weight(.bold))
+                                .tracking(0.8)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(TextColorOption.allCases) { color in
+                                        Button {
+                                            item.colorOption = color
+                                        } label: {
+                                            Circle()
+                                                .fill(color.color)
+                                                .frame(width: 32, height: 32)
+                                                .overlay {
+                                                    Circle()
+                                                        .stroke(color == .black ? Color.white.opacity(0.3) : Color.clear, lineWidth: 1)
+                                                }
+                                                .overlay {
+                                                    if item.colorOption == color {
+                                                        Circle()
+                                                            .stroke(MVMTheme.accent, lineWidth: 3)
+                                                            .frame(width: 38, height: 38)
+                                                    }
+                                                }
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                            .contentMargins(.horizontal, 0)
+                        }
+
+                        HStack(spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("STYLE")
+                                    .font(.caption.weight(.bold))
+                                    .tracking(0.8)
+                                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                                Button {
+                                    item.isBold.toggle()
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "bold")
+                                            .font(.caption.weight(.bold))
+                                        Text("Bold")
+                                            .font(.caption.weight(.semibold))
+                                    }
+                                    .foregroundStyle(item.isBold ? .white : MVMTheme.secondaryText)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(item.isBold ? MVMTheme.accent : MVMTheme.cardSoft)
+                                    .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("SIZE")
+                                    .font(.caption.weight(.bold))
+                                    .tracking(0.8)
+                                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                                HStack(spacing: 8) {
+                                    Image(systemName: "textformat.size.smaller")
+                                        .font(.caption2)
+                                        .foregroundStyle(MVMTheme.tertiaryText)
+                                    Slider(value: $item.size, in: 10...48, step: 1)
+                                        .tint(MVMTheme.accent)
+                                    Image(systemName: "textformat.size.larger")
+                                        .font(.caption2)
+                                        .foregroundStyle(MVMTheme.tertiaryText)
+                                }
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("ALIGNMENT")
+                                .font(.caption.weight(.bold))
+                                .tracking(0.8)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+
+                            HStack(spacing: 8) {
+                                ForEach(TextAlignment.allCases) { align in
+                                    Button {
+                                        item.alignment = align
+                                    } label: {
+                                        Image(systemName: align.icon)
+                                            .font(.body.weight(.semibold))
+                                            .foregroundStyle(item.alignment == align ? .white : MVMTheme.secondaryText)
+                                            .frame(width: 44, height: 36)
+                                            .background(item.alignment == align ? MVMTheme.accent : MVMTheme.cardSoft)
+                                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("POSITION")
+                                .font(.caption.weight(.bold))
+                                .tracking(0.8)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+
+                            HStack(spacing: 8) {
+                                ForEach(TextVerticalPosition.allCases) { pos in
+                                    Button {
+                                        item.verticalPosition = pos
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: pos.icon)
+                                                .font(.caption2.weight(.bold))
+                                            Text(pos.rawValue)
+                                                .font(.caption.weight(.semibold))
+                                        }
+                                        .foregroundStyle(item.verticalPosition == pos ? .white : MVMTheme.secondaryText)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 8)
+                                        .background(item.verticalPosition == pos ? MVMTheme.accent : MVMTheme.cardSoft)
+                                        .clipShape(Capsule())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        Button(role: .destructive) {
+                            onDelete()
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "trash")
+                                    .font(.caption.weight(.semibold))
+                                Text("Remove Text")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 40)
+                            .background(.red.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(20)
+                    .padding(.bottom, 36)
+                }
+                .scrollDismissesKeyboard(.interactively)
+            }
+            .navigationTitle("Edit Text")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(MVMTheme.accent)
+                        .fontWeight(.semibold)
+                }
+            }
+            .toolbarBackground(MVMTheme.background, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(MVMTheme.background)
+        .presentationContentInteraction(.scrolls)
+    }
+
+    private var previewBar: some View {
+        HStack {
+            Spacer()
+            Text(item.text.isEmpty ? "Preview" : item.text)
+                .font(previewFont)
+                .foregroundStyle(item.colorOption.color)
+                .lineLimit(2)
+                .multilineTextAlignment(swiftUIAlignment)
+            Spacer()
+        }
+        .padding(16)
+        .background(MVMTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(MVMTheme.border)
+        }
+    }
+
+    private var previewFont: Font {
+        let base: Font
+        switch item.fontOption {
+        case .system: base = .system(size: min(item.size, 32))
+        case .rounded: base = .system(size: min(item.size, 32), design: .rounded)
+        case .serif: base = .system(size: min(item.size, 32), design: .serif)
+        case .mono: base = .system(size: min(item.size, 32), design: .monospaced)
+        }
+        return item.isBold ? base.bold() : base
+    }
+
+    private var swiftUIAlignment: SwiftUI.TextAlignment {
+        switch item.alignment {
+        case .leading: return .leading
+        case .center: return .center
+        case .trailing: return .trailing
+        }
+    }
+}
+
+extension UIFont {
+    func withWeight(_ weight: UIFont.Weight) -> UIFont {
+        let descriptor = fontDescriptor.addingAttributes([
+            .traits: [UIFontDescriptor.TraitKey.weight: weight]
+        ])
+        return UIFont(descriptor: descriptor, size: pointSize)
+    }
 }
 
 nonisolated enum ShareCardFilter: String, CaseIterable, Identifiable, Sendable {

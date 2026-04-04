@@ -11,6 +11,8 @@ struct WODPlanDayDetailSheet: View {
     @State private var hasChanges: Bool = false
     @State private var editTrigger: Bool = false
     @State private var calendarService = CalendarExportService()
+    @State private var reorderMode: EditMode = .inactive
+    @State private var showAddMovement: Bool = false
 
     init(day: WODPlanDay) {
         self.day = day
@@ -114,19 +116,212 @@ struct WODPlanDayDetailSheet: View {
     }
 
     private var workoutContent: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
+        List {
+            Section {
                 headerCard
-                detailsBar
-
-                movementsSection
-                actionsSection
+                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 48)
+
+            Section {
+                detailsBar
+                    .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
+
+            Section {
+                ForEach(movements) { movement in
+                    let index = movements.firstIndex(where: { $0.id == movement.id }) ?? 0
+                    VStack(spacing: 0) {
+                        if reorderMode == .active {
+                            reorderRow(index: index, movement: movement)
+                        } else {
+                            movementRow(index: index, movement: movement)
+                        }
+                    }
+                    .listRowBackground(reorderMode == .active ? MVMTheme.card : Color.clear)
+                    .listRowSeparator(reorderMode == .active ? .automatic : .hidden)
+                    .listRowInsets(reorderMode == .active
+                        ? EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16)
+                        : EdgeInsets(top: 5, leading: 20, bottom: 5, trailing: 20))
+                }
+                .onMove { from, to in
+                    movements.move(fromOffsets: from, toOffset: to)
+                    hasChanges = true
+                }
+                .onDelete { indexSet in
+                    movements.remove(atOffsets: indexSet)
+                    hasChanges = true
+                }
+            } header: {
+                HStack {
+                    Text("MOVEMENTS")
+                        .font(.caption.weight(.bold))
+                        .tracking(1.0)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+
+                    Spacer()
+
+                    Button {
+                        withAnimation {
+                            expandedID = nil
+                            reorderMode = reorderMode == .active ? .inactive : .active
+                        }
+                    } label: {
+                        Text(reorderMode == .active ? "Done" : "Reorder")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(wodAccent)
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+
+            if reorderMode != .active {
+                Section {
+                    Button {
+                        showAddMovement = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.body)
+                            Text("Add Movement")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .foregroundStyle(wodAccent)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(wodAccent.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(wodAccent.opacity(0.2))
+                        }
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                }
+
+                if let notes = day.template.notes, !notes.isEmpty {
+                    Section {
+                        HStack(spacing: 8) {
+                            Image(systemName: "info.circle")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(wodAccent)
+                            Text(notes)
+                                .font(.caption)
+                                .foregroundStyle(MVMTheme.secondaryText)
+                        }
+                        .padding(12)
+                        .background(wodAccent.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                    }
+                }
+
+                Section {
+                    VStack(spacing: 10) {
+                        Button {
+                            vm.convertWODDayToRest(dayId: day.id)
+                            if vm.isCalendarSyncEnabled, let plan = vm.wodPlan {
+                                Task {
+                                    _ = await calendarService.resyncWODPlanFromDate(plan, from: day.date)
+                                }
+                            }
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "leaf.fill")
+                                    .font(.caption.weight(.bold))
+                                Text("Convert to Rest Day")
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                            .foregroundStyle(MVMTheme.secondaryText)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(MVMTheme.cardSoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(MVMTheme.border)
+                            }
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
+
+                        Button {
+                            vm.regenerateWODDay(dayId: day.id)
+                            if vm.isCalendarSyncEnabled, let plan = vm.wodPlan {
+                                Task {
+                                    _ = await calendarService.resyncWODPlanFromDate(plan, from: day.date)
+                                }
+                            }
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.caption.weight(.bold))
+                                Text("Replace with Different Workout")
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                            .foregroundStyle(wodAccent)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(wodAccent.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                }
+            }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .environment(\.editMode, $reorderMode)
         .scrollDismissesKeyboard(.interactively)
+        .sheet(isPresented: $showAddMovement) {
+            AddMovementSheet { newMovement in
+                movements.append(newMovement)
+                hasChanges = true
+            }
+        }
+    }
+
+    private func reorderRow(index: Int, movement: WODMovement) -> some View {
+        HStack(spacing: 12) {
+            Text("\(index + 1)")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(wodAccent)
+                .frame(width: 24, height: 24)
+                .background(wodAccent.opacity(0.12))
+                .clipShape(Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(movement.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.primaryText)
+                HStack(spacing: 6) {
+                    if let reps = movement.reps {
+                        Text(reps)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(wodAccent)
+                    }
+                    if let dur = movement.duration {
+                        Text(dur)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(wodAccent)
+                    }
+                }
+            }
+            Spacer()
+        }
+        .padding(.vertical, 4)
     }
 
     private var headerCard: some View {
@@ -215,124 +410,6 @@ struct WODPlanDayDetailSheet: View {
                 .foregroundStyle(MVMTheme.tertiaryText)
         }
         .frame(maxWidth: .infinity)
-    }
-
-
-    @State private var reorderMode: Bool = false
-    @State private var showAddMovement: Bool = false
-
-    private var movementsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("MOVEMENTS")
-                    .font(.caption.weight(.bold))
-                    .tracking(1.0)
-                    .foregroundStyle(MVMTheme.tertiaryText)
-
-                Spacer()
-
-                Button {
-                    withAnimation {
-                        reorderMode.toggle()
-                    }
-                } label: {
-                    Text(reorderMode ? "Done" : "Reorder")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(wodAccent)
-                }
-            }
-            .padding(.leading, 4)
-
-            if reorderMode {
-                List {
-                    ForEach(Array(movements.enumerated()), id: \.element.id) { index, movement in
-                        HStack(spacing: 12) {
-                            Text("\(index + 1)")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(wodAccent)
-                                .frame(width: 24, height: 24)
-                                .background(wodAccent.opacity(0.12))
-                                .clipShape(Circle())
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(movement.name)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(MVMTheme.primaryText)
-                                HStack(spacing: 6) {
-                                    if let reps = movement.reps {
-                                        Text(reps)
-                                            .font(.caption.weight(.medium))
-                                            .foregroundStyle(wodAccent)
-                                    }
-                                    if let dur = movement.duration {
-                                        Text(dur)
-                                            .font(.caption.weight(.medium))
-                                            .foregroundStyle(wodAccent)
-                                    }
-                                }
-                            }
-                        }
-                        .listRowBackground(MVMTheme.card)
-                    }
-                    .onMove { from, to in
-                        movements.move(fromOffsets: from, toOffset: to)
-                        hasChanges = true
-                    }
-                    .onDelete { indexSet in
-                        movements.remove(atOffsets: indexSet)
-                        hasChanges = true
-                    }
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .environment(\.editMode, .constant(.active))
-                .frame(height: CGFloat(movements.count * 60 + 10))
-            } else {
-                ForEach(Array(movements.enumerated()), id: \.element.id) { index, movement in
-                    movementRow(index: index, movement: movement)
-                }
-            }
-
-            Button {
-                showAddMovement = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.body)
-                    Text("Add Movement")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(wodAccent)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(wodAccent.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(wodAccent.opacity(0.2))
-                }
-            }
-            .buttonStyle(PressScaleButtonStyle())
-
-            if let notes = day.template.notes, !notes.isEmpty {
-                HStack(spacing: 8) {
-                    Image(systemName: "info.circle")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(wodAccent)
-                    Text(notes)
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.secondaryText)
-                }
-                .padding(12)
-                .background(wodAccent.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-        }
-        .sheet(isPresented: $showAddMovement) {
-            AddMovementSheet { newMovement in
-                movements.append(newMovement)
-                hasChanges = true
-            }
-        }
     }
 
     private func movementRow(index: Int, movement: WODMovement) -> some View {
@@ -476,60 +553,6 @@ struct WODPlanDayDetailSheet: View {
                 .foregroundStyle(MVMTheme.primaryText)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
-        }
-    }
-
-    private var actionsSection: some View {
-        VStack(spacing: 10) {
-            Button {
-                vm.convertWODDayToRest(dayId: day.id)
-                if vm.isCalendarSyncEnabled, let plan = vm.wodPlan {
-                    Task {
-                        _ = await calendarService.resyncWODPlanFromDate(plan, from: day.date)
-                    }
-                }
-                dismiss()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "leaf.fill")
-                        .font(.caption.weight(.bold))
-                    Text("Convert to Rest Day")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(MVMTheme.secondaryText)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(MVMTheme.cardSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(MVMTheme.border)
-                }
-            }
-            .buttonStyle(PressScaleButtonStyle())
-
-            Button {
-                vm.regenerateWODDay(dayId: day.id)
-                if vm.isCalendarSyncEnabled, let plan = vm.wodPlan {
-                    Task {
-                        _ = await calendarService.resyncWODPlanFromDate(plan, from: day.date)
-                    }
-                }
-                dismiss()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.caption.weight(.bold))
-                    Text("Replace with Different Workout")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .foregroundStyle(wodAccent)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(wodAccent.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-            .buttonStyle(PressScaleButtonStyle())
         }
     }
 }
