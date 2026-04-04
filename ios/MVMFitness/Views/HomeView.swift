@@ -2,7 +2,9 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(AppViewModel.self) private var vm
+    @Environment(StoreViewModel.self) private var store
 
+    @State private var showUpgrade: Bool = false
 
     @State private var animateHero: Bool = false
     @State private var animateMetrics: Bool = false
@@ -83,6 +85,31 @@ struct HomeView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
+                    if !store.isPremium {
+                        Button {
+                            showUpgrade = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "crown.fill")
+                                    .font(.caption.weight(.bold))
+                                Text("PRO")
+                                    .font(.caption2.weight(.heavy))
+                                    .tracking(0.5)
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(
+                                LinearGradient(
+                                    colors: [MVMTheme.accent, MVMTheme.accent2],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .clipShape(Capsule())
+                        }
+                    }
+
                     Button {
                         navigateToTrainingCalendar = true
                     } label: {
@@ -185,6 +212,9 @@ struct HomeView: View {
         }
         .navigationDestination(isPresented: $navigateToTrainingCalendar) {
             TrainingCalendarView()
+        }
+        .sheet(isPresented: $showUpgrade) {
+            UpgradeView()
         }
         .sheet(isPresented: $showWODSheet) {
             WODDetailView()

@@ -4,6 +4,7 @@ struct ExerciseAutocompleteField: View {
     let title: String
     @Binding var text: String
     var accentColor: Color = MVMTheme.accent
+    var armyOnly: Bool = false
     var onChanged: (() -> Void)? = nil
 
     @State private var isEditing: Bool = false
@@ -30,14 +31,14 @@ struct ExerciseAutocompleteField: View {
                 .focused($isFocused)
                 .onChange(of: text) { _, newValue in
                     if isFocused {
-                        suggestions = ExerciseLibrary.search(newValue).prefix(6).map { $0 }
+                        suggestions = (armyOnly ? ArmyPTExerciseLibrary.search(newValue) : ExerciseLibrary.search(newValue)).prefix(6).map { $0 }
                     }
                     onChanged?()
                 }
                 .onChange(of: isFocused) { _, focused in
                     if focused {
                         isEditing = true
-                        suggestions = ExerciseLibrary.search(text).prefix(6).map { $0 }
+                        suggestions = (armyOnly ? ArmyPTExerciseLibrary.search(text) : ExerciseLibrary.search(text)).prefix(6).map { $0 }
                     } else {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                             isEditing = false

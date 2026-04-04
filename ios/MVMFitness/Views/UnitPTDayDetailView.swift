@@ -7,6 +7,8 @@ struct UnitPTDayDetailView: View {
     @State private var dayPlan: UnitPTDayPlan
     @State private var isEditing: Bool = false
     @State private var hapticTrigger: Bool = false
+    @State private var showAddExercise: Bool = false
+    @State private var editMode: EditMode = .inactive
 
     let onSave: (UnitPTDayPlan) -> Void
     let onRegenerate: () -> Void
@@ -46,6 +48,7 @@ struct UnitPTDayDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(isEditing ? "Save" : "Edit") {
                     if isEditing {
+                        editMode = .inactive
                         onSave(dayPlan)
                         hapticTrigger.toggle()
                     }
@@ -58,9 +61,12 @@ struct UnitPTDayDetailView: View {
             }
         }
         .sensoryFeedback(.success, trigger: hapticTrigger)
+        .sheet(isPresented: $showAddExercise) {
+            ArmyPTExercisePickerSheet { exerciseName in
+                dayPlan.mainEffort.append(UnitPTBlock(exerciseName))
+            }
+        }
     }
-
-    // MARK: - Header
 
     private var dayHeader: some View {
         HStack(spacing: 14) {
@@ -105,54 +111,28 @@ struct UnitPTDayDetailView: View {
         .premiumCard()
     }
 
-    // MARK: - Sections
-
     private var objectiveSection: some View {
-        editableSection(
-            title: "Objective",
-            icon: "target",
-            text: $dayPlan.objective
-        )
+        editableSection(title: "Objective", icon: "target", text: $dayPlan.objective)
     }
 
     private var formationSection: some View {
-        editableSection(
-            title: "Formation",
-            icon: "person.3.sequence.fill",
-            text: $dayPlan.formationNotes
-        )
+        editableSection(title: "Formation", icon: "person.3.sequence.fill", text: $dayPlan.formationNotes)
     }
 
     private var equipmentSection: some View {
-        editableSection(
-            title: "Equipment",
-            icon: "wrench.and.screwdriver.fill",
-            text: $dayPlan.equipment
-        )
+        editableSection(title: "Equipment", icon: "wrench.and.screwdriver.fill", text: $dayPlan.equipment)
     }
 
     private var warmupSection: some View {
-        editableSection(
-            title: "Warm-Up",
-            icon: "flame.fill",
-            text: $dayPlan.warmup
-        )
+        editableSection(title: "Warm-Up", icon: "flame.fill", text: $dayPlan.warmup)
     }
 
     private var cooldownSection: some View {
-        editableSection(
-            title: "Cool-Down",
-            icon: "wind",
-            text: $dayPlan.cooldown
-        )
+        editableSection(title: "Cool-Down", icon: "wind", text: $dayPlan.cooldown)
     }
 
     private var leaderNotesSection: some View {
-        editableSection(
-            title: "Leader Notes",
-            icon: "note.text",
-            text: $dayPlan.leaderNotes
-        )
+        editableSection(title: "Leader Notes", icon: "note.text", text: $dayPlan.leaderNotes)
     }
 
     // MARK: - Main Effort
@@ -171,49 +151,103 @@ struct UnitPTDayDetailView: View {
 
                 if isEditing {
                     Button {
-                        dayPlan.mainEffort.append(UnitPTBlock("New Exercise"))
+                        withAnimation {
+                            editMode = editMode == .active ? .inactive : .active
+                        }
                     } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.body)
+                        Text(editMode == .active ? "Done" : "Reorder")
+                            .font(.caption2.weight(.semibold))
                             .foregroundStyle(MVMTheme.accent)
                     }
                 }
             }
 
-            ForEach(Array(dayPlan.mainEffort.enumerated()), id: \.element.id) { index, block in
-                HStack(spacing: 10) {
-                    Text("\(index + 1)")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(MVMTheme.accent)
-                        .frame(width: 24, height: 24)
-                        .background(MVMTheme.accent.opacity(0.12))
-                        .clipShape(Circle())
-
-                    if isEditing {
-                        TextField("Exercise", text: Binding(
-                            get: { dayPlan.mainEffort[index].description },
-                            set: { dayPlan.mainEffort[index].description = $0 }
-                        ))
-                        .font(.subheadline)
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .textFieldStyle(.plain)
-
-                        Button {
-                            dayPlan.mainEffort.remove(at: index)
-                        } label: {
-                            Image(systemName: "minus.circle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.red.opacity(0.7))
+            if isEditing && editMode == .active {
+                List {
+                    ForEach(Array(dayPlan.mainEffort.enumerated()), id: \.element.id) { index, block in
+                        HStack(spacing: 10) {
+                            Text("\(index + 1)")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(MVMTheme.accent)
+                                .frame(width: 24, height: 24)
+                                .background(MVMTheme.accent.opacity(0.12))
+                                .clipShape(Circle())
+                            Text(block.description)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(MVMTheme.primaryText)
                         }
-                    } else {
-                        Text(block.description)
-                            .font(.subheadline)
-                            .foregroundStyle(MVMTheme.secondaryText)
+                        .listRowBackground(MVMTheme.card)
+                    }
+                    .onMove { from, to in
+                        dayPlan.mainEffort.move(fromOffsets: from, toOffset: to)
+                    }
+                    .onDelete { indexSet in
+                        dayPlan.mainEffort.remove(atOffsets: indexSet)
                     }
                 }
-                .padding(12)
-                .background(MVMTheme.cardSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .environment(\.editMode, .constant(.active))
+                .frame(height: CGFloat(dayPlan.mainEffort.count * 52 + 10))
+            } else {
+                ForEach(Array(dayPlan.mainEffort.enumerated()), id: \.element.id) { index, block in
+                    HStack(spacing: 10) {
+                        Text("\(index + 1)")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(MVMTheme.accent)
+                            .frame(width: 24, height: 24)
+                            .background(MVMTheme.accent.opacity(0.12))
+                            .clipShape(Circle())
+
+                        if isEditing {
+                            TextField("Exercise", text: Binding(
+                                get: { dayPlan.mainEffort[index].description },
+                                set: { dayPlan.mainEffort[index].description = $0 }
+                            ))
+                            .font(.subheadline)
+                            .foregroundStyle(MVMTheme.primaryText)
+                            .textFieldStyle(.plain)
+
+                            Button {
+                                dayPlan.mainEffort.remove(at: index)
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.red.opacity(0.7))
+                            }
+                        } else {
+                            Text(block.description)
+                                .font(.subheadline)
+                                .foregroundStyle(MVMTheme.secondaryText)
+                        }
+                    }
+                    .padding(12)
+                    .background(MVMTheme.cardSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+
+            if isEditing {
+                Button {
+                    showAddExercise = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.body)
+                        Text("Add Exercise")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(MVMTheme.accent.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(MVMTheme.accent.opacity(0.2))
+                    }
+                }
+                .buttonStyle(PressScaleButtonStyle())
             }
         }
         .padding(16)
@@ -323,8 +357,6 @@ struct UnitPTDayDetailView: View {
         .padding(16)
         .premiumCard()
     }
-
-    // MARK: - Editable Section Helper
 
     private func editableSection(title: String, icon: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 8) {

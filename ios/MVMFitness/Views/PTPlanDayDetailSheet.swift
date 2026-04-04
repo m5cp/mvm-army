@@ -255,8 +255,13 @@ struct PTPlanDayDetailSheet: View {
             .buttonStyle(PressScaleButtonStyle())
         }
         .sheet(isPresented: $showAddExercise) {
-            AddExerciseSheet { newExercise in
-                exercises.append(newExercise)
+            ArmyPTExercisePickerSheet { exerciseName in
+                let exercise = WorkoutExercise(
+                    name: exerciseName,
+                    sets: 3,
+                    reps: 10
+                )
+                exercises.append(exercise)
                 hasChanges = true
             }
         }
@@ -316,6 +321,7 @@ struct PTPlanDayDetailSheet: View {
                             set: { exercises[index].name = $0; hasChanges = true }
                         ),
                         accentColor: MVMTheme.accent,
+                        armyOnly: true,
                         onChanged: { hasChanges = true }
                     )
                     .zIndex(10)
