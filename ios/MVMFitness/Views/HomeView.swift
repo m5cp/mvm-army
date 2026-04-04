@@ -1094,11 +1094,9 @@ struct HomeView: View {
 
     private var greetingText: String {
         let hour = Calendar.current.component(.hour, from: .now)
-        if hour < 5 { return "Late night" }
-        if hour < 10 { return "Good morning" }
-        if hour < 14 { return "Drive on" }
-        if hour < 18 { return "Afternoon" }
-        return "Evening"
+        if hour < 12 { return "Good morning" }
+        if hour < 17 { return "Drive on" }
+        return "Good evening"
     }
 
     private var formattedSteps: String {
