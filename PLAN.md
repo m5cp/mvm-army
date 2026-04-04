@@ -3,7 +3,7 @@
 ## Features
 
 - **Onboarding flow** — Choose user type (current/future service member, PT leader), branch, fitness goal, and set a daily reminder
-- **Score calculator** — Enter ACFT (Army Combat Fitness Test) event results and get an estimated total score with weak-event insights
+- **Score calculator** — Enter AFT (Army Fitness Test) event results and get an estimated total score with weak-event insights
 - **Personal workout generator** — Generate a tailored daily PT session based on branch, workout type, equipment, and duration
 - **Unit PT planner** — Create formal unit-level PT plans with formation, warm-up, workout blocks, cooldown, and leader notes — shareable/printable
 - **Progress tracking** — Score trend chart, step history bar chart, streak counter, and recent scores list
