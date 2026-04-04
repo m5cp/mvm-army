@@ -35,6 +35,10 @@ struct ProgressViewScreen: View {
                     if !vm.aftScores.isEmpty {
                         aftHistoryCard
                     }
+                    AIInsightsCard()
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 16)
+
                     PerformanceHighlightsView(
                         highlights: vm.performanceHighlights,
                         showEmptyState: vm.performanceHighlights.isEmpty
