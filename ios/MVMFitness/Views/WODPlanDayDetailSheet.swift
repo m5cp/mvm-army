@@ -218,6 +218,9 @@ struct WODPlanDayDetailSheet: View {
     }
 
 
+    @State private var reorderMode: Bool = false
+    @State private var showAddMovement: Bool = false
+
     private var movementsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -228,15 +231,87 @@ struct WODPlanDayDetailSheet: View {
 
                 Spacer()
 
-                Text("Tap to edit")
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(MVMTheme.tertiaryText)
+                Button {
+                    withAnimation {
+                        reorderMode.toggle()
+                    }
+                } label: {
+                    Text(reorderMode ? "Done" : "Reorder")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(wodAccent)
+                }
             }
             .padding(.leading, 4)
 
-            ForEach(Array(movements.enumerated()), id: \.element.id) { index, movement in
-                movementRow(index: index, movement: movement)
+            if reorderMode {
+                List {
+                    ForEach(Array(movements.enumerated()), id: \.element.id) { index, movement in
+                        HStack(spacing: 12) {
+                            Text("\(index + 1)")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(wodAccent)
+                                .frame(width: 24, height: 24)
+                                .background(wodAccent.opacity(0.12))
+                                .clipShape(Circle())
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(movement.name)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(MVMTheme.primaryText)
+                                HStack(spacing: 6) {
+                                    if let reps = movement.reps {
+                                        Text(reps)
+                                            .font(.caption.weight(.medium))
+                                            .foregroundStyle(wodAccent)
+                                    }
+                                    if let dur = movement.duration {
+                                        Text(dur)
+                                            .font(.caption.weight(.medium))
+                                            .foregroundStyle(wodAccent)
+                                    }
+                                }
+                            }
+                        }
+                        .listRowBackground(MVMTheme.card)
+                    }
+                    .onMove { from, to in
+                        movements.move(fromOffsets: from, toOffset: to)
+                        hasChanges = true
+                    }
+                    .onDelete { indexSet in
+                        movements.remove(atOffsets: indexSet)
+                        hasChanges = true
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .environment(\.editMode, .constant(.active))
+                .frame(height: CGFloat(movements.count * 60 + 10))
+            } else {
+                ForEach(Array(movements.enumerated()), id: \.element.id) { index, movement in
+                    movementRow(index: index, movement: movement)
+                }
             }
+
+            Button {
+                showAddMovement = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.body)
+                    Text("Add Movement")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(wodAccent)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(wodAccent.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(wodAccent.opacity(0.2))
+                }
+            }
+            .buttonStyle(PressScaleButtonStyle())
 
             if let notes = day.template.notes, !notes.isEmpty {
                 HStack(spacing: 8) {
@@ -250,6 +325,12 @@ struct WODPlanDayDetailSheet: View {
                 .padding(12)
                 .background(wodAccent.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .sheet(isPresented: $showAddMovement) {
+            AddMovementSheet { newMovement in
+                movements.append(newMovement)
+                hasChanges = true
             }
         }
     }

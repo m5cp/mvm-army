@@ -12,6 +12,7 @@ struct WorkoutCompletionShareSheet: View {
     @State private var ringScale: CGFloat = 0.6
     @State private var contentOpacity: Double = 0
     @State private var showSavedToast: Bool = false
+    @State private var showEditor: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -36,30 +37,49 @@ struct WorkoutCompletionShareSheet: View {
                     Spacer()
 
                     VStack(spacing: 12) {
-                        Button {
-                            if let image = renderedImage {
-                                UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-                                showSavedToast = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                    showSavedToast = false
+                        HStack(spacing: 12) {
+                            Button {
+                                if let image = renderedImage {
+                                    UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                                    showSavedToast = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                        showSavedToast = false
+                                    }
                                 }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "photo.on.rectangle.angled")
+                                        .font(.subheadline.weight(.bold))
+                                    Text("Save")
+                                        .font(.headline.weight(.bold))
+                                }
+                                .foregroundStyle(.white)
+                                .frame(height: 52)
+                                .frame(maxWidth: .infinity)
+                                .background(MVMTheme.heroGradient)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: "photo.on.rectangle.angled")
-                                    .font(.subheadline.weight(.bold))
-                                Text("Save to Photos")
-                                    .font(.headline.weight(.bold))
+                            .buttonStyle(PressScaleButtonStyle())
+                            .disabled(renderedImage == nil)
+
+                            Button {
+                                showEditor = true
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "slider.horizontal.3")
+                                        .font(.subheadline.weight(.bold))
+                                    Text("Edit")
+                                        .font(.headline.weight(.bold))
+                                }
+                                .foregroundStyle(MVMTheme.accent)
+                                .frame(height: 52)
+                                .frame(maxWidth: .infinity)
+                                .background(MVMTheme.accent.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
-                            .foregroundStyle(.white)
-                            .frame(height: 56)
-                            .frame(maxWidth: .infinity)
-                            .background(MVMTheme.heroGradient)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .shadow(color: MVMTheme.accent.opacity(0.3), radius: 16, y: 8)
+                            .buttonStyle(PressScaleButtonStyle())
+                            .disabled(renderedImage == nil)
                         }
-                        .buttonStyle(PressScaleButtonStyle())
-                        .disabled(renderedImage == nil)
 
                         Button {
                             if let image = renderedImage {
@@ -86,7 +106,7 @@ struct WorkoutCompletionShareSheet: View {
                                     .font(.headline.weight(.bold))
                             }
                             .foregroundStyle(MVMTheme.accent)
-                            .frame(height: 56)
+                            .frame(height: 52)
                             .frame(maxWidth: .infinity)
                             .background(MVMTheme.accent.opacity(0.12))
                             .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -162,6 +182,11 @@ struct WorkoutCompletionShareSheet: View {
                     duration: "",
                     date: .now
                 )
+            }
+            .sheet(isPresented: $showEditor) {
+                if let image = renderedImage {
+                    ShareCardEditorView(baseImage: image)
+                }
             }
         }
     }

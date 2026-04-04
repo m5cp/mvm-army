@@ -117,6 +117,7 @@ struct PTPlanDayDetailSheet: View {
             .padding(.bottom, 48)
         }
         .scrollDismissesKeyboard(.interactively)
+        .sensoryFeedback(.selection, trigger: exercises.count)
     }
 
     private var headerCard: some View {
@@ -167,6 +168,9 @@ struct PTPlanDayDetailSheet: View {
         .shadow(color: MVMTheme.accent.opacity(0.2), radius: 20, y: 12)
     }
 
+    @State private var showAddExercise: Bool = false
+    @State private var editMode: EditMode = .inactive
+
     private var exercisesList: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -177,14 +181,83 @@ struct PTPlanDayDetailSheet: View {
 
                 Spacer()
 
-                Text("Tap to edit")
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(MVMTheme.tertiaryText)
+                Button {
+                    withAnimation {
+                        editMode = editMode == .active ? .inactive : .active
+                    }
+                } label: {
+                    Text(editMode == .active ? "Done" : "Reorder")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(MVMTheme.accent)
+                }
             }
             .padding(.leading, 4)
 
-            ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
-                exerciseRow(index: index, exercise: exercise)
+            if editMode == .active {
+                List {
+                    ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
+                        HStack(spacing: 12) {
+                            Text("\(index + 1)")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(MVMTheme.accent)
+                                .frame(width: 24, height: 24)
+                                .background(MVMTheme.accent.opacity(0.12))
+                                .clipShape(Circle())
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(exercise.name)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(MVMTheme.primaryText)
+                                Text(exercise.displayDetail)
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(MVMTheme.secondaryText)
+                            }
+                        }
+                        .listRowBackground(MVMTheme.card)
+                    }
+                    .onMove { from, to in
+                        exercises.move(fromOffsets: from, toOffset: to)
+                        hasChanges = true
+                    }
+                    .onDelete { indexSet in
+                        exercises.remove(atOffsets: indexSet)
+                        hasChanges = true
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .environment(\.editMode, .constant(.active))
+                .frame(height: CGFloat(exercises.count * 60 + 10))
+            } else {
+                ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
+                    exerciseRow(index: index, exercise: exercise)
+                }
+            }
+
+            Button {
+                showAddExercise = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.body)
+                    Text("Add Exercise")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(MVMTheme.accent)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(MVMTheme.accent.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(MVMTheme.accent.opacity(0.2))
+                }
+            }
+            .buttonStyle(PressScaleButtonStyle())
+        }
+        .sheet(isPresented: $showAddExercise) {
+            AddExerciseSheet { newExercise in
+                exercises.append(newExercise)
+                hasChanges = true
             }
         }
     }
