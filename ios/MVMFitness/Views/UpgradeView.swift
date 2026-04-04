@@ -7,14 +7,21 @@ struct UpgradeView: View {
 
     @State private var selectedPackageID: String?
     @State private var animateIn: Bool = false
+    @State private var pulseGlow: Bool = false
 
-    private let features: [(icon: String, title: String, description: String)] = [
-        ("bolt.shield.fill", "Advanced PT Plans", "Multi-week periodized training plans"),
-        ("chart.line.uptrend.xyaxis", "AI Insights & Analytics", "Performance analysis and smart recommendations"),
-        ("person.3.fill", "Unit PT Builder", "Full unit PT plans with TCS and leader notes"),
-        ("doc.text.fill", "PDF & Calendar Export", "Export plans as PDFs and sync to calendar"),
-        ("square.and.arrow.up.fill", "Share Cards & QR", "Custom share cards with photo overlays"),
-        ("star.fill", "Priority Support", "Early access to new features and updates")
+    private let proFeatures: [(icon: String, title: String)] = [
+        ("bolt.shield.fill", "Advanced PT Plans"),
+        ("chart.line.uptrend.xyaxis", "AI Insights & Analytics"),
+        ("person.3.fill", "Unit PT Builder"),
+        ("doc.text.fill", "PDF & Calendar Export"),
+        ("square.and.arrow.up.fill", "Share Cards & QR"),
+        ("star.fill", "Priority Support")
+    ]
+
+    private let freeFeatures: [(icon: String, title: String)] = [
+        ("figure.run", "AFT Score Calculator"),
+        ("dumbbell.fill", "Basic Workouts"),
+        ("chart.bar.fill", "Step Tracking")
     ]
 
     var body: some View {
@@ -23,10 +30,12 @@ struct UpgradeView: View {
                 MVMTheme.background.ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 24) {
+                    VStack(spacing: 28) {
                         headerSection
-                        featuresSection
-                        packagesSection
+                        freeTierSection
+                        subscriptionTiersSection
+                        lifetimeDealSection
+                        ctaButton
                         legalSection
                     }
                     .padding(.horizontal, 20)
@@ -63,6 +72,9 @@ struct UpgradeView: View {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.1)) {
                     animateIn = true
                 }
+                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true).delay(0.6)) {
+                    pulseGlow = true
+                }
             }
         }
     }
@@ -70,7 +82,7 @@ struct UpgradeView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             ZStack {
                 Circle()
                     .fill(
@@ -80,11 +92,11 @@ struct UpgradeView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 72, height: 72)
+                    .frame(width: 68, height: 68)
                     .shadow(color: MVMTheme.accent.opacity(0.35), radius: 16, y: 6)
 
                 Image(systemName: "crown.fill")
-                    .font(.system(size: 30, weight: .bold))
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(.white)
             }
             .scaleEffect(animateIn ? 1 : 0.6)
@@ -92,7 +104,7 @@ struct UpgradeView: View {
 
             VStack(spacing: 6) {
                 Text("Unlock MVM Pro")
-                    .font(.title.weight(.bold))
+                    .font(.title2.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
 
                 Text("Train smarter. Perform better.")
@@ -101,69 +113,64 @@ struct UpgradeView: View {
             }
             .opacity(animateIn ? 1 : 0)
             .offset(y: animateIn ? 0 : 10)
-
-            HStack(spacing: 6) {
-                Image(systemName: "tag.fill")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color(hex: "#F59E0B"))
-                Text("LIMITED TIME LAUNCH PRICE")
-                    .font(.caption2.weight(.heavy))
-                    .tracking(0.8)
-                    .foregroundStyle(Color(hex: "#F59E0B"))
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-            .background(Color(hex: "#F59E0B").opacity(0.12))
-            .clipShape(Capsule())
-            .opacity(animateIn ? 1 : 0)
         }
     }
 
-    // MARK: - Features
+    // MARK: - Free Tier
 
-    private var featuresSection: some View {
-        VStack(spacing: 8) {
-            ForEach(Array(features.enumerated()), id: \.element.title) { index, feature in
-                HStack(spacing: 14) {
-                    Image(systemName: feature.icon)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(MVMTheme.accent)
-                        .frame(width: 36, height: 36)
-                        .background(MVMTheme.accent.opacity(0.12))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(feature.title)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(MVMTheme.primaryText)
-                        Text(feature.description)
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(MVMTheme.tertiaryText)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    Image(systemName: "checkmark")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(MVMTheme.accent)
+    private var freeTierSection: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Free")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text("Basic features included")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
                 }
-                .padding(12)
-                .opacity(animateIn ? 1 : 0)
-                .offset(y: animateIn ? 0 : 8)
-                .animation(
-                    .spring(response: 0.5, dampingFraction: 0.8).delay(Double(index) * 0.05 + 0.15),
-                    value: animateIn
-                )
+
+                Spacer(minLength: 0)
+
+                Text("$0")
+                    .font(.title2.weight(.heavy))
+                    .foregroundStyle(MVMTheme.secondaryText)
             }
+            .padding(16)
+
+            Divider().overlay(MVMTheme.border)
+
+            VStack(spacing: 8) {
+                ForEach(freeFeatures, id: \.title) { feature in
+                    HStack(spacing: 10) {
+                        Image(systemName: "checkmark")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                            .frame(width: 18)
+                        Text(feature.title)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+            .padding(16)
         }
-        .padding(4)
-        .premiumCard()
+        .background(MVMTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(MVMTheme.border)
+        }
+        .opacity(animateIn ? 1 : 0)
+        .offset(y: animateIn ? 0 : 8)
+        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: animateIn)
     }
 
-    // MARK: - Packages
+    // MARK: - Subscription Tiers
 
-    private var packagesSection: some View {
-        VStack(spacing: 12) {
+    private var subscriptionTiersSection: some View {
+        VStack(spacing: 10) {
             if store.isLoading {
                 VStack(spacing: 12) {
                     ProgressView()
@@ -174,8 +181,10 @@ struct UpgradeView: View {
                 }
                 .frame(height: 120)
             } else if let current = store.offerings?.current {
-                ForEach(current.availablePackages, id: \.identifier) { package in
-                    packageCard(package)
+                ForEach(sortedPackages(from: current), id: \.identifier) { package in
+                    if package.packageType != .lifetime {
+                        subscriptionCard(package)
+                    }
                 }
             } else {
                 VStack(spacing: 12) {
@@ -193,7 +202,234 @@ struct UpgradeView: View {
                 }
                 .frame(height: 120)
             }
+        }
+        .opacity(animateIn ? 1 : 0)
+        .offset(y: animateIn ? 0 : 10)
+        .animation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.25), value: animateIn)
+    }
 
+    private func subscriptionCard(_ package: Package) -> some View {
+        let isSelected = selectedPackageID == package.identifier
+        let isAnnual = package.packageType == .annual
+
+        return Button {
+            selectedPackageID = package.identifier
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? MVMTheme.accent : MVMTheme.tertiaryText.opacity(0.4), lineWidth: 2)
+                        .frame(width: 22, height: 22)
+                    if isSelected {
+                        Circle()
+                            .fill(MVMTheme.accent)
+                            .frame(width: 14, height: 14)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 8) {
+                        Text(package.storeProduct.localizedTitle)
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(MVMTheme.primaryText)
+
+                        if isAnnual {
+                            Text("POPULAR")
+                                .font(.system(size: 9, weight: .heavy))
+                                .tracking(0.5)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 2)
+                                .background(MVMTheme.accent)
+                                .clipShape(Capsule())
+                        }
+                    }
+
+                    if let intro = package.storeProduct.introductoryDiscount {
+                        HStack(spacing: 4) {
+                            Image(systemName: "gift.fill")
+                                .font(.system(size: 9))
+                            Text("\(intro.subscriptionPeriod.value) \(intro.subscriptionPeriod.unit == .day ? "day" : intro.subscriptionPeriod.unit == .week ? "week" : "month") free trial")
+                                .font(.caption2.weight(.semibold))
+                        }
+                        .foregroundStyle(MVMTheme.success)
+                    } else if isAnnual {
+                        Text("Save 58% vs monthly")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(MVMTheme.success)
+                    }
+                }
+
+                Spacer(minLength: 0)
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(package.storeProduct.localizedPriceString)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(isSelected ? MVMTheme.accent : MVMTheme.primaryText)
+
+                    Text(package.packageType == .annual ? "per year" : "per month")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+            }
+            .padding(16)
+            .background(isSelected ? MVMTheme.accent.opacity(0.06) : MVMTheme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? MVMTheme.accent.opacity(0.5) : MVMTheme.border, lineWidth: isSelected ? 1.5 : 1)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Lifetime Deal
+
+    private var lifetimeDealSection: some View {
+        Group {
+            if let current = store.offerings?.current,
+               let lifetimePackage = current.availablePackages.first(where: { $0.packageType == .lifetime }) {
+                let isSelected = selectedPackageID == lifetimePackage.identifier || (selectedPackageID == nil)
+
+                Button {
+                    selectedPackageID = lifetimePackage.identifier
+                } label: {
+                    VStack(spacing: 0) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "star.fill")
+                                .font(.caption2.weight(.bold))
+                            Text("LIMITED TIME LAUNCH OFFER")
+                                .font(.caption2.weight(.heavy))
+                                .tracking(1.2)
+                        }
+                        .foregroundStyle(Color(hex: "#0C0F0E"))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 9)
+                        .frame(maxWidth: .infinity)
+                        .background(MVMTheme.heroAmber)
+
+                        VStack(spacing: 16) {
+                            VStack(spacing: 5) {
+                                Text("Founding Member")
+                                    .font(.caption.weight(.bold))
+                                    .tracking(1.0)
+                                    .foregroundStyle(MVMTheme.heroAmber)
+
+                                Text("Lifetime Access")
+                                    .font(.title2.weight(.heavy))
+                                    .foregroundStyle(.white)
+                            }
+
+                            HStack(alignment: .firstTextBaseline, spacing: 0) {
+                                Text(lifetimePackage.storeProduct.localizedPriceString)
+                                    .font(.system(size: 48, weight: .heavy, design: .rounded))
+                                    .foregroundStyle(.white)
+                            }
+
+                            VStack(spacing: 6) {
+                                HStack(spacing: 6) {
+                                    Text("$99.99")
+                                        .font(.subheadline.weight(.bold))
+                                        .strikethrough(color: .white.opacity(0.5))
+                                        .foregroundStyle(.white.opacity(0.4))
+
+                                    Text("50% OFF")
+                                        .font(.caption2.weight(.heavy))
+                                        .tracking(0.5)
+                                        .foregroundStyle(Color(hex: "#0C0F0E"))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(MVMTheme.heroAmber)
+                                        .clipShape(Capsule())
+                                }
+
+                                Text("One payment. Yours forever.")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.white.opacity(0.5))
+                            }
+
+                            Divider().overlay(.white.opacity(0.1))
+                                .padding(.horizontal, 8)
+
+                            VStack(spacing: 9) {
+                                lifetimePerk(icon: "infinity", text: "Every feature, every update — forever")
+                                lifetimePerk(icon: "lock.open.fill", text: "No recurring charges, no surprises")
+                                lifetimePerk(icon: "chart.line.uptrend.xyaxis", text: "Pays for itself in under 13 months vs annual")
+                                lifetimePerk(icon: "shield.checkered", text: "Lock in before price goes to $99.99")
+                            }
+
+                            VStack(spacing: 4) {
+                                Text("Half the cost of one year at the leading fitness tracker")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(MVMTheme.success)
+
+                                Text("Career soldiers save hundreds over a 20-year service")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(.white.opacity(0.4))
+                            }
+                            .multilineTextAlignment(.center)
+                        }
+                        .padding(20)
+                        .background {
+                            ZStack {
+                                LinearGradient(
+                                    colors: [
+                                        Color(hex: "#1A1A2E"),
+                                        Color(hex: "#16213E"),
+                                        Color(hex: "#0F3460").opacity(0.8)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                MVMTheme.subtleGradient
+                            }
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        MVMTheme.heroAmber.opacity(isSelected ? 0.8 : (pulseGlow ? 0.6 : 0.3)),
+                                        MVMTheme.heroAmber.opacity(isSelected ? 0.5 : (pulseGlow ? 0.3 : 0.1)),
+                                        MVMTheme.heroAmber.opacity(isSelected ? 0.8 : (pulseGlow ? 0.6 : 0.3))
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: isSelected ? 2 : 1.5
+                            )
+                    }
+                    .shadow(color: MVMTheme.heroAmber.opacity(pulseGlow ? 0.2 : 0.08), radius: 24, y: 12)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .opacity(animateIn ? 1 : 0)
+        .offset(y: animateIn ? 0 : 16)
+        .animation(.spring(response: 0.7, dampingFraction: 0.78).delay(0.35), value: animateIn)
+    }
+
+    private func lifetimePerk(icon: String, text: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(MVMTheme.heroAmber)
+                .frame(width: 20)
+
+            Text(text)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.white.opacity(0.75))
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    // MARK: - CTA
+
+    private var ctaButton: some View {
+        Group {
             if let current = store.offerings?.current, let selected = selectedPackage(from: current) {
                 Button {
                     Task { await store.purchase(package: selected) }
@@ -205,7 +441,7 @@ struct UpgradeView: View {
                             Image(systemName: "lock.open.fill")
                                 .font(.subheadline.weight(.bold))
                         }
-                        Text("Continue")
+                        Text(selected.packageType == .lifetime ? "Get Lifetime Access" : "Continue")
                             .font(.headline.weight(.bold))
                     }
                     .foregroundStyle(.white)
@@ -220,93 +456,18 @@ struct UpgradeView: View {
             }
         }
         .opacity(animateIn ? 1 : 0)
-        .offset(y: animateIn ? 0 : 12)
-        .animation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.4), value: animateIn)
+        .animation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.45), value: animateIn)
     }
 
-    private func packageCard(_ package: Package) -> some View {
-        let isSelected = selectedPackageID == package.identifier || (selectedPackageID == nil && package.packageType == .lifetime)
-        let isLifetime = package.packageType == .lifetime
+    // MARK: - Helpers
 
-        return Button {
-            selectedPackageID = package.identifier
-        } label: {
-            VStack(spacing: 8) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 8) {
-                            Text(package.storeProduct.localizedTitle)
-                                .font(.headline.weight(.bold))
-                                .foregroundStyle(MVMTheme.primaryText)
-
-                            if isLifetime {
-                                Text("BEST VALUE")
-                                    .font(.system(size: 9, weight: .heavy))
-                                    .tracking(0.5)
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 3)
-                                    .background(
-                                        LinearGradient(
-                                            colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706")],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .clipShape(Capsule())
-                            }
-                        }
-
-                        if !package.storeProduct.localizedDescription.isEmpty {
-                            Text(package.storeProduct.localizedDescription)
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(MVMTheme.tertiaryText)
-                                .lineLimit(2)
-                        }
-                    }
-
-                    Spacer(minLength: 0)
-
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(package.storeProduct.localizedPriceString)
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(isSelected ? MVMTheme.accent : MVMTheme.primaryText)
-
-                        if isLifetime {
-                            Text("one time")
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(MVMTheme.tertiaryText)
-                        } else if package.packageType == .annual {
-                            Text("per year")
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(MVMTheme.tertiaryText)
-                        } else if package.packageType == .monthly {
-                            Text("per month")
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(MVMTheme.tertiaryText)
-                        }
-                    }
-                }
-
-                if let intro = package.storeProduct.introductoryDiscount {
-                    HStack(spacing: 4) {
-                        Image(systemName: "gift.fill")
-                            .font(.caption2)
-                        Text("Free trial: \(intro.subscriptionPeriod.value) \(intro.subscriptionPeriod.unit == .day ? "days" : intro.subscriptionPeriod.unit == .week ? "weeks" : "months")")
-                            .font(.caption2.weight(.semibold))
-                    }
-                    .foregroundStyle(MVMTheme.accent)
-                }
-            }
-            .padding(16)
-            .background(isSelected ? MVMTheme.accent.opacity(0.08) : MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? MVMTheme.accent.opacity(0.5) : MVMTheme.border, lineWidth: isSelected ? 2 : 1)
-            }
+    private func sortedPackages(from offering: Offering) -> [Package] {
+        let order: [PackageType] = [.monthly, .annual, .lifetime]
+        return offering.availablePackages.sorted { a, b in
+            let aIdx = order.firstIndex(of: a.packageType) ?? 99
+            let bIdx = order.firstIndex(of: b.packageType) ?? 99
+            return aIdx < bIdx
         }
-        .buttonStyle(.plain)
     }
 
     private func selectedPackage(from offering: Offering) -> Package? {
