@@ -684,6 +684,17 @@ final class AppViewModel {
         persistAll()
     }
 
+    func reorderPTDays(from source: IndexSet, to destination: Int) {
+        guard var plan = currentPlan else { return }
+        plan.days.move(fromOffsets: source, toOffset: destination)
+        for i in plan.days.indices {
+            plan.days[i].dayIndex = i
+        }
+        currentPlan = plan
+        ptPlanNeedsSync = true
+        persistAll()
+    }
+
     func updateDayExercises(dayIndex: Int, exercises: [WorkoutExercise]) {
         guard var plan = currentPlan,
               let idx = plan.days.firstIndex(where: { $0.dayIndex == dayIndex }) else { return }
@@ -1157,6 +1168,14 @@ final class AppViewModel {
             wodPlanNeedsSync = true
             persistAll()
         }
+    }
+
+    func reorderWODDays(from source: IndexSet, to destination: Int) {
+        guard var plan = wodPlan else { return }
+        plan.days.move(fromOffsets: source, toOffset: destination)
+        wodPlan = plan
+        wodPlanNeedsSync = true
+        persistAll()
     }
 
     func updateWODDayMovements(dayId: UUID, movements: [WODMovement]) {

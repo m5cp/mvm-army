@@ -483,6 +483,7 @@ struct PTWODShareSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var renderedImage: UIImage?
     @State private var showSavedToast: Bool = false
+    @State private var showEditor: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -504,30 +505,48 @@ struct PTWODShareSheet: View {
                                 .frame(height: 300)
                         }
 
-                        Button {
-                            if let image = renderedImage {
-                                UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-                                showSavedToast = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                    showSavedToast = false
+                        HStack(spacing: 12) {
+                            Button {
+                                if let image = renderedImage {
+                                    UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                                    showSavedToast = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                        showSavedToast = false
+                                    }
                                 }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "photo.on.rectangle.angled")
+                                    Text("Save")
+                                }
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(height: 52)
+                                .frame(maxWidth: .infinity)
+                                .background(MVMTheme.heroGradient)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: "photo.on.rectangle.angled")
-                                Text("Save to Photos")
+                            .buttonStyle(PressScaleButtonStyle())
+                            .disabled(renderedImage == nil)
+
+                            Button {
+                                showEditor = true
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "slider.horizontal.3")
+                                    Text("Edit")
+                                }
+                                .font(.headline)
+                                .foregroundStyle(MVMTheme.accent)
+                                .frame(height: 52)
+                                .frame(maxWidth: .infinity)
+                                .background(MVMTheme.accent.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(height: 56)
-                            .frame(maxWidth: .infinity)
-                            .background(MVMTheme.heroGradient)
-                            .clipShape(RoundedRectangle(cornerRadius: 18))
-                            .shadow(color: MVMTheme.accent.opacity(0.28), radius: 18, y: 10)
+                            .buttonStyle(PressScaleButtonStyle())
+                            .disabled(renderedImage == nil)
                         }
-                        .buttonStyle(PressScaleButtonStyle())
                         .padding(.horizontal, 20)
-                        .disabled(renderedImage == nil)
 
                         Button {
                             if let image = renderedImage {
@@ -553,10 +572,10 @@ struct PTWODShareSheet: View {
                             }
                             .font(.headline)
                             .foregroundStyle(MVMTheme.accent)
-                            .frame(height: 56)
+                            .frame(height: 52)
                             .frame(maxWidth: .infinity)
                             .background(MVMTheme.accent.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
                         .buttonStyle(PressScaleButtonStyle())
                         .padding(.horizontal, 20)
@@ -600,6 +619,11 @@ struct PTWODShareSheet: View {
                 renderedImage = ShareCardRenderer.renderImage(
                     cardType: .workout(title: workout.title, exercises: workout.exercises, tags: workout.tags)
                 )
+            }
+            .sheet(isPresented: $showEditor) {
+                if let image = renderedImage {
+                    ShareCardEditorView(baseImage: image)
+                }
             }
         }
     }

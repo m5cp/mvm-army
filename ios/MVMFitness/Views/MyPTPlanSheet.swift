@@ -24,6 +24,7 @@ struct MyPTPlanSheet: View {
     @State private var actionTrigger: Bool = false
     @State private var selectedPTDay: WorkoutDay?
     @State private var showShareCardSheet: Bool = false
+    @State private var isReorderingDays: Bool = false
 
     private let calendar = Calendar.current
 
@@ -44,8 +45,12 @@ struct MyPTPlanSheet: View {
 
                             planActionsBar
 
-                            ForEach(Array(plan.days.enumerated()), id: \.element.id) { offset, day in
-                                dayRow(day, offset: offset)
+                            if isReorderingDays {
+                                reorderDaysList(plan)
+                            } else {
+                                ForEach(Array(plan.days.enumerated()), id: \.element.id) { offset, day in
+                                    dayRow(day, offset: offset)
+                                }
                             }
 
                             if plan.currentWeek < plan.totalWeeks {
@@ -217,6 +222,12 @@ struct MyPTPlanSheet: View {
                     showShareCardSheet = true
                 }
 
+                planActionButton(icon: "arrow.up.arrow.down", label: isReorderingDays ? "Done" : "Reorder") {
+                    withAnimation(.spring(response: 0.35)) {
+                        isReorderingDays.toggle()
+                    }
+                }
+
                 planActionButton(icon: "doc.richtext", label: "Export") {
                     showExportPDFSheet = true
                 }
@@ -224,6 +235,56 @@ struct MyPTPlanSheet: View {
         }
         .opacity(animateCards ? 1 : 0)
         .offset(y: animateCards ? 0 : 8)
+    }
+
+    private func reorderDaysList(_ plan: WeeklyPlan) -> some View {
+        List {
+            ForEach(Array(plan.days.enumerated()), id: \.element.id) { index, day in
+                HStack(spacing: 12) {
+                    VStack(spacing: 2) {
+                        Text(shortDayName(day.date))
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                        Text(dayNumber(day.date))
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
+                    .frame(width: 32)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(day.isRestDay ? "Recovery & Mobility" : day.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(day.isRestDay ? MVMTheme.secondaryText : MVMTheme.primaryText)
+                            .lineLimit(1)
+                        if !day.isRestDay {
+                            Text("\(day.exercises.count) exercises")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        } else {
+                            Text("Active rest")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
+                    }
+
+                    Spacer()
+
+                    if day.isRestDay {
+                        Image(systemName: "leaf.fill")
+                            .font(.caption)
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
+                }
+                .listRowBackground(MVMTheme.card)
+            }
+            .onMove { from, to in
+                vm.reorderPTDays(from: from, to: to)
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .environment(\.editMode, .constant(.active))
+        .frame(height: CGFloat(plan.days.count * 60 + 10))
     }
 
     private func planActionButton(icon: String, label: String, action: @escaping () -> Void) -> some View {

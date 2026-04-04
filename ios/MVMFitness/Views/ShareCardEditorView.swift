@@ -16,8 +16,9 @@ struct ShareCardEditorView: View {
     @State private var showCamera: Bool = false
     @State private var overlayPhoto: UIImage?
     @State private var overlayOffset: CGSize = .zero
-    @State private var overlayScale: CGFloat = 0.35
+    @State private var overlayScale: CGFloat = 1.0
     @State private var overlayCorner: OverlayCorner = .topLeft
+    @State private var photoMode: PhotoMode = .background
     @State private var showSavedToast: Bool = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var dragOffset: CGSize = .zero
@@ -114,9 +115,29 @@ struct ShareCardEditorView: View {
 
         let renderer = UIGraphicsImageRenderer(size: base.size)
         return renderer.image { ctx in
-            base.draw(at: .zero)
+            if let photo = overlayPhoto, photoMode == .background {
+                let filteredPhoto = applyFilter(to: photo, filter: selectedFilter) ?? photo
+                let photoAspect = filteredPhoto.size.width / filteredPhoto.size.height
+                let baseAspect = base.size.width / base.size.height
+                let drawRect: CGRect
+                if photoAspect > baseAspect {
+                    let h = base.size.height
+                    let w = h * photoAspect
+                    drawRect = CGRect(x: (base.size.width - w) / 2, y: 0, width: w, height: h)
+                } else {
+                    let w = base.size.width
+                    let h = w / photoAspect
+                    drawRect = CGRect(x: 0, y: (base.size.height - h) / 2, width: w, height: h)
+                }
+                filteredPhoto.draw(in: drawRect)
+                ctx.cgContext.setFillColor(UIColor.black.withAlphaComponent(0.45).cgColor)
+                ctx.cgContext.fill(CGRect(origin: .zero, size: base.size))
+                base.draw(at: .zero, blendMode: .screen, alpha: 0.85)
+            } else {
+                base.draw(at: .zero)
+            }
 
-            if let photo = overlayPhoto {
+            if let photo = overlayPhoto, photoMode == .overlay {
                 let photoSize = CGSize(
                     width: base.size.width * overlayScale,
                     height: base.size.width * overlayScale * (photo.size.height / photo.size.width)
@@ -162,7 +183,7 @@ struct ShareCardEditorView: View {
 
     private var photoOverlaySection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("PHOTO OVERLAY")
+            Text("PHOTO")
                 .font(.caption.weight(.bold))
                 .tracking(1.0)
                 .foregroundStyle(MVMTheme.tertiaryText)
@@ -224,34 +245,65 @@ struct ShareCardEditorView: View {
 
             if overlayPhoto != nil {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("POSITION")
+                    Text("MODE")
                         .font(.caption2.weight(.bold))
                         .tracking(0.8)
                         .foregroundStyle(MVMTheme.tertiaryText)
 
                     HStack(spacing: 8) {
-                        ForEach(OverlayCorner.allCases) { corner in
+                        ForEach(PhotoMode.allCases) { mode in
                             Button {
-                                overlayCorner = corner
+                                withAnimation(.spring(response: 0.3)) {
+                                    photoMode = mode
+                                }
                             } label: {
-                                Text(corner.label)
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(overlayCorner == corner ? .white : MVMTheme.secondaryText)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(overlayCorner == corner ? MVMTheme.accent : MVMTheme.cardSoft)
-                                    .clipShape(Capsule())
+                                HStack(spacing: 6) {
+                                    Image(systemName: mode.icon)
+                                        .font(.caption2.weight(.bold))
+                                    Text(mode.label)
+                                        .font(.caption.weight(.semibold))
+                                }
+                                .foregroundStyle(photoMode == mode ? .white : MVMTheme.secondaryText)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(photoMode == mode ? MVMTheme.accent : MVMTheme.cardSoft)
+                                .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
                         }
                     }
 
-                    HStack(spacing: 12) {
-                        Text("Size")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(MVMTheme.secondaryText)
-                        Slider(value: $overlayScale, in: 0.15...0.5)
-                            .tint(MVMTheme.accent)
+                    if photoMode == .overlay {
+                        Text("POSITION")
+                            .font(.caption2.weight(.bold))
+                            .tracking(0.8)
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                            .padding(.top, 4)
+
+                        HStack(spacing: 8) {
+                            ForEach(OverlayCorner.allCases) { corner in
+                                Button {
+                                    overlayCorner = corner
+                                } label: {
+                                    Text(corner.label)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(overlayCorner == corner ? .white : MVMTheme.secondaryText)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .background(overlayCorner == corner ? MVMTheme.accent : MVMTheme.cardSoft)
+                                        .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+
+                        HStack(spacing: 12) {
+                            Text("Size")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(MVMTheme.secondaryText)
+                            Slider(value: $overlayScale, in: 0.15...0.5)
+                                .tint(MVMTheme.accent)
+                        }
                     }
                 }
                 .padding(.horizontal, 24)
@@ -490,6 +542,20 @@ nonisolated enum ShareCardFilter: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
     var displayName: String { rawValue }
+}
+
+nonisolated enum PhotoMode: String, CaseIterable, Identifiable, Sendable {
+    case background = "Background"
+    case overlay = "Overlay"
+
+    var id: String { rawValue }
+    var label: String { rawValue }
+    var icon: String {
+        switch self {
+        case .background: return "photo.fill"
+        case .overlay: return "square.on.square"
+        }
+    }
 }
 
 nonisolated enum OverlayCorner: String, CaseIterable, Identifiable, Sendable {

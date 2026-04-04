@@ -24,6 +24,7 @@ struct WODPlanSheet: View {
     @State private var calendarService = CalendarExportService()
     @State private var actionTrigger: Bool = false
     @State private var selectedWODDay: WODPlanDay?
+    @State private var isReorderingDays: Bool = false
 
     private let calendar = Calendar.current
 
@@ -40,7 +41,11 @@ struct WODPlanSheet: View {
                             newPlanButton
                             planHeader(plan)
                             planActionsBar
-                            weekDaysList(plan)
+                            if isReorderingDays {
+                                reorderDaysList(plan)
+                            } else {
+                                weekDaysList(plan)
+                            }
                             refreshButton
                         }
                     }
@@ -213,6 +218,12 @@ struct WODPlanSheet: View {
             HStack(spacing: 10) {
                 wodActionButton(icon: "square.and.arrow.up", label: "Share") {
                     showShareSheet = true
+                }
+
+                wodActionButton(icon: "arrow.up.arrow.down", label: isReorderingDays ? "Done" : "Reorder") {
+                    withAnimation(.spring(response: 0.35)) {
+                        isReorderingDays.toggle()
+                    }
                 }
 
                 wodActionButton(icon: "doc.richtext", label: "Export") {
@@ -615,6 +626,61 @@ struct WODPlanSheet: View {
                 dayRow(day, offset: offset)
             }
         }
+    }
+
+    private func reorderDaysList(_ plan: WODPlan) -> some View {
+        List {
+            ForEach(Array(plan.days.enumerated()), id: \.element.id) { index, day in
+                HStack(spacing: 12) {
+                    VStack(spacing: 2) {
+                        Text(shortDayName(day.date))
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                        Text(dayNumber(day.date))
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
+                    .frame(width: 32)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(day.isRestDay ? "Rest & Recovery" : day.template.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(day.isRestDay ? MVMTheme.secondaryText : MVMTheme.primaryText)
+                            .lineLimit(1)
+                        if !day.isRestDay {
+                            HStack(spacing: 6) {
+                                Text(day.template.format.rawValue)
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(Color(hex: "#F59E0B"))
+                                Text("~\(day.template.durationMinutes) min")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(MVMTheme.tertiaryText)
+                            }
+                        } else {
+                            Text("Active rest")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
+                    }
+
+                    Spacer()
+
+                    if day.isRestDay {
+                        Image(systemName: "leaf.fill")
+                            .font(.caption)
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
+                }
+                .listRowBackground(MVMTheme.card)
+            }
+            .onMove { from, to in
+                vm.reorderWODDays(from: from, to: to)
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .environment(\.editMode, .constant(.active))
+        .frame(height: CGFloat(plan.days.count * 60 + 10))
     }
 
     private func dayRow(_ day: WODPlanDay, offset: Int) -> some View {
