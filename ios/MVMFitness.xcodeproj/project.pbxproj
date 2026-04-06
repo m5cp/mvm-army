@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		XX298127CFBB2CF3FA631BXX /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = XXDCC169DE7B2F3C1C8B10XX /* RevenueCat */; };
+		XX84D57CB3933792060CCBXX /* MVMFitnessWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = XXE403B271EAFDBE7CB94DXX /* MVMFitnessWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		XXC1003CB96D61CABF4F40XX /* MVMFitnessWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = XX266854D8D95C71CDA804XX /* MVMFitnessWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -33,9 +34,27 @@
 			remoteGlobalIDString = XX9662579B05C3D0A04682XX;
 			remoteInfo = MVMFitnessWidget;
 		};
+		XXDC4F3A302427F5369DB5XX /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 105FC5722E9EAD3100EA8BCF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = XX302C921F31E0703E80CAXX;
+			remoteInfo = MVMFitnessWatch;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		XX32B49CEAA0499208E713XX /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				XX84D57CB3933792060CCBXX /* MVMFitnessWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		XXC49F570598E5486B1D97XX /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -54,6 +73,7 @@
 		105FC5892E9EAD3200EA8BCF /* MVMFitnessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MVMFitnessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		105FC5932E9EAD3200EA8BCF /* MVMFitnessUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MVMFitnessUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		XX266854D8D95C71CDA804XX /* MVMFitnessWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MVMFitnessWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		XXE403B271EAFDBE7CB94DXX /* MVMFitnessWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MVMFitnessWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -67,19 +87,17 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		105FC57C2E9EAD3100EA8BCF /* MVMFitness */ = {
+		XX3EBE0810CD8D752D6C50XX /* MVMFitnessWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MVMFitness;
+			path = MVMFitnessWidget;
 			sourceTree = "<group>";
+			exceptions = (
+				XX2764503E520D2C0AAA71XX /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
 		};
-		105FC58C2E9EAD3200EA8BCF /* MVMFitnessTests */ = {
+		XX7BD1621C6EF0141D112DXX /* MVMFitnessWatch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MVMFitnessTests;
-			sourceTree = "<group>";
-		};
-		105FC5962E9EAD3200EA8BCF /* MVMFitnessUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MVMFitnessUITests;
+			path = MVMFitnessWatch;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -107,6 +125,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		XX28A9A27FCA465D91AA27XX /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		XX75B8358D2242CEB782C5XX /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -117,13 +142,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		XX3EBE0810CD8D752D6C50XX /* MVMFitnessWidget */ = {
+		105FC57C2E9EAD3100EA8BCF /* MVMFitness */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MVMFitnessWidget;
+			path = MVMFitness;
 			sourceTree = "<group>";
-			exceptions = (
-				XX2764503E520D2C0AAA71XX /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
-			);
+		};
+		105FC58C2E9EAD3200EA8BCF /* MVMFitnessTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MVMFitnessTests;
+			sourceTree = "<group>";
+		};
+		105FC5962E9EAD3200EA8BCF /* MVMFitnessUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MVMFitnessUITests;
+			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -136,6 +168,7 @@
 				105FC5962E9EAD3200EA8BCF /* MVMFitnessUITests */,
 				105FC57B2E9EAD3100EA8BCF /* Products */,
 				XX3EBE0810CD8D752D6C50XX /* MVMFitnessWidget */,
+				XX7BD1621C6EF0141D112DXX /* MVMFitnessWatch */,
 			);
 			sourceTree = "<group>";
 		};
@@ -146,6 +179,7 @@
 				105FC5892E9EAD3200EA8BCF /* MVMFitnessTests.xctest */,
 				105FC5932E9EAD3200EA8BCF /* MVMFitnessUITests.xctest */,
 				XX266854D8D95C71CDA804XX /* MVMFitnessWidget.appex */,
+				XXE403B271EAFDBE7CB94DXX /* MVMFitnessWatch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -161,11 +195,13 @@
 				105FC5772E9EAD3100EA8BCF /* Frameworks */,
 				105FC5782E9EAD3100EA8BCF /* Resources */,
 				XXC49F570598E5486B1D97XX /* Embed Foundation Extensions */,
+				XX32B49CEAA0499208E713XX /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				XXA1BF3F65738F8E841D45XX /* PBXTargetDependency */,
+				XXCBAED501CFA47973E294XX /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				105FC57C2E9EAD3100EA8BCF /* MVMFitness */,
@@ -223,6 +259,26 @@
 			productName = MVMFitnessUITests;
 			productReference = 105FC5932E9EAD3200EA8BCF /* MVMFitnessUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		XX302C921F31E0703E80CAXX /* MVMFitnessWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = XX1D9C9147CAD53C3C9BFDXX /* Build configuration list for PBXNativeTarget "MVMFitnessWatch" */;
+			buildPhases = (
+				XX178B45C53EB340DB4155XX /* Sources */,
+				XX28A9A27FCA465D91AA27XX /* Frameworks */,
+				XX4FEB6E8356710642DD83XX /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MVMFitnessWatch;
+			productName = MVMFitnessWatch;
+			productReference = XXE403B271EAFDBE7CB94DXX /* MVMFitnessWatch.app */;
+			productType = "com.apple.product-type.application";
+			fileSystemSynchronizedGroups = (
+				XX7BD1621C6EF0141D112DXX /* MVMFitnessWatch */,
+			);
 		};
 		XX9662579B05C3D0A04682XX /* MVMFitnessWidget */ = {
 			isa = PBXNativeTarget;
@@ -285,6 +341,7 @@
 				105FC5882E9EAD3200EA8BCF /* MVMFitnessTests */,
 				105FC5922E9EAD3200EA8BCF /* MVMFitnessUITests */,
 				XX9662579B05C3D0A04682XX /* MVMFitnessWidget */,
+				XX302C921F31E0703E80CAXX /* MVMFitnessWatch */,
 			);
 			packageReferences = (
 				XX4AC81916604C4344ADC0XX /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
@@ -308,6 +365,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		105FC5912E9EAD3200EA8BCF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		XX4FEB6E8356710642DD83XX /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -345,6 +409,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		XX178B45C53EB340DB4155XX /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		XXE0FD6AFA7551401BFCEBXX /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -369,6 +440,11 @@
 			isa = PBXTargetDependency;
 			target = XX9662579B05C3D0A04682XX /* MVMFitnessWidget */;
 			targetProxy = XX4C7BC24BF0C8790182D0XX /* PBXContainerItemProxy */;
+		};
+		XXCBAED501CFA47973E294XX /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = XX302C921F31E0703E80CAXX /* MVMFitnessWatch */;
+			targetProxy = XXDC4F3A302427F5369DB5XX /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -686,6 +762,37 @@
 			};
 			name = Debug;
 		};
+		XXD4D8AAD907CE6FF14DD3XX /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.sf0lrvsw5r0bpccfi1669.mvmfitnesswatch;
+				PRODUCT_NAME = MVMFitnessWatch;
+				SWIFT_VERSION = 5.0;
+				SDKROOT = watchos;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				GENERATE_INFOPLIST_FILE = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 1.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				TARGETED_DEVICE_FAMILY = 4;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_KEY_CFBundleDisplayName = "$(PRODUCT_NAME)";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				ENABLE_PREVIEWS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = app.rork.sf0lrvsw5r0bpccfi1669;
+				CODE_SIGN_ENTITLEMENTS = MVMFitnessWatch/MVMFitnessWatch.entitlements;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "View your fitness stats on Apple Watch";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Save workouts from Apple Watch";
+			};
+			name = Release;
+		};
 		XXDF7C5F61E9DE09BD1EC6XX /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -709,6 +816,37 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 			};
 			name = Release;
+		};
+		XXE5DC514D606A3FE025AAXX /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.sf0lrvsw5r0bpccfi1669.mvmfitnesswatch;
+				PRODUCT_NAME = MVMFitnessWatch;
+				SWIFT_VERSION = 5.0;
+				SDKROOT = watchos;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				GENERATE_INFOPLIST_FILE = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 1.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				TARGETED_DEVICE_FAMILY = 4;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_KEY_CFBundleDisplayName = "$(PRODUCT_NAME)";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				ENABLE_PREVIEWS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = app.rork.sf0lrvsw5r0bpccfi1669;
+				CODE_SIGN_ENTITLEMENTS = MVMFitnessWatch/MVMFitnessWatch.entitlements;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "View your fitness stats on Apple Watch";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Save workouts from Apple Watch";
+			};
+			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 
@@ -745,6 +883,15 @@
 			buildConfigurations = (
 				105FC5A42E9EAD3200EA8BCF /* Debug */,
 				105FC5A52E9EAD3200EA8BCF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		XX1D9C9147CAD53C3C9BFDXX /* Build configuration list for PBXNativeTarget "MVMFitnessWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XXE5DC514D606A3FE025AAXX /* Debug */,
+				XXD4D8AAD907CE6FF14DD3XX /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
