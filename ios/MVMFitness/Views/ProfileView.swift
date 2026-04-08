@@ -3,6 +3,7 @@ import PhotosUI
 
 struct ProfileView: View {
     @Environment(AppViewModel.self) private var vm
+    @Environment(StoreViewModel.self) private var store
 
     @AppStorage("ptGoal") private var ptGoalRaw = ""
     @AppStorage("planWeeks") private var planWeeks = 4
@@ -18,6 +19,8 @@ struct ProfileView: View {
     @State private var resetPlanTrigger = false
     @State private var resetAllTrigger = false
     @State private var showAvatarPicker = false
+    @State private var showUpgrade = false
+    @State private var restoreTrigger = false
     @State private var imageManager = ProfileImageManager()
     @State private var isEditingName: Bool = false
     @FocusState private var nameFieldFocused: Bool
@@ -29,6 +32,7 @@ struct ProfileView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 28) {
                     profileHeader
+                    subscriptionSection
                     currentGoalSection
                     notificationsSection
                     appControlsSection
@@ -219,6 +223,62 @@ struct ProfileView: View {
         Rectangle()
             .fill(MVMTheme.border)
             .frame(width: 1, height: 28)
+    }
+
+    // MARK: - Subscription Management
+
+    private var subscriptionSection: some View {
+        settingsSection(title: "SUBSCRIPTION", icon: "crown") {
+            if store.isPremium {
+                HStack(spacing: 12) {
+                    Image(systemName: "crown.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.heroAmber)
+                        .frame(width: 24)
+                    Text("MVM Pro Active")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Spacer()
+                    Text("PRO")
+                        .font(.caption2.weight(.heavy))
+                        .foregroundStyle(MVMTheme.heroAmber)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(MVMTheme.heroAmber.opacity(0.15))
+                        .clipShape(Capsule())
+                }
+                .frame(minHeight: 48)
+            } else {
+                Button {
+                    showUpgrade = true
+                } label: {
+                    settingsRow(icon: "crown.fill", title: "Upgrade to Pro", color: MVMTheme.heroAmber, showChevron: true)
+                }
+            }
+
+            sectionDivider
+
+            Button {
+                restoreTrigger.toggle()
+                Task { await store.restore() }
+            } label: {
+                settingsRow(icon: "arrow.triangle.2.circlepath", title: "Restore Purchases", color: MVMTheme.accent)
+            }
+            .sensoryFeedback(.impact(weight: .light), trigger: restoreTrigger)
+
+            sectionDivider
+
+            Button {
+                if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                settingsRow(icon: "creditcard", title: "Manage Subscription", color: MVMTheme.slateAccent, showChevron: true)
+            }
+        }
+        .sheet(isPresented: $showUpgrade) {
+            UpgradeView()
+        }
     }
 
     // MARK: - Current Goal

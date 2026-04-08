@@ -488,7 +488,27 @@ struct UpgradeView: View {
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(MVMTheme.accent)
 
-            Text("Payment will be charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless cancelled at least 24 hours before the end of the current period. Manage subscriptions in Settings.")
+            HStack(spacing: 16) {
+                NavigationLink {
+                    LegalTextView(title: "Terms of Use", content: LegalContent.termsOfUse)
+                } label: {
+                    Text("Terms of Use")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .underline()
+                }
+
+                NavigationLink {
+                    LegalTextView(title: "Privacy Policy", content: LegalContent.privacyPolicy)
+                } label: {
+                    Text("Privacy Policy")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .underline()
+                }
+            }
+
+            Text("Payment will be charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless cancelled at least 24 hours before the end of the current period. Manage subscriptions in Settings > Apple ID > Subscriptions.")
                 .font(.system(size: 9))
                 .foregroundStyle(MVMTheme.tertiaryText.opacity(0.6))
                 .multilineTextAlignment(.center)
