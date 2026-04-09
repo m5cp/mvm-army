@@ -3,6 +3,8 @@ import SwiftUI
 struct WatchStatsView: View {
     @Environment(WatchViewModel.self) private var viewModel
 
+    private var data: WatchData { viewModel.data }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 10) {
@@ -11,37 +13,39 @@ struct WatchStatsView: View {
                     .foregroundStyle(WatchTheme.accent)
                     .padding(.top, 4)
 
-                healthRing(
-                    icon: "flame.fill",
-                    title: "Active Cal",
-                    value: String(format: "%.0f", viewModel.todayCalories),
-                    unit: "kcal",
-                    color: .red
-                )
-
-                healthRing(
+                statRow(
                     icon: "figure.walk",
                     title: "Steps",
-                    value: "\(viewModel.todaySteps)",
+                    value: "\(data.stepsToday)",
                     unit: "steps",
                     color: WatchTheme.accent
                 )
 
-                healthRing(
-                    icon: "map.fill",
-                    title: "Distance",
-                    value: String(format: "%.1f", viewModel.todayDistance),
-                    unit: "mi",
-                    color: .cyan
+                statRow(
+                    icon: "flame.fill",
+                    title: "Streak",
+                    value: "\(data.streak)",
+                    unit: data.streak == 1 ? "day" : "days",
+                    color: .orange
                 )
 
-                if viewModel.heartRate > 0 {
-                    healthRing(
-                        icon: "heart.fill",
-                        title: "Heart Rate",
-                        value: String(format: "%.0f", viewModel.heartRate),
-                        unit: "bpm",
-                        color: .pink
+                if let score = data.aftScore, score > 0 {
+                    statRow(
+                        icon: "shield.fill",
+                        title: "AFT Score",
+                        value: "\(score)",
+                        unit: "pts",
+                        color: data.aftPassed == true ? WatchTheme.success : .red
+                    )
+                }
+
+                if data.planWeek > 0 && data.planTotalWeeks > 0 {
+                    statRow(
+                        icon: "calendar",
+                        title: "Plan",
+                        value: "Wk \(data.planWeek)/\(data.planTotalWeeks)",
+                        unit: "",
+                        color: .cyan
                     )
                 }
             }
@@ -49,7 +53,7 @@ struct WatchStatsView: View {
         }
     }
 
-    private func healthRing(icon: String, title: String, value: String, unit: String, color: Color) -> some View {
+    private func statRow(icon: String, title: String, value: String, unit: String, color: Color) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .semibold))
@@ -66,9 +70,11 @@ struct WatchStatsView: View {
                         .font(.system(size: 18, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
 
-                    Text(unit)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(WatchTheme.subtleText)
+                    if !unit.isEmpty {
+                        Text(unit)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(WatchTheme.subtleText)
+                    }
                 }
             }
 

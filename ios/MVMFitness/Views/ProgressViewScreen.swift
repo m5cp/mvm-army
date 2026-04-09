@@ -1,6 +1,5 @@
 import SwiftUI
 import Charts
-import HealthKit
 
 struct ProgressViewScreen: View {
     @Environment(AppViewModel.self) private var vm
@@ -14,10 +13,7 @@ struct ProgressViewScreen: View {
     @State private var selectedDayRecord: CompletedWorkoutRecord?
     @State private var showDayDetail: Bool = false
     @State private var showTrainingCalendar: Bool = false
-    @State private var showAllActivities: Bool = false
-    @State private var selectedActivity: ActivitySummary?
-    @State private var showActivityDetail: Bool = false
-    @AppStorage("hasRequestedHealthKit") private var hasRequestedHealthKit: Bool = false
+
 
     var body: some View {
         ZStack {
@@ -29,7 +25,7 @@ struct ProgressViewScreen: View {
                     primaryMetricsRow
                     thisWeekHero
                     interactiveWeekStrip
-                    activityCardsSection
+                    localActivitySection
                     if !vm.quickStartRecords.isEmpty {
                         quickStartHistoryCard
                     }
@@ -79,24 +75,11 @@ struct ProgressViewScreen: View {
         .navigationDestination(isPresented: $showTrainingCalendar) {
             TrainingCalendarView()
         }
-        .navigationDestination(isPresented: $showAllActivities) {
-            AllActivitiesView()
-        }
-        .navigationDestination(isPresented: $showActivityDetail) {
-            if let activity = selectedActivity {
-                ActivityDetailView(activity: activity)
-            }
-        }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
             Task {
                 try? await Task.sleep(for: .milliseconds(400))
                 vm.syncTodaySteps()
-            }
-            if hasRequestedHealthKit {
-                Task {
-                    await vm.healthKit.refreshAll()
-                }
             }
             withAnimation(.easeOut(duration: 0.6).delay(0.05)) {
                 appeared = true
@@ -151,9 +134,7 @@ struct ProgressViewScreen: View {
     // MARK: - Primary Metrics Row
 
     private var primaryMetricsRow: some View {
-        let todaySteps = max(vm.pedometer.todaySteps, vm.healthKit.todaySteps)
-        let calories = Int(vm.healthKit.todayActiveCalories)
-        let distance = vm.healthKit.todayWalkRunDistance
+        let todaySteps = vm.pedometer.todaySteps
 
         return HStack(spacing: 10) {
             primaryMetricCard(
@@ -161,23 +142,23 @@ struct ProgressViewScreen: View {
                 iconColor: MVMTheme.success,
                 value: todaySteps.formatted(),
                 label: "Steps",
-                sublabel: hasRequestedHealthKit ? "Today" : "—"
+                sublabel: "Today"
             )
 
             primaryMetricCard(
-                icon: "map.fill",
+                icon: "checkmark.seal.fill",
                 iconColor: MVMTheme.accent,
-                value: hasRequestedHealthKit ? String(format: "%.1f mi", distance) : "—",
-                label: "Distance",
-                sublabel: "Today"
+                value: "\(vm.totalWorkoutsCompleted)",
+                label: "Workouts",
+                sublabel: "Total"
             )
 
             primaryMetricCard(
                 icon: "flame.fill",
                 iconColor: Color(hex: "#FF6B35"),
-                value: hasRequestedHealthKit ? "\(calories)" : "—",
-                label: "Calories",
-                sublabel: "Active"
+                value: "\(vm.workoutsThisWeek)",
+                label: "This Week",
+                sublabel: "Sessions"
             )
         }
         .opacity(appeared ? 1 : 0)
@@ -417,238 +398,94 @@ struct ProgressViewScreen: View {
 
     // MARK: - Activity Cards Section
 
-    private var activityCardsSection: some View {
+    private var localActivitySection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
-                Image(systemName: "heart.fill")
-                    .foregroundStyle(.red)
+                Image(systemName: "figure.strengthtraining.traditional")
+                    .foregroundStyle(MVMTheme.accent)
                     .font(.subheadline.weight(.semibold))
                 Text("Activity")
                     .font(.headline)
                     .foregroundStyle(MVMTheme.primaryText)
-
                 Spacer()
-
-                if hasRequestedHealthKit && !vm.healthKit.permissionDenied {
-                    Button {
-                        showAllActivities = true
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text("See All")
-                                .font(.caption.weight(.semibold))
-                            Image(systemName: "chevron.right")
-                                .font(.caption2.weight(.bold))
-                        }
-                        .foregroundStyle(MVMTheme.accent)
-                    }
-                }
             }
             .padding(.horizontal, 4)
 
-            if !hasRequestedHealthKit {
-                enableHealthCard
-            } else if vm.healthKit.permissionDenied && vm.pedometer.permissionDenied {
-                permissionDeniedCard
-            } else {
-                activityGridCards
+            HStack(spacing: 10) {
+                localMetricTile(
+                    icon: "figure.walk",
+                    name: "Steps",
+                    value: vm.pedometer.todaySteps.formatted(),
+                    sublabel: "Today",
+                    color: MVMTheme.success
+                )
+
+                localMetricTile(
+                    icon: "calendar",
+                    name: "Streak",
+                    value: "\(vm.streak)",
+                    sublabel: vm.streak == 1 ? "day" : "days",
+                    color: MVMTheme.warning
+                )
+            }
+
+            HStack(spacing: 10) {
+                localMetricTile(
+                    icon: "dumbbell.fill",
+                    name: "Completed",
+                    value: "\(vm.totalWorkoutsCompleted)",
+                    sublabel: "All time",
+                    color: MVMTheme.slateAccent
+                )
+
+                localMetricTile(
+                    icon: "chart.line.uptrend.xyaxis",
+                    name: "Avg Steps",
+                    value: vm.weeklyStepAverage.formatted(),
+                    sublabel: "7-day avg",
+                    color: MVMTheme.accent
+                )
             }
         }
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Activity tracking")
     }
 
-    private var enableHealthCard: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "heart.text.square")
-                .font(.system(size: 36))
-                .foregroundStyle(MVMTheme.accent)
-                .symbolEffect(.pulse, options: .repeating)
+    private func localMetricTile(icon: String, name: String, value: String, sublabel: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(color)
+                .frame(width: 32, height: 32)
+                .background(color.opacity(0.12))
+                .clipShape(Circle())
 
-            Text("Track Your Activity")
-                .font(.title3.weight(.bold))
-                .foregroundStyle(MVMTheme.primaryText)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(name)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.secondaryText)
 
-            Text("Connect to Apple Health to see your steps, calories, and workout activities.")
-                .font(.subheadline)
-                .foregroundStyle(MVMTheme.secondaryText)
-                .multilineTextAlignment(.center)
-                .lineSpacing(2)
+                Text(value)
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(MVMTheme.primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .contentTransition(.numericText())
 
-            Button {
-                Task {
-                    hasRequestedHealthKit = true
-                    await vm.healthKit.refreshAll()
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "heart.fill")
-                        .font(.subheadline.weight(.bold))
-                    Text("Enable Activity Tracking")
-                        .font(.subheadline.weight(.bold))
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(MVMTheme.heroGradient)
-                .clipShape(.rect(cornerRadius: 14))
-            }
-            .buttonStyle(PressScaleButtonStyle())
-        }
-        .padding(24)
-        .premiumCard()
-    }
-
-    private var permissionDeniedCard: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "heart.text.square")
-                .font(.system(size: 32))
-                .foregroundStyle(MVMTheme.tertiaryText)
-
-            Text("Health Access Needed")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(MVMTheme.secondaryText)
-
-            Text("Enable Health and Motion access in Settings to track your daily steps and fitness activities.")
-                .font(.caption)
-                .foregroundStyle(MVMTheme.tertiaryText)
-                .multilineTextAlignment(.center)
-                .lineSpacing(2)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(24)
-        .premiumCard()
-    }
-
-    private var activityGridCards: some View {
-        VStack(spacing: 10) {
-            let walkingActivity = vm.healthKit.activities.first { $0.activityType == .walking }
-            let runningActivity = vm.healthKit.activities.first { $0.activityType == .running }
-            let strengthActivity = vm.healthKit.activities.first {
-                $0.activityType == .functionalStrengthTraining || $0.activityType == .traditionalStrengthTraining
-            }
-
-            HStack(spacing: 10) {
-                activityTile(
-                    icon: "figure.walk",
-                    name: "Walking",
-                    value: walkingActivity.map { formatDuration($0.todayDuration) } ?? "—",
-                    sublabel: walkingActivity.map { String(format: "%.1f mi", $0.todayDistance) } ?? "No data",
-                    color: MVMTheme.success,
-                    activity: walkingActivity
-                )
-
-                activityTile(
-                    icon: "figure.run",
-                    name: "Running",
-                    value: runningActivity.map { formatDuration($0.todayDuration) } ?? "—",
-                    sublabel: runningActivity.map { String(format: "%.1f mi", $0.todayDistance) } ?? "No data",
-                    color: Color(hex: "#FF6B35"),
-                    activity: runningActivity
-                )
-            }
-
-            HStack(spacing: 10) {
-                activityTile(
-                    icon: "dumbbell.fill",
-                    name: "Strength",
-                    value: strengthActivity.map { "\($0.todayCount)" } ?? "—",
-                    sublabel: strengthActivity.map { $0.todayCount > 0 ? "session\($0.todayCount == 1 ? "" : "s") today" : "No sessions" } ?? "No data",
-                    color: MVMTheme.slateAccent,
-                    activity: strengthActivity
-                )
-
-                Button {
-                    showAllActivities = true
-                } label: {
-                    VStack(spacing: 10) {
-                        Image(systemName: "square.grid.2x2")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(MVMTheme.accent)
-                            .frame(width: 40, height: 40)
-                            .background(MVMTheme.accent.opacity(0.12))
-                            .clipShape(Circle())
-
-                        Text("All Activities")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(MVMTheme.primaryText)
-
-                        Text("\(vm.healthKit.activities.count) tracked")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(MVMTheme.tertiaryText)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 110)
-                    .background(MVMTheme.card)
-                    .clipShape(.rect(cornerRadius: 20))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(MVMTheme.accent.opacity(0.15), lineWidth: 1)
-                            .stroke(MVMTheme.border)
-                    }
-                    .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
-                }
-                .buttonStyle(PressScaleButtonStyle())
+                Text(sublabel)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(MVMTheme.tertiaryText)
             }
         }
-    }
-
-    private func activityTile(icon: String, name: String, value: String, sublabel: String, color: Color, activity: ActivitySummary?) -> some View {
-        Button {
-            if let activity {
-                selectedActivity = activity
-                showActivityDetail = true
-            } else {
-                showAllActivities = true
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Image(systemName: icon)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(color)
-                        .frame(width: 32, height: 32)
-                        .background(color.opacity(0.12))
-                        .clipShape(Circle())
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(name)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(MVMTheme.secondaryText)
-
-                    Text(value)
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-
-                    Text(sublabel)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                        .lineLimit(1)
-                }
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(minHeight: 110)
-            .background(MVMTheme.card)
-            .clipShape(.rect(cornerRadius: 20))
-            .overlay {
-                RoundedRectangle(cornerRadius: 20).stroke(MVMTheme.border)
-            }
-            .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 100)
+        .background(MVMTheme.card)
+        .clipShape(.rect(cornerRadius: 20))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20).stroke(MVMTheme.border)
         }
-        .buttonStyle(PressScaleButtonStyle())
-        .accessibilityLabel("\(name), \(value), \(sublabel)")
-        .accessibilityHint("Tap to view daily breakdown")
+        .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
     }
 
     // MARK: - Weekly Frequency Chart

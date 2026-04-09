@@ -7,7 +7,6 @@ final class AppViewModel {
     var completedRecords: [CompletedWorkoutRecord] = []
     var stepHistory: [StepDay] = []
     var pedometer = PedometerManager()
-    var healthKit = HealthKitManager()
     var lastWorkoutTag: String = ""
     var unitPTPlans: [UnitPTPlan] = []
     var unitPTFullPlan: UnitPTFullPlan?
@@ -1442,9 +1441,6 @@ final class AppViewModel {
         showRecap(PerformanceHighlightsService.workoutRecap(title: record.activity.rawValue, exerciseCount: 1))
         persistAll()
 
-        Task {
-            await healthKit.saveQuickStartWorkout(record)
-        }
     }
 
     func exportQuickStartToCalendar(_ record: QuickStartRecord, calendarService: CalendarExportService) async -> CalendarExportService.ExportResult {

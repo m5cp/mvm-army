@@ -582,8 +582,6 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "MVM Fitness reads your step count, active calories, walking/running distance, cycling distance, and workout activity data from Apple Health to display your daily activity, track fitness progress, and show detailed breakdowns of your training sessions. Your health data stays on-device and is never shared with third parties.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MVM Fitness saves your completed Quick Start workout sessions (runs, bike rides, hikes, functional fitness) to Apple Health so they contribute to your activity rings and workout history. Your health data stays on-device and is never shared with third parties.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "MVM Fitness uses the camera to scan QR codes for importing shared PT plans and workouts from other users.";
@@ -624,8 +622,6 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "MVM Fitness reads your step count, active calories, walking/running distance, cycling distance, and workout activity data from Apple Health to display your daily activity, track fitness progress, and show detailed breakdowns of your training sessions. Your health data stays on-device and is never shared with third parties.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MVM Fitness saves your completed Quick Start workout sessions (runs, bike rides, hikes, functional fitness) to Apple Health so they contribute to your activity rings and workout history. Your health data stays on-device and is never shared with third parties.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "MVM Fitness uses the camera to scan QR codes for importing shared PT plans and workouts from other users.";
@@ -788,8 +784,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = app.rork.sf0lrvsw5r0bpccfi1669;
 				CODE_SIGN_ENTITLEMENTS = MVMFitnessWatch/MVMFitnessWatch.entitlements;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "View your fitness stats on Apple Watch";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Save workouts from Apple Watch";
+
 			};
 			name = Release;
 		};
@@ -843,8 +838,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = app.rork.sf0lrvsw5r0bpccfi1669;
 				CODE_SIGN_ENTITLEMENTS = MVMFitnessWatch/MVMFitnessWatch.entitlements;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "View your fitness stats on Apple Watch";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Save workouts from Apple Watch";
+
 			};
 			name = Debug;
 		};

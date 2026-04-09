@@ -9,7 +9,6 @@ struct MVMFitnessWatchApp: App {
             ContentView()
                 .environment(viewModel)
                 .task {
-                    await viewModel.requestHealthAccess()
                     viewModel.refresh()
                 }
         }

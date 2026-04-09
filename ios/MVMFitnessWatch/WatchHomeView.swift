@@ -35,7 +35,7 @@ struct WatchHomeView: View {
                     )
                     StatPill(
                         icon: "figure.walk",
-                        value: formatSteps(viewModel.todaySteps),
+                        value: formatSteps(data.stepsToday),
                         label: "Steps",
                         color: WatchTheme.accent
                     )

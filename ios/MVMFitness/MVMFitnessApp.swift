@@ -5,7 +5,6 @@ import RevenueCat
 @main
 struct MVMFitnessApp: App {
     @AppStorage("appearanceMode") private var appearanceModeRaw = AppearanceMode.system.rawValue
-    @AppStorage("hasRequestedHealthKit") private var hasRequestedHealthKit: Bool = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel = AppViewModel()
     @State private var store = StoreViewModel()
@@ -32,11 +31,6 @@ struct MVMFitnessApp: App {
                         Task {
                             try? await Task.sleep(for: .milliseconds(300))
                             viewModel.syncTodaySteps()
-                        }
-                        if hasRequestedHealthKit {
-                            Task {
-                                await viewModel.healthKit.refreshAll()
-                            }
                         }
                         viewModel.syncWidgetData()
                     }

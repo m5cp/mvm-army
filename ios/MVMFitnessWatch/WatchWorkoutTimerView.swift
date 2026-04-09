@@ -163,13 +163,6 @@ struct WatchWorkoutTimerView: View {
 
     private func completeWorkout() {
         pauseTimer()
-        let duration = TimeInterval(elapsedSeconds)
-        Task {
-            _ = await viewModel.saveWorkoutToHealth(
-                title: viewModel.data.todayWorkoutTitle ?? "MVM Workout",
-                duration: duration
-            )
-            showComplete = true
-        }
+        showComplete = true
     }
 }
