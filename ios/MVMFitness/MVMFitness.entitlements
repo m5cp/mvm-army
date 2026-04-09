@@ -8,9 +8,5 @@
 	</array>
 	<key>com.apple.developer.siri</key>
 	<true/>
-	<key>com.apple.developer.in-app-payments</key>
-	<array>
-		<string>merchant.app.rork.sf0lrvsw5r0bpccfi1669</string>
-	</array>
 </dict>
 </plist>
