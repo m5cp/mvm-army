@@ -43,7 +43,7 @@ struct PDFUploadView: View {
                     .adaptiveContainer()
                 }
             }
-            .navigationTitle("Import Workout")
+            .navigationTitle("Import Exercises")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -91,11 +91,11 @@ struct PDFUploadView: View {
                 }
 
                 VStack(spacing: 6) {
-                    Text("Upload Workout PDF")
+                    Text("Import Exercises from PDF")
                         .font(.title3.weight(.bold))
                         .foregroundStyle(MVMTheme.primaryText)
 
-                    Text("Import a workout from any PDF file.\nExercises, sets, and reps will be extracted automatically.")
+                    Text("Upload a PDF to detect exercise movements.\nNames, sets, and reps will be added to your library — not as a ready-made routine.")
                         .font(.subheadline)
                         .foregroundStyle(MVMTheme.secondaryText)
                         .multilineTextAlignment(.center)

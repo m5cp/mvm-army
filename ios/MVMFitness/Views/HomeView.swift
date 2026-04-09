@@ -1020,8 +1020,8 @@ struct HomeView: View {
                 }
 
                 planRow(
-                    title: "Import Workout PDF",
-                    subtitle: "Upload & extract any workout",
+                    title: "Import Exercises from PDF",
+                    subtitle: "Scan & add movements to your library",
                     icon: "doc.text.fill",
                     color: Color(hex: "#8B5CF6")
                 ) {
