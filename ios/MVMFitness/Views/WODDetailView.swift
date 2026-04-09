@@ -354,9 +354,9 @@ struct WODDetailView: View {
                     }
                     Button {
                         generateTrigger.toggle()
-                        generateHero()
+                        generateChallenge()
                     } label: {
-                        Label("Elite Challenge", systemImage: "bolt.heart.fill")
+                        Label("Challenge Workout", systemImage: "bolt.heart.fill")
                     }
                 } label: {
                     HStack(spacing: 6) {
@@ -515,9 +515,9 @@ struct WODDetailView: View {
         workout = WODService.convertToWorkoutDay(template)
     }
 
-    private func generateHero() {
+    private func generateChallenge() {
         didComplete = false
-        let template = WODService.generateHeroWOD()
+        let template = WODService.generateChallengeWOD()
         wodTemplate = template
         workout = WODService.convertToWorkoutDay(template)
     }

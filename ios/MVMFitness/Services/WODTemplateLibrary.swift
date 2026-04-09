@@ -222,11 +222,11 @@ enum WODTemplateLibrary {
         functionalWODs + aftWODs
     }
 
-    static var heroWODs: [WODTemplate] {
+    static var challengeWODs: [WODTemplate] {
         HeroWODLibrary.heroWODs
     }
 
-    static var allIncludingHero: [WODTemplate] {
+    static var allIncludingChallenge: [WODTemplate] {
         functionalWODs + aftWODs + HeroWODLibrary.heroWODs
     }
 

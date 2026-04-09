@@ -14,8 +14,8 @@ enum WODService {
 
         let selected: WODTemplate
         if heroOnly {
-            let elitePool = HeroWODLibrary.heroWODs.filter { $0.title != lastTitle }
-            selected = elitePool.randomElement() ?? HeroWODLibrary.heroWODs.randomElement() ?? HeroWODLibrary.heroWODs[0]
+            let challengePool = HeroWODLibrary.heroWODs.filter { $0.title != lastTitle }
+            selected = challengePool.randomElement() ?? HeroWODLibrary.heroWODs.randomElement() ?? HeroWODLibrary.heroWODs[0]
         } else {
             let pool = filteredPool(equipment: equipment, excluding: lastTitle)
             selected = pool.randomElement() ?? WODTemplateLibrary.allTemplates.randomElement() ?? WODTemplateLibrary.functionalWODs[0]
@@ -27,7 +27,7 @@ enum WODService {
         return selected
     }
 
-    static func generateHeroWOD() -> WODTemplate {
+    static func generateChallengeWOD() -> WODTemplate {
         let lastTitle = UserDefaults.standard.string(forKey: lastWODKey)
         let pool = HeroWODLibrary.heroWODs.filter { $0.title != lastTitle }
         let selected = pool.randomElement() ?? HeroWODLibrary.heroWODs.randomElement() ?? HeroWODLibrary.heroWODs[0]
