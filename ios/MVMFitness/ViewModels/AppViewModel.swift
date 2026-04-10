@@ -20,6 +20,8 @@ final class AppViewModel {
     var ptPlanNeedsSync: Bool = false
     var wodPlanNeedsSync: Bool = false
     var quickStartRecords: [QuickStartRecord] = []
+    var activeMilestone: Milestone?
+    var showMilestoneUpgrade: Bool = false
 
     var performanceHighlights: [PerformanceHighlight] {
         PerformanceHighlightsService.generateHighlights(
@@ -536,6 +538,7 @@ final class AppViewModel {
         let previousScores = aftScores
         aftScores.insert(record, at: 0)
         showRecap(PerformanceHighlightsService.aftScoreRecap(newScore: record, previousScores: previousScores))
+        checkAFTMilestone(newScore: record.totalScore, previousScore: previousScores.first?.totalScore)
         persistAll()
     }
 
@@ -575,6 +578,7 @@ final class AppViewModel {
         )
         aftScores.insert(scoreRecord, at: 0)
         showRecap(PerformanceHighlightsService.aftScoreRecap(newScore: scoreRecord, previousScores: previousScores))
+        checkAFTMilestone(newScore: result.totalScore, previousScore: previousScores.first?.totalScore)
         persistAll()
     }
 
@@ -659,6 +663,7 @@ final class AppViewModel {
             let completed = plan.days.filter(\.isCompleted).count
             let total = plan.totalWorkoutDays
             showRecap(PerformanceHighlightsService.planDayRecap(dayNumber: completed, totalDays: total))
+            checkMilestonesAfterWorkout()
         }
         persistAll()
     }
@@ -683,6 +688,7 @@ final class AppViewModel {
             ), at: 0
         )
         showRecap(PerformanceHighlightsService.workoutRecap(title: workout.title, exerciseCount: workout.exercises.count))
+        checkMilestonesAfterWorkout()
         persistAll()
     }
 
@@ -1458,6 +1464,47 @@ final class AppViewModel {
             notes: notes,
             durationMinutes: durationMinutes
         )
+    }
+
+    // MARK: - Milestones & Review Prompts
+
+    func checkMilestonesAfterWorkout() {
+        let total = completedRecords.count
+        let currentStreak = streak
+
+        if let milestone = MilestoneManager.checkWorkoutMilestone(totalCompleted: total) {
+            activeMilestone = milestone
+            if milestone.suggestUpgrade { showMilestoneUpgrade = true }
+        } else if let streakMilestone = MilestoneManager.checkStreakMilestone(streak: currentStreak) {
+            activeMilestone = streakMilestone
+        }
+
+        ReviewPromptManager.checkAndPromptIfEligible(trigger: .workoutMilestone(total: total))
+        ReviewPromptManager.checkAndPromptIfEligible(trigger: .streak(days: currentStreak))
+
+        if currentStreak >= 3 {
+            Task { await NotificationManager.scheduleStreakReminder(streak: currentStreak) }
+        }
+    }
+
+    func checkAFTMilestone(newScore: Int, previousScore: Int?) {
+        if aftScores.count == 1 {
+            if let milestone = MilestoneManager.checkFirstAFTScore() {
+                activeMilestone = milestone
+                if milestone.suggestUpgrade { showMilestoneUpgrade = true }
+            }
+        } else if let milestone = MilestoneManager.checkAFTMilestone(newScore: newScore, previousScore: previousScore) {
+            activeMilestone = milestone
+        }
+
+        if let prev = previousScore, newScore > prev {
+            ReviewPromptManager.checkAndPromptIfEligible(trigger: .aftScoreImprovement)
+        }
+    }
+
+    func dismissMilestone() {
+        activeMilestone = nil
+        showMilestoneUpgrade = false
     }
 
     func resetAllData() {

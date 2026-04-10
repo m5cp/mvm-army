@@ -58,6 +58,7 @@ struct MainTabView: View {
             get: { vm.activeRecap },
             set: { vm.activeRecap = $0 }
         ))
+        .milestoneOverlay()
     }
 
     private var customTabBar: some View {
