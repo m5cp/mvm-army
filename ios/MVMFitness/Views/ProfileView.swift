@@ -484,13 +484,6 @@ struct ProfileView: View {
                 settingsRow(icon: "tablecells", title: "Scoring Reference", color: MVMTheme.accent, showChevron: true)
             }
 
-            sectionDivider
-
-            NavigationLink {
-                CompetitorComparisonView()
-            } label: {
-                settingsRow(icon: "medal.fill", title: "Why MVM?", color: MVMTheme.heroAmber, showChevron: true)
-            }
         }
     }
 
