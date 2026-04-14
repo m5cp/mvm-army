@@ -359,7 +359,7 @@ struct AFTGoalShareSheet: View {
 
                         Button {
                             if let image {
-                                let text = "MVM Army — AFT Goal: \(totalScore)/500\n#MVMArmy #ArmyFitness"
+                                let text = "MVM Fitness — AFT Goal: \(totalScore)/500\n#MVMFitness #ArmyFitness"
                                 let activityVC = UIActivityViewController(activityItems: [image, text], applicationActivities: nil)
                                 guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                                       let rootVC = windowScene.windows.first?.rootViewController else { return }
@@ -477,7 +477,7 @@ enum AFTGoalCardRenderer {
                 .foregroundColor: UIColor.white.withAlphaComponent(0.7),
                 .kern: 3.0
             ]
-            let headerStr = NSAttributedString(string: "MVM ARMY", attributes: headerAttrs)
+            let headerStr = NSAttributedString(string: "MVM FITNESS", attributes: headerAttrs)
             headerStr.draw(at: CGPoint(x: 60, y: 50))
 
             let dateFormatter = DateFormatter()
@@ -665,7 +665,7 @@ enum AFTGoalCardRenderer {
                 .font: UIFont.systemFont(ofSize: 20, weight: .medium),
                 .foregroundColor: UIColor.white.withAlphaComponent(0.2)
             ]
-            let rightStr = NSAttributedString(string: "#MVMArmy", attributes: rightAttrs)
+            let rightStr = NSAttributedString(string: "#MVMFitness", attributes: rightAttrs)
             let rightSize = rightStr.size()
             rightStr.draw(at: CGPoint(x: width - 60 - rightSize.width, y: footerY + 20))
         }

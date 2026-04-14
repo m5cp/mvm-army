@@ -1030,7 +1030,7 @@ struct PlanView: View {
         case .partial(let exported, let failed):
             exportAlertMessage = "\(exported) exported, \(failed) failed. Try again for remaining."
         case .denied:
-            exportAlertMessage = "Calendar access denied. Go to Settings → MVM Army → Calendars to enable."
+            exportAlertMessage = "Calendar access denied. Go to Settings → MVM Fitness → Calendars to enable."
         case .error(let message):
             exportAlertMessage = "Export failed: \(message)"
         }

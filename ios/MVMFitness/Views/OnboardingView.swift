@@ -88,7 +88,7 @@ struct OnboardingView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 28))
 
             VStack(spacing: 10) {
-                Text("MVM ARMY")
+                Text("MVM FITNESS")
                     .font(.system(size: 30, weight: .heavy))
                     .tracking(2.5)
                     .foregroundStyle(.white)
