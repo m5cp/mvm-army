@@ -8,12 +8,6 @@ struct AFTCalculatorView: View {
     @State private var sex: SoldierSex = .male
     @State private var standard: AFTStandard = .combat
 
-    @State private var deadliftLbs: Double = 180
-    @State private var pushUpReps: Double = 25
-    @State private var sdcSeconds: Double = 120
-    @State private var plankSeconds: Double = 120
-    @State private var runSeconds: Double = 960
-
     @State private var deadliftText: String = "180"
     @State private var pushUpText: String = "25"
     @State private var sdcMinText: String = "2"
@@ -28,12 +22,6 @@ struct AFTCalculatorView: View {
     @State private var showAFTShareSheet: Bool = false
     @FocusState private var focusedField: CalculatorField?
 
-    @State private var lastHapticDeadlift: Double = 180
-    @State private var lastHapticPushUp: Double = 25
-    @State private var lastHapticSDC: Double = 120
-    @State private var lastHapticPlank: Double = 120
-    @State private var lastHapticRun: Double = 960
-
     private enum CalculatorField: Hashable {
         case name, age
         case deadlift, pushUp
@@ -44,20 +32,42 @@ struct AFTCalculatorView: View {
         Int(ageText) ?? 25
     }
 
+    private var deadliftLbs: Int {
+        Int(deadliftText) ?? 0
+    }
+
+    private var pushUpReps: Int {
+        Int(pushUpText) ?? 0
+    }
+
+    private var sdcTotalSeconds: Int {
+        (Int(sdcMinText) ?? 0) * 60 + (Int(sdcSecText) ?? 0)
+    }
+
+    private var plankTotalSeconds: Int {
+        (Int(plankMinText) ?? 0) * 60 + (Int(plankSecText) ?? 0)
+    }
+
+    private var runTotalSeconds: Int {
+        (Int(runMinText) ?? 0) * 60 + (Int(runSecText) ?? 0)
+    }
+
+    private let engine = AFTScoringEngine.shared
+
     private var deadliftPoints: Int {
-        AFTScoringTables.scoreDeadlift(lbs: Int(deadliftLbs), age: scoringAge, sex: sex, standard: standard)
+        engine.score(event: .mdl, age: scoringAge, sex: sex, standard: standard, rawValue: deadliftLbs)
     }
     private var pushUpPoints: Int {
-        AFTScoringTables.scorePushUp(reps: Int(pushUpReps), age: scoringAge, sex: sex, standard: standard)
+        engine.score(event: .hrp, age: scoringAge, sex: sex, standard: standard, rawValue: pushUpReps)
     }
     private var sdcPoints: Int {
-        AFTScoringTables.scoreSDC(seconds: Int(sdcSeconds), age: scoringAge, sex: sex, standard: standard)
+        engine.score(event: .sdc, age: scoringAge, sex: sex, standard: standard, rawValue: sdcTotalSeconds)
     }
     private var plankPoints: Int {
-        AFTScoringTables.scorePlank(seconds: Int(plankSeconds), age: scoringAge, sex: sex, standard: standard)
+        engine.score(event: .plk, age: scoringAge, sex: sex, standard: standard, rawValue: plankTotalSeconds)
     }
     private var runPoints: Int {
-        AFTScoringTables.scoreRun(seconds: Int(runSeconds), age: scoringAge, sex: sex, standard: standard)
+        engine.score(event: .run2mi, age: scoringAge, sex: sex, standard: standard, rawValue: runTotalSeconds)
     }
 
     private var totalScore: Int {
@@ -88,11 +98,11 @@ struct AFTCalculatorView: View {
             age: scoringAge,
             sex: sex,
             standard: standard,
-            deadliftLbs: Int(deadliftLbs),
-            pushUpReps: Int(pushUpReps),
-            sdcSeconds: Int(sdcSeconds),
-            plankSeconds: Int(plankSeconds),
-            runSeconds: Int(runSeconds),
+            deadliftLbs: deadliftLbs,
+            pushUpReps: pushUpReps,
+            sdcSeconds: sdcTotalSeconds,
+            plankSeconds: plankTotalSeconds,
+            runSeconds: runTotalSeconds,
             deadliftPoints: deadliftPoints,
             pushUpPoints: pushUpPoints,
             sdcPoints: sdcPoints,
@@ -102,22 +112,6 @@ struct AFTCalculatorView: View {
             passed: overallPassed,
             weakestEvents: weakest
         )
-    }
-
-    private var deadliftBounds: AFTEventBounds {
-        AFTScoringTables.deadliftBounds(age: scoringAge, sex: sex, standard: standard)
-    }
-    private var pushUpBounds: AFTEventBounds {
-        AFTScoringTables.pushUpBounds(age: scoringAge, sex: sex, standard: standard)
-    }
-    private var sdcBoundsVal: AFTEventBounds {
-        AFTScoringTables.sdcBounds(age: scoringAge, sex: sex, standard: standard)
-    }
-    private var plankBoundsVal: AFTEventBounds {
-        AFTScoringTables.plankBounds(age: scoringAge, sex: sex, standard: standard)
-    }
-    private var runBoundsVal: AFTEventBounds {
-        AFTScoringTables.runBounds(age: scoringAge, sex: sex, standard: standard)
     }
 
     var body: some View {
@@ -150,6 +144,7 @@ struct AFTCalculatorView: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
+                    normalizeSecondsFields()
                     focusedField = nil
                 }
                 .fontWeight(.semibold)
@@ -262,7 +257,7 @@ struct AFTCalculatorView: View {
                             VStack(spacing: 2) {
                                 Text(option.rawValue)
                                     .font(.subheadline.weight(.semibold))
-                                Text("Min \(option.minimumPerEvent)/evt")
+                                Text(option == .combat ? "350 total / 60 each" : "300 total / 60 each")
                                     .font(.caption2)
                                     .opacity(0.7)
                             }
@@ -287,149 +282,79 @@ struct AFTCalculatorView: View {
     // MARK: - Event Cards
 
     private var deadliftEventCard: some View {
-        eventSliderCard(
+        eventCard(
             icon: "figure.strengthtraining.traditional",
             title: "3RM Deadlift",
             abbreviation: "MDL",
-            points: deadliftPoints,
-            value: $deadliftLbs,
-            range: 0...400,
-            step: 10,
-            displayValue: "\(Int(deadliftLbs)) lbs",
-            textContent: {
-                HStack(spacing: 8) {
-                    TextField("180", text: $deadliftText)
-                        .keyboardType(.numberPad)
-                        .focused($focusedField, equals: .deadlift)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .padding(.horizontal, 12)
-                        .frame(height: 48)
-                        .frame(maxWidth: 100)
-                        .background(MVMTheme.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
-                        }
-                        .onChange(of: deadliftText) { _, newValue in
-                            if let val = Double(newValue) {
-                                deadliftLbs = min(400, max(0, val))
-                            }
-                        }
-                    Text("lbs")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.secondaryText)
-                }
-            },
-            onSliderChange: {
-                deadliftText = "\(Int(deadliftLbs))"
+            points: deadliftPoints
+        ) {
+            HStack(spacing: 8) {
+                numericField(text: $deadliftText, placeholder: "180", field: .deadlift, width: 100)
+                Text("lbs")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.secondaryText)
             }
-        )
+        }
     }
 
     private var pushUpEventCard: some View {
-        eventSliderCard(
+        eventCard(
             icon: "figure.core.training",
             title: "Hand-Release Push-Up",
             abbreviation: "HRP",
-            points: pushUpPoints,
-            value: $pushUpReps,
-            range: 0...80,
-            step: 1,
-            displayValue: "\(Int(pushUpReps)) reps",
-            textContent: {
-                HStack(spacing: 8) {
-                    TextField("25", text: $pushUpText)
-                        .keyboardType(.numberPad)
-                        .focused($focusedField, equals: .pushUp)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .padding(.horizontal, 12)
-                        .frame(height: 48)
-                        .frame(maxWidth: 100)
-                        .background(MVMTheme.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
-                        }
-                        .onChange(of: pushUpText) { _, newValue in
-                            if let val = Double(newValue) {
-                                pushUpReps = min(80, max(0, val))
-                            }
-                        }
-                    Text("reps")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.secondaryText)
-                }
-            },
-            onSliderChange: {
-                pushUpText = "\(Int(pushUpReps))"
+            points: pushUpPoints
+        ) {
+            HStack(spacing: 8) {
+                numericField(text: $pushUpText, placeholder: "25", field: .pushUp, width: 100)
+                Text("reps")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.secondaryText)
             }
-        )
+        }
     }
 
     private var sdcEventCard: some View {
-        timeEventSliderCard(
+        eventCard(
             icon: "figure.run",
             title: "Sprint-Drag-Carry",
             abbreviation: "SDC",
-            points: sdcPoints,
-            totalSeconds: $sdcSeconds,
-            range: 60...300,
-            minText: $sdcMinText,
-            secText: $sdcSecText,
-            minField: .sdcMin,
-            secField: .sdcSec,
-            lowerIsBetter: true
-        )
+            points: sdcPoints
+        ) {
+            timeFields(minText: $sdcMinText, secText: $sdcSecText, minField: .sdcMin, secField: .sdcSec)
+        }
     }
 
     private var plankEventCard: some View {
-        timeEventSliderCard(
+        eventCard(
             icon: "figure.pilates",
             title: "Plank",
             abbreviation: "PLK",
-            points: plankPoints,
-            totalSeconds: $plankSeconds,
-            range: 0...300,
-            minText: $plankMinText,
-            secText: $plankSecText,
-            minField: .plankMin,
-            secField: .plankSec,
-            lowerIsBetter: false
-        )
+            points: plankPoints
+        ) {
+            timeFields(minText: $plankMinText, secText: $plankSecText, minField: .plankMin, secField: .plankSec)
+        }
     }
 
     private var runEventCard: some View {
-        timeEventSliderCard(
+        eventCard(
             icon: "figure.run.circle",
             title: "2-Mile Run",
             abbreviation: "2MR",
-            points: runPoints,
-            totalSeconds: $runSeconds,
-            range: 600...1800,
-            minText: $runMinText,
-            secText: $runSecText,
-            minField: .runMin,
-            secField: .runSec,
-            lowerIsBetter: true
-        )
+            points: runPoints
+        ) {
+            timeFields(minText: $runMinText, secText: $runSecText, minField: .runMin, secField: .runSec)
+        }
     }
 
-    // MARK: - Generic Event Slider Card
+    // MARK: - Generic Event Card
 
     @ViewBuilder
-    private func eventSliderCard<TextContent: View>(
+    private func eventCard<Content: View>(
         icon: String,
         title: String,
         abbreviation: String,
         points: Int,
-        value: Binding<Double>,
-        range: ClosedRange<Double>,
-        step: Double,
-        displayValue: String,
-        @ViewBuilder textContent: () -> TextContent,
-        onSliderChange: @escaping () -> Void
+        @ViewBuilder content: () -> Content
     ) -> some View {
         let passed = eventPassed(points)
 
@@ -449,7 +374,7 @@ struct AFTCalculatorView: View {
             }
 
             HStack(spacing: 12) {
-                textContent()
+                content()
 
                 Spacer()
 
@@ -464,13 +389,6 @@ struct AFTCalculatorView: View {
                         .foregroundStyle(MVMTheme.tertiaryText)
                 }
             }
-
-            Slider(value: value, in: range, step: step)
-                .tint(sliderTint(points))
-                .onChange(of: value.wrappedValue) { _, _ in
-                    onSliderChange()
-                }
-                .sensoryFeedback(.selection, trigger: value.wrappedValue)
 
             HStack {
                 Text(abbreviation)
@@ -489,127 +407,6 @@ struct AFTCalculatorView: View {
             }
         }
         .padding(16)
-        .background(passed ? MVMTheme.card : MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(passed ? MVMTheme.success.opacity(0.2) : (points > 0 ? MVMTheme.danger.opacity(0.2) : MVMTheme.border), lineWidth: 1)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.25), radius: 18, y: 10)
-    }
-
-    @ViewBuilder
-    private func timeEventSliderCard(
-        icon: String,
-        title: String,
-        abbreviation: String,
-        points: Int,
-        totalSeconds: Binding<Double>,
-        range: ClosedRange<Double>,
-        minText: Binding<String>,
-        secText: Binding<String>,
-        minField: CalculatorField,
-        secField: CalculatorField,
-        lowerIsBetter: Bool
-    ) -> some View {
-        let passed = eventPassed(points)
-
-        VStack(spacing: 14) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.caption)
-                    .foregroundStyle(MVMTheme.accent)
-
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(MVMTheme.primaryText)
-
-                Spacer()
-
-                goNoGoBadge(passed: passed)
-            }
-
-            HStack(spacing: 12) {
-                HStack(spacing: 6) {
-                    TextField("0", text: minText)
-                        .keyboardType(.numberPad)
-                        .focused($focusedField, equals: minField)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .padding(.horizontal, 12)
-                        .frame(height: 48)
-                        .frame(maxWidth: 70)
-                        .background(MVMTheme.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
-                        }
-                        .onChange(of: minText.wrappedValue) { _, _ in
-                            syncTimeToSlider(minText: minText.wrappedValue, secText: secText.wrappedValue, totalSeconds: totalSeconds, range: range)
-                        }
-
-                    Text(":")
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(MVMTheme.secondaryText)
-
-                    TextField("00", text: secText)
-                        .keyboardType(.numberPad)
-                        .focused($focusedField, equals: secField)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .padding(.horizontal, 12)
-                        .frame(height: 48)
-                        .frame(maxWidth: 70)
-                        .background(MVMTheme.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
-                        }
-                        .onChange(of: secText.wrappedValue) { _, _ in
-                            syncTimeToSlider(minText: minText.wrappedValue, secText: secText.wrappedValue, totalSeconds: totalSeconds, range: range)
-                        }
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(points)")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundStyle(pointsColor(points))
-                        .contentTransition(.numericText())
-
-                    Text("pts")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                }
-            }
-
-            Slider(value: totalSeconds, in: range, step: 1)
-                .tint(sliderTint(points))
-                .onChange(of: totalSeconds.wrappedValue) { _, newVal in
-                    let secs = Int(newVal)
-                    minText.wrappedValue = "\(secs / 60)"
-                    secText.wrappedValue = String(format: "%02d", secs % 60)
-                }
-                .sensoryFeedback(.selection, trigger: Int(totalSeconds.wrappedValue) / 5)
-
-            HStack {
-                Text(abbreviation)
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(MVMTheme.accent)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(MVMTheme.accent.opacity(0.12))
-                    .clipShape(Capsule())
-
-                Spacer()
-
-                Text(lowerIsBetter ? "Lower is better" : "Higher is better")
-                    .font(.caption2)
-                    .foregroundStyle(MVMTheme.tertiaryText)
-            }
-        }
-        .padding(16)
         .background(MVMTheme.card)
         .overlay {
             RoundedRectangle(cornerRadius: 20)
@@ -619,11 +416,43 @@ struct AFTCalculatorView: View {
         .shadow(color: .black.opacity(0.25), radius: 18, y: 10)
     }
 
-    private func syncTimeToSlider(minText: String, secText: String, totalSeconds: Binding<Double>, range: ClosedRange<Double>) {
-        let mins = Int(minText) ?? 0
-        let secs = Int(secText) ?? 0
-        let total = Double(mins * 60 + secs)
-        totalSeconds.wrappedValue = min(range.upperBound, max(range.lowerBound, total))
+    // MARK: - Input Fields
+
+    private func numericField(text: Binding<String>, placeholder: String, field: CalculatorField, width: CGFloat) -> some View {
+        TextField(placeholder, text: text)
+            .keyboardType(.numberPad)
+            .focused($focusedField, equals: field)
+            .font(.title3.weight(.bold))
+            .foregroundStyle(MVMTheme.primaryText)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 12)
+            .frame(height: 48)
+            .frame(maxWidth: width)
+            .background(MVMTheme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+            }
+    }
+
+    private func timeFields(minText: Binding<String>, secText: Binding<String>, minField: CalculatorField, secField: CalculatorField) -> some View {
+        HStack(spacing: 6) {
+            numericField(text: minText, placeholder: "0", field: minField, width: 70)
+
+            Text(":")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(MVMTheme.secondaryText)
+
+            numericField(text: secText, placeholder: "00", field: secField, width: 70)
+        }
+    }
+
+    // MARK: - Normalize seconds on dismiss
+
+    private func normalizeSecondsFields() {
+        if let s = Int(sdcSecText) { sdcSecText = String(format: "%02d", min(59, max(0, s))) }
+        if let s = Int(plankSecText) { plankSecText = String(format: "%02d", min(59, max(0, s))) }
+        if let s = Int(runSecText) { runSecText = String(format: "%02d", min(59, max(0, s))) }
     }
 
     // MARK: - GO / NO-GO Badge
@@ -668,8 +497,6 @@ struct AFTCalculatorView: View {
                 scorePill("PLK", plankPoints)
                 scorePill("2MR", runPoints)
             }
-
-
         }
         .padding(18)
         .premiumCard()
@@ -692,7 +519,9 @@ struct AFTCalculatorView: View {
                     .font(.title3.weight(.bold))
                     .foregroundStyle(overallPassed ? MVMTheme.success : MVMTheme.danger)
 
-                Text("\(standard.rawValue) Standard — Min \(standard.minimumPerEvent)/evt, \(standard.minimumTotal) total")
+                Text(standard == .combat
+                     ? "Combat — 350 total / 60 each"
+                     : "General — 300 total / 60 each")
                     .font(.caption)
                     .foregroundStyle(MVMTheme.secondaryText)
             }
@@ -708,6 +537,7 @@ struct AFTCalculatorView: View {
     private var actionButtons: some View {
         VStack(spacing: 12) {
             Button {
+                normalizeSecondsFields()
                 vm.saveAFTCalculatorResult(preview)
                 didSave = true
             } label: {
@@ -724,6 +554,7 @@ struct AFTCalculatorView: View {
             .sensoryFeedback(.success, trigger: didSave)
 
             Button {
+                normalizeSecondsFields()
                 showAFTShareSheet = true
             } label: {
                 HStack(spacing: 8) {
@@ -746,6 +577,7 @@ struct AFTCalculatorView: View {
             .buttonStyle(PressScaleButtonStyle())
 
             Button {
+                normalizeSecondsFields()
                 showExportSheet = true
             } label: {
                 HStack(spacing: 8) {
@@ -790,12 +622,6 @@ struct AFTCalculatorView: View {
     private func pointsColor(_ value: Int) -> Color {
         if value >= standard.minimumPerEvent { return MVMTheme.success }
         if value >= 40 { return MVMTheme.warning }
-        return MVMTheme.danger
-    }
-
-    private func sliderTint(_ points: Int) -> Color {
-        if points >= standard.minimumPerEvent { return MVMTheme.success }
-        if points >= 40 { return MVMTheme.warning }
         return MVMTheme.danger
     }
 }
