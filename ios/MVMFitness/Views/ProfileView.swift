@@ -23,6 +23,7 @@ struct ProfileView: View {
     @State private var restoreTrigger = false
     @State private var imageManager = ProfileImageManager()
     @State private var isEditingName: Bool = false
+    @State private var hasAppearedOnce: Bool = false
     @FocusState private var nameFieldFocused: Bool
 
     var body: some View {
@@ -52,6 +53,9 @@ struct ProfileView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .onAppear {
             reminderTime = Calendar.current.date(from: DateComponents(hour: reminderHour, minute: reminderMinute)) ?? .now
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                hasAppearedOnce = true
+            }
         }
         .alert("Reset weekly plan?", isPresented: $showResetPlanAlert) {
             Button("Cancel", role: .cancel) { }
@@ -407,11 +411,14 @@ struct ProfileView: View {
             }
             .frame(minHeight: 44)
             .onChange(of: dailyReminderEnabled) { _, newValue in
+                guard hasAppearedOnce else { return }
                 Task {
                     if newValue {
                         let granted = await NotificationManager.requestPermission()
                         if granted {
                             await NotificationManager.scheduleDailyReminder(at: reminderTime)
+                        } else {
+                            dailyReminderEnabled = false
                         }
                     } else {
                         NotificationManager.removeDailyReminder()

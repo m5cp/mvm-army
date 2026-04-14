@@ -39,8 +39,6 @@ final class AppViewModel {
 
     init() {
         loadLocalData()
-        pedometer.refreshTodaySteps()
-        syncTodaySteps()
     }
 
     func loadLocalData() {
