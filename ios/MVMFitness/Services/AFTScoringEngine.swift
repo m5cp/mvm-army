@@ -46,9 +46,13 @@ final class AFTScoringEngine: @unchecked Sendable {
 
     static let shared: AFTScoringEngine = {
         do {
-            return try loadFromBundle()
+            let engine = try loadFromBundle()
+            guard !engine.allEntries.isEmpty else {
+                fatalError("AFTScoringEngine: aft_scoring_2025_06_01.json loaded but contains zero entries.")
+            }
+            return engine
         } catch {
-            return AFTScoringEngine(entries: [])
+            fatalError("AFTScoringEngine: Failed to load aft_scoring_2025_06_01.json — \(error.localizedDescription)")
         }
     }()
 
