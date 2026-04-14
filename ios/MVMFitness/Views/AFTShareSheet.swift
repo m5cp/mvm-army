@@ -340,7 +340,7 @@ enum AFTCardRenderer {
 
     private static func drawPassFail(context: CGContext, score: AFTScoreRecord, width: CGFloat) {
         let y: CGFloat = 1040
-        let passed = score.totalScore >= 360 && score.deadliftPoints >= 60 && score.pushUpPoints >= 60 && score.sdcPoints >= 60 && score.plankPoints >= 60 && score.runPoints >= 60
+        let passed = score.deadliftPoints >= 60 && score.pushUpPoints >= 60 && score.sdcPoints >= 60 && score.plankPoints >= 60 && score.runPoints >= 60 && score.totalScore >= 300
         let statusColor: UIColor = passed
             ? UIColor(red: 0.133, green: 0.773, blue: 0.369, alpha: 1.0)
             : UIColor(red: 0.937, green: 0.267, blue: 0.267, alpha: 1.0)
