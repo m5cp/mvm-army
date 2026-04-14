@@ -9,6 +9,7 @@ struct ResourcesView: View {
                 VStack(spacing: 20) {
                     testOverviewSection
                     scoringReferenceSection
+                    scoringTablesSection
                     disclaimerSection
                 }
                 .padding(.horizontal, 20)
@@ -112,6 +113,48 @@ struct ResourcesView: View {
                 RoundedRectangle(cornerRadius: 14)
                     .stroke(MVMTheme.border)
             }
+        }
+    }
+
+    private var scoringTablesSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sectionHeader(icon: "tablecells.badge.ellipsis", title: "FULL SCORING TABLES")
+
+            NavigationLink(destination: AFTScoringTableView()) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(MVMTheme.accent.opacity(0.15))
+                            .frame(width: 42, height: 42)
+                        Image(systemName: "tablecells")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(MVMTheme.accent)
+                    }
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("View Scoring Tables")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(MVMTheme.primaryText)
+                        Text("All events, age bands & standards")
+                            .font(.caption)
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                .padding(14)
+                .background(MVMTheme.card)
+                .clipShape(.rect(cornerRadius: 14))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(MVMTheme.border)
+                }
+            }
+            .buttonStyle(.plain)
         }
     }
 
