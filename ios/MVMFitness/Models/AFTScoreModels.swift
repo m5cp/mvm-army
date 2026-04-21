@@ -20,6 +20,9 @@ nonisolated enum AFTEvents: Sendable {
 nonisolated struct AFTScoreRecord: Codable, Identifiable, Hashable, Sendable {
     let id: UUID
     var date: Date
+    var age: Int
+    var sex: SoldierSex
+    var standard: AFTStandard
     var deadliftLbs: Int
     var pushUpReps: Int
     var sdcSeconds: Int
@@ -35,6 +38,9 @@ nonisolated struct AFTScoreRecord: Codable, Identifiable, Hashable, Sendable {
 
     init(
         date: Date = .now,
+        age: Int = 0,
+        sex: SoldierSex = .male,
+        standard: AFTStandard = .general,
         deadliftLbs: Int,
         pushUpReps: Int,
         sdcSeconds: Int,
@@ -50,6 +56,9 @@ nonisolated struct AFTScoreRecord: Codable, Identifiable, Hashable, Sendable {
     ) {
         self.id = UUID()
         self.date = date
+        self.age = age
+        self.sex = sex
+        self.standard = standard
         self.deadliftLbs = deadliftLbs
         self.pushUpReps = pushUpReps
         self.sdcSeconds = sdcSeconds
@@ -63,5 +72,32 @@ nonisolated struct AFTScoreRecord: Codable, Identifiable, Hashable, Sendable {
         self.totalScore = totalScore
         self.weakestEvents = weakestEvents
     }
-}
 
+    enum CodingKeys: String, CodingKey {
+        case id, date, age, sex, standard
+        case deadliftLbs, pushUpReps, sdcSeconds, plankSeconds, runSeconds
+        case deadliftPoints, pushUpPoints, sdcPoints, plankPoints, runPoints
+        case totalScore, weakestEvents
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id             = try c.decode(UUID.self,  forKey: .id)
+        date           = try c.decode(Date.self,  forKey: .date)
+        age            = try c.decodeIfPresent(Int.self,           forKey: .age)      ?? 0
+        sex            = try c.decodeIfPresent(SoldierSex.self,    forKey: .sex)      ?? .male
+        standard       = try c.decodeIfPresent(AFTStandard.self,   forKey: .standard) ?? .general
+        deadliftLbs    = try c.decode(Int.self, forKey: .deadliftLbs)
+        pushUpReps     = try c.decode(Int.self, forKey: .pushUpReps)
+        sdcSeconds     = try c.decode(Int.self, forKey: .sdcSeconds)
+        plankSeconds   = try c.decode(Int.self, forKey: .plankSeconds)
+        runSeconds     = try c.decode(Int.self, forKey: .runSeconds)
+        deadliftPoints = try c.decode(Int.self, forKey: .deadliftPoints)
+        pushUpPoints   = try c.decode(Int.self, forKey: .pushUpPoints)
+        sdcPoints      = try c.decode(Int.self, forKey: .sdcPoints)
+        plankPoints    = try c.decode(Int.self, forKey: .plankPoints)
+        runPoints      = try c.decode(Int.self, forKey: .runPoints)
+        totalScore     = try c.decode(Int.self, forKey: .totalScore)
+        weakestEvents  = try c.decode([String].self, forKey: .weakestEvents)
+    }
+}
