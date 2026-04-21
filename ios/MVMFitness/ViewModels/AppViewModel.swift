@@ -530,6 +530,39 @@ final class AppViewModel {
         persistAll()
     }
 
+    // MARK: - Delete All Data
+
+    func deleteAllData() {
+        currentPlan = nil
+        completedRecords = []
+        stepHistory = []
+        unitPTPlans = []
+        unitPTFullPlan = nil
+        scheduledUnitPT = []
+        importedWorkouts = []
+        aftScores = []
+        aftCalculatorResults = []
+        wodPlan = nil
+        todayFunctionalWOD = nil
+        quickStartRecords = []
+        activeMilestone = nil
+        lastWorkoutTag = ""
+
+        let keysToDelete = [
+            "currentPlan", "completedRecords", "stepHistory",
+            "unitPTPlans", "unitPTFullPlan", "scheduledUnitPT",
+            "importedWorkouts", "aftScores", "aftCalculatorResults",
+            "wodPlan", "quickStartRecords", "lastWorkoutTag",
+            "trainingFocus", "fitnessLevel", "equipment",
+            "daysPerWeek", "minutesPerWorkout", "ptMode",
+            "dutyType", "ptGoal", "planWeeks",
+            "onboardingComplete", "disclaimerAccepted",
+            "shownMilestones", "appearanceMode"
+        ]
+        keysToDelete.forEach { UserDefaults.standard.removeObject(forKey: $0) }
+        syncWidgetData()
+    }
+
     // MARK: - AFT Scores
 
     func saveAFTScore(_ record: AFTScoreRecord) {

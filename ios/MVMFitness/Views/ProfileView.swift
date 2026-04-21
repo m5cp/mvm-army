@@ -24,6 +24,7 @@ struct ProfileView: View {
     @State private var imageManager = ProfileImageManager()
     @State private var isEditingName: Bool = false
     @State private var hasAppearedOnce: Bool = false
+    @State private var showDeleteConfirm: Bool = false
     @FocusState private var nameFieldFocused: Bool
 
     var body: some View {
@@ -38,6 +39,7 @@ struct ProfileView: View {
                     notificationsSection
                     appControlsSection
                     legalSection
+                    dangerZoneSection
                     footer
                 }
                 .padding(.horizontal, 20)
@@ -542,6 +544,37 @@ struct ProfileView: View {
                 settingsRow(icon: "doc.badge.gearshape", title: "EULA", color: MVMTheme.slateAccent, showChevron: true)
             }
             .accessibilityHint("View the end user license agreement")
+        }
+    }
+
+    // MARK: - Danger Zone
+
+    private var dangerZoneSection: some View {
+        Section {
+            Button(role: .destructive) {
+                showDeleteConfirm = true
+            } label: {
+                Label("Delete All Data", systemImage: "trash.fill")
+                    .foregroundStyle(.red)
+            }
+        } header: {
+            Text("Danger Zone")
+        } footer: {
+            Text("Permanently deletes all your workouts, AFT scores, plans, and settings. This cannot be undone.")
+                .foregroundStyle(MVMTheme.secondaryText)
+        }
+        .confirmationDialog(
+            "Delete All Data?",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Everything", role: .destructive) {
+                vm.deleteAllData()
+                UserDefaults.standard.set(false, forKey: "onboardingComplete")
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will permanently erase all workouts, AFT scores, training plans, and your profile. You will be returned to onboarding.")
         }
     }
 
