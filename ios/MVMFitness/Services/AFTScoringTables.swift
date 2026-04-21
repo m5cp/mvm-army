@@ -1,34 +1,5 @@
 import Foundation
 
-nonisolated enum AFTAgeGroup: String, CaseIterable, Sendable {
-    case age17to21 = "17-21"
-    case age22to26 = "22-26"
-    case age27to31 = "27-31"
-    case age32to36 = "32-36"
-    case age37to41 = "37-41"
-    case age42to46 = "42-46"
-    case age47to51 = "47-51"
-    case age52to56 = "52-56"
-    case age57to61 = "57-61"
-    case age62plus = "62+"
-
-    static func from(age: Int) -> AFTAgeGroup {
-        switch age {
-        case ..<17: return .age17to21
-        case 17...21: return .age17to21
-        case 22...26: return .age22to26
-        case 27...31: return .age27to31
-        case 32...36: return .age32to36
-        case 37...41: return .age37to41
-        case 42...46: return .age42to46
-        case 47...51: return .age47to51
-        case 52...56: return .age52to56
-        case 57...61: return .age57to61
-        default: return .age62plus
-        }
-    }
-}
-
 nonisolated struct AFTEventBounds: Sendable {
     let max100: Double
     let min60: Double
