@@ -55,7 +55,7 @@ struct AFTShareSheet: View {
 
                         Button {
                             if let image = renderedImage {
-                                let text = "MVM Fitness — AFT Score: \(score.totalScore)/500\n#MVMFitness #ArmyFitness"
+                                let text = shareCaption(for: score)
                                 let activityVC = UIActivityViewController(activityItems: [image, text], applicationActivities: nil)
                                 guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                                       let rootVC = windowScene.windows.first?.rootViewController else { return }
@@ -124,6 +124,23 @@ struct AFTShareSheet: View {
                 renderedImage = AFTCardRenderer.render(score: score, previous: previous)
             }
         }
+    }
+
+    private func shareCaption(for score: AFTScoreRecord) -> String {
+        let appStoreURL = "https://apps.apple.com/app/mvm-fitness/id6746823289"
+        let passStatus = score.totalScore >= 300 ? "PASSED ✅" : "in training 💪"
+        return """
+        Just scored \(score.totalScore) on my Army Fitness Test — \(passStatus) 🎯
+
+        MDL: \(score.deadliftLbs) lbs (\(score.deadliftPoints) pts)
+        HRP: \(score.pushUpReps) reps (\(score.pushUpPoints) pts)
+        SDC: \(AFTCalculatorService.formatTime(score.sdcSeconds)) (\(score.sdcPoints) pts)
+        PLK: \(AFTCalculatorService.formatTime(score.plankSeconds)) (\(score.plankPoints) pts)
+        2MR: \(AFTCalculatorService.formatTime(score.runSeconds)) (\(score.runPoints) pts)
+
+        Tracked with MVM Fitness 🪖
+        \(appStoreURL)
+        """
     }
 }
 
