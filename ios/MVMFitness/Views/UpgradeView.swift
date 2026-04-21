@@ -463,19 +463,23 @@ struct UpgradeView: View {
     // MARK: - Helpers
 
     private func sortedPackages(from offering: Offering) -> [Package] {
-        let order: [PackageType] = [.monthly, .annual, .lifetime]
-        return offering.availablePackages.sorted { a, b in
-            let aIdx = order.firstIndex(of: a.packageType) ?? 99
-            let bIdx = order.firstIndex(of: b.packageType) ?? 99
-            return aIdx < bIdx
-        }
+        let order: [PackageType] = [.annual, .monthly]
+        return offering.availablePackages
+            .filter { $0.packageType != .lifetime }
+            .sorted { a, b in
+                let aIdx = order.firstIndex(of: a.packageType) ?? 99
+                let bIdx = order.firstIndex(of: b.packageType) ?? 99
+                return aIdx < bIdx
+            }
     }
 
     private func selectedPackage(from offering: Offering) -> Package? {
         if let id = selectedPackageID {
             return offering.availablePackages.first { $0.identifier == id }
         }
-        return offering.availablePackages.first { $0.packageType == .lifetime } ?? offering.availablePackages.first
+        return offering.availablePackages.first { $0.packageType == .annual }
+            ?? offering.availablePackages.first { $0.packageType == .lifetime }
+            ?? offering.availablePackages.first
     }
 
     // MARK: - Legal
