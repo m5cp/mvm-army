@@ -30,27 +30,26 @@ struct MainTabView: View {
     @State private var profilePath = NavigationPath()
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                NavigationStack(path: $homePath) {
-                    HomeView()
-                }
-                .opacity(selectedTab == .home ? 1 : 0)
-                .zIndex(selectedTab == .home ? 1 : 0)
-
-                NavigationStack(path: $progressPath) {
-                    ProgressViewScreen()
-                }
-                .opacity(selectedTab == .progress ? 1 : 0)
-                .zIndex(selectedTab == .progress ? 1 : 0)
-
-                NavigationStack(path: $profilePath) {
-                    ProfileView()
-                }
-                .opacity(selectedTab == .profile ? 1 : 0)
-                .zIndex(selectedTab == .profile ? 1 : 0)
+        ZStack {
+            NavigationStack(path: $homePath) {
+                HomeView()
             }
+            .opacity(selectedTab == .home ? 1 : 0)
+            .zIndex(selectedTab == .home ? 1 : 0)
 
+            NavigationStack(path: $progressPath) {
+                ProgressViewScreen()
+            }
+            .opacity(selectedTab == .progress ? 1 : 0)
+            .zIndex(selectedTab == .progress ? 1 : 0)
+
+            NavigationStack(path: $profilePath) {
+                ProfileView()
+            }
+            .opacity(selectedTab == .profile ? 1 : 0)
+            .zIndex(selectedTab == .profile ? 1 : 0)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             customTabBar
         }
         .background(MVMTheme.background.ignoresSafeArea())
@@ -84,23 +83,30 @@ struct MainTabView: View {
                         Text(tab.title)
                             .font(.caption2.weight(selectedTab == tab ? .bold : .medium))
                     }
-                    .foregroundStyle(selectedTab == tab ? MVMTheme.accent : MVMTheme.tertiaryText)
+                    .foregroundStyle(selectedTab == tab ? MVMTheme.accent : MVMTheme.secondaryText)
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 10)
-                    .padding(.bottom, 2)
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.bottom, 20)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
         .background {
-            MVMTheme.background
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(MVMTheme.border)
-                        .frame(height: 0.5)
-                }
-                .ignoresSafeArea(edges: .bottom)
+            if #available(iOS 26.0, *) {
+                Capsule()
+                    .fill(.clear)
+                    .glassEffect(.regular, in: Capsule())
+            } else {
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        Capsule().stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                    }
+            }
         }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 8)
     }
 }

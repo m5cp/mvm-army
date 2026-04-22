@@ -1,34 +1,33 @@
-# Build MVM Fitness — Military Fitness Training App
+# Liquid Glass tab bar, fix dark text, auto AI insights, remove PDF import
 
-## Features
+## What I found in your screenshots
 
-- **Onboarding flow** — Choose user type (current/future service member, PT leader), branch, fitness goal, and set a daily reminder
-- **Score calculator** — Enter AFT (Army Fitness Test) event results and get an estimated total score with weak-event insights
-- **Personal workout generator** — Generate a tailored daily PT session based on branch, workout type, equipment, and duration
-- **Unit PT planner** — Create formal unit-level PT plans with formation, warm-up, workout blocks, cooldown, and leader notes — shareable/printable
-- **Progress tracking** — Score trend chart, step history bar chart, streak counter, and recent scores list
-- **Step counting** — Automatic daily step tracking via the device pedometer
-- **Daily reminder notifications** — Configurable local notification to train each day
-- **Profile & settings** — Change branch, goal, appearance mode (light/dark/system), reset data, re-run onboarding
+1. **Tab bar** — currently a solid dark bar with a hard top border. Not glassy.
+2. **Black-on-black text:**
+   - "Progress" large nav title renders in near-black (toolbar background is forcing dark color scheme on a dark background, so the system title color disappears).
+   - "Danger Zone" header and the app version footer on Profile are using a very faded tertiary gray that's nearly invisible on the dark background.
+3. **Apple Intelligence** — the AI Insights card exists on the Progress tab but only shows insight after tapping "Generate." You want it to surface insights automatically.
+4. **Import Exercises from PDF** — present as a row on Home's planning section.
 
-## Design
+## Changes I'll make
 
-- **Dark-first theme** with a near-black background (#09090B), soft dark cards, and subtle white borders
-- **Blue-to-purple hero gradient** on the main score card and primary buttons
-- Premium card styling with rounded corners, soft shadows, and border overlays
-- Spring animations on transitions and a press-scale effect on buttons
-- SF Symbols throughout for icons
-- Swift Charts for score trends and step history
-- Clean typography using SF Rounded for headings
+**Tab bar (Liquid Glass)**
+- Rebuild the custom tab bar with a translucent Liquid Glass look on iOS 26 (using `.glassEffect` in a `GlassEffectContainer`), falling back to `.ultraThinMaterial` on iOS 18.
+- Remove the solid background fill and the hard hairline border; let the content scroll behind it with a soft top edge.
+- Keep the same three tabs (Home / Progress / Profile), same icons, same bounce animation, same accent-green selection state.
 
-## Screens
+**Fix black-on-black text**
+- Progress screen: make the large "Progress" title render in white (force the title color so it's visible on the dark background).
+- Profile "Danger Zone" header: bump to a readable secondary white instead of faded tertiary.
+- Profile footer ("MVM FITNESS / Me vs Me / Version / disclaimer"): raise opacity so it's legible in dark mode.
 
-- **Onboarding** — 4-step guided setup with selectable grid options and daily reminder toggle
-- **Home** — Hero score card, quick-action buttons (Score, Daily PT, Unit PT), latest workout preview, daily insight tip
-- **Progress** — Streak/avg metrics row, score trend area chart, step bar chart, recent scores list
-- **Profile** — Pickers for user type/branch/goal, reminder settings, appearance toggle, reset/re-run options, app info
+**Apple Intelligence insights (auto-surface)**
+- On the Progress tab, auto-generate the performance insight on first appearance (when Apple Intelligence is available) instead of requiring a tap.
+- Keep the manual refresh button and the Weekly / Coaching tabs as-is.
+- Keep the iOS 26 availability guard and the graceful fallback card for older devices.
 
-## App Icon
+**Remove PDF import**
+- Delete the "Import Exercises from PDF" row from the Home planning list. No other plan rows change.
+- Leave the underlying PDF upload screen file in place (unused) so nothing else breaks; only the entry point is removed.
 
-- Bold dark gradient background (deep navy to purple) with a stylized upward arrow or shield shape in bright blue-white, evoking military strength and personal improvement — clean and modern
-
+No other screens, flows, or logic will be touched.

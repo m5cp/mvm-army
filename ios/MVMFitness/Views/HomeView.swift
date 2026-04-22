@@ -1019,15 +1019,6 @@ struct HomeView: View {
                     showUnitPTSheet = true
                 }
 
-                planRow(
-                    title: "Import Exercises from PDF",
-                    subtitle: "Scan & add movements to your library",
-                    icon: "doc.text.fill",
-                    color: Color(hex: "#8B5CF6")
-                ) {
-                    toolTapTrigger.toggle()
-                    showPDFUploadSheet = true
-                }
             }
         }
         .scaleEffect(animateHero ? 1 : 0.96)

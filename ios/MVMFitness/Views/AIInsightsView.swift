@@ -125,12 +125,14 @@ struct AIInsightsCardContent: View {
 
             if !aiService.isAvailable {
                 unavailableStatusView
-            } else if !hasGenerated {
-                generatePrompt
             } else {
                 tabSelector
                 contentArea
             }
+        }
+        .task {
+            guard aiService.isAvailable, !hasGenerated else { return }
+            await generateAll()
         }
         .padding(20)
         .background {

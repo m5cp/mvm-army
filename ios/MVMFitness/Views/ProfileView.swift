@@ -559,6 +559,9 @@ struct ProfileView: View {
             }
         } header: {
             Text("Danger Zone")
+                .font(.caption.weight(.bold))
+                .tracking(0.8)
+                .foregroundStyle(MVMTheme.secondaryText)
         } footer: {
             Text("Permanently deletes all your workouts, AFT scores, plans, and settings. This cannot be undone.")
                 .foregroundStyle(MVMTheme.secondaryText)
@@ -585,17 +588,17 @@ struct ProfileView: View {
             Text("MVM FITNESS")
                 .font(.caption.weight(.heavy))
                 .tracking(2.0)
-                .foregroundStyle(MVMTheme.tertiaryText)
+                .foregroundStyle(MVMTheme.secondaryText)
             Text("Me vs Me")
                 .font(.caption2.weight(.medium))
-                .foregroundStyle(MVMTheme.tertiaryText.opacity(0.6))
+                .foregroundStyle(MVMTheme.tertiaryText)
             Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")")
                 .font(.caption2)
-                .foregroundStyle(MVMTheme.tertiaryText.opacity(0.4))
+                .foregroundStyle(MVMTheme.tertiaryText)
 
             Text("Not affiliated with, endorsed by, or sponsored by the U.S. Department of War, the Department of the Army, or any government agency.")
                 .font(.system(size: 9))
-                .foregroundStyle(MVMTheme.tertiaryText.opacity(0.35))
+                .foregroundStyle(MVMTheme.tertiaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
                 .padding(.top, 4)

@@ -55,6 +55,7 @@ struct ProgressViewScreen: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .preferredColorScheme(.dark)
         .sheet(isPresented: $showAFTSheet) {
             AFTScoreSheet()
         }
