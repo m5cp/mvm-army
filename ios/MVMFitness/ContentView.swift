@@ -2,12 +2,20 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AppViewModel.self) private var vm
+    @AppStorage("onboardingComplete") private var onboardingComplete: Bool = false
     @State private var showSplash: Bool = true
 
     var body: some View {
         ZStack {
-            MainTabView()
-                .background(MVMTheme.background.ignoresSafeArea())
+            if onboardingComplete {
+                MainTabView()
+                    .background(MVMTheme.background.ignoresSafeArea())
+                    .transition(.opacity)
+            } else {
+                OnboardingView()
+                    .background(MVMTheme.background.ignoresSafeArea())
+                    .transition(.opacity)
+            }
 
             if showSplash {
                 SplashView {
@@ -19,5 +27,6 @@ struct RootView: View {
                 .zIndex(1)
             }
         }
+        .animation(.easeInOut(duration: 0.35), value: onboardingComplete)
     }
 }

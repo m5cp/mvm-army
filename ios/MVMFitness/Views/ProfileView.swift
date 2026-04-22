@@ -589,7 +589,7 @@ struct ProfileView: View {
             Text("Me vs Me")
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(MVMTheme.tertiaryText.opacity(0.6))
-            Text("Version 5.0")
+            Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")")
                 .font(.caption2)
                 .foregroundStyle(MVMTheme.tertiaryText.opacity(0.4))
 
