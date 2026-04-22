@@ -24,9 +24,27 @@ struct OnboardingView: View {
                 MVMTheme.background.ignoresSafeArea()
 
                 VStack(spacing: 0) {
+                    HStack {
+                        Spacer()
+                        Button {
+                            skipOnboarding()
+                        } label: {
+                            Text("Skip")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(MVMTheme.secondaryText)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(Color.white.opacity(0.06))
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.top, 8)
+                    .padding(.horizontal, 20)
+
                     if step > 0 {
                         progressIndicator
-                            .padding(.top, 16)
+                            .padding(.top, 12)
                             .padding(.horizontal, 32)
                     }
 
@@ -48,6 +66,12 @@ struct OnboardingView: View {
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: step)
+    }
+
+    private func skipOnboarding() {
+        disclaimerAccepted = false
+        hasAgreed = false
+        onboardingComplete = true
     }
 
     // MARK: - Progress
