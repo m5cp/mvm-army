@@ -358,23 +358,13 @@ struct ActiveSessionView: View {
                     .foregroundStyle(MVMTheme.secondaryText)
                     .frame(maxWidth: .infinity)
                     .frame(height: 44)
-                    .background(MVMTheme.card)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(MVMTheme.border)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .mvmCard(cornerRadius: 12)
                 }
                 .buttonStyle(PressScaleButtonStyle())
             }
         }
         .padding(20)
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .mvmCard(cornerRadius: 20)
     }
 
     private var timerTextColor: Color {
@@ -555,12 +545,7 @@ struct ActiveSessionView: View {
                         .foregroundStyle(MVMTheme.secondaryText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
-                        .background(MVMTheme.card)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(MVMTheme.border)
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .mvmCard(cornerRadius: 14)
                     }
                     .buttonStyle(PressScaleButtonStyle())
                 }
@@ -744,12 +729,7 @@ struct ActiveSessionView: View {
                     }
                 }
                 .padding(20)
-                .background(MVMTheme.card)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(MVMTheme.border)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .mvmCard(cornerRadius: 20)
             }
 
             Spacer()

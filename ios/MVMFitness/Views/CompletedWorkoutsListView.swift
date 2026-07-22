@@ -123,12 +123,7 @@ struct CompletedWorkoutsListView: View {
                 .foregroundStyle(MVMTheme.tertiaryText)
         }
         .padding(14)
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .mvmCard(cornerRadius: 16)
     }
 
     private func formatDate(_ date: Date) -> String {

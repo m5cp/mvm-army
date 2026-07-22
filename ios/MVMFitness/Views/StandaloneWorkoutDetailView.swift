@@ -102,12 +102,7 @@ struct StandaloneWorkoutDetailView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(24)
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .mvmCard(cornerRadius: 20)
     }
 
     private func exerciseCard(_ exercise: WorkoutExercise) -> some View {
@@ -147,11 +142,6 @@ struct StandaloneWorkoutDetailView: View {
             }
         }
         .padding(16)
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .mvmCard(cornerRadius: 14)
     }
 }

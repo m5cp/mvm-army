@@ -221,12 +221,7 @@ struct QuickStartCompletionView: View {
                     .foregroundStyle(MVMTheme.tertiaryText)
             }
             .padding(14)
-            .background(MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(MVMTheme.border)
-            }
+            .mvmCard(cornerRadius: 16)
         }
         .buttonStyle(PressScaleButtonStyle())
         .scaleEffect(cardScale)
@@ -276,12 +271,7 @@ struct QuickStartCompletionView: View {
                 }
             }
             .padding(14)
-            .background(MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(MVMTheme.border)
-            }
+            .mvmCard(cornerRadius: 16)
         }
         .buttonStyle(PressScaleButtonStyle())
         .disabled(calendarExported)

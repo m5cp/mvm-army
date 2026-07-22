@@ -412,12 +412,7 @@ struct CompetitorComparisonView: View {
                     index: 2
                 )
             }
-            .background(MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(MVMTheme.border)
-            }
+            .mvmCard(cornerRadius: 16)
 
             HStack(spacing: 16) {
                 savingsBadge(label: "Year 3", saved: "$10", vs: "vs Annual")
@@ -659,12 +654,7 @@ struct CompetitorComparisonView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
         .padding(.horizontal, 6)
-        .background(MVMTheme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(MVMTheme.border)
-        }
+        .mvmCard(cornerRadius: 14)
     }
 
     // MARK: - Feature Matrix
@@ -702,12 +692,7 @@ struct CompetitorComparisonView: View {
                     .padding(.vertical, 10)
                 }
             }
-            .background(MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .overlay {
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(MVMTheme.border)
-            }
+            .mvmCard(cornerRadius: 18)
         }
     }
 
@@ -836,12 +821,7 @@ struct CompetitorComparisonView: View {
                 .padding(.top, 4)
         }
         .padding(20)
-        .background(MVMTheme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(MVMTheme.border)
-        }
+        .mvmCard(cornerRadius: 20)
     }
 
     private func savingsRow(_ label: String, saved: String, icon: String) -> some View {

@@ -142,6 +142,7 @@ struct AFTCalculatorView: View {
             .scrollDismissesKeyboard(.interactively)
         }
         .sensoryFeedback(.success, trigger: didSave)
+        .onAppear { prefillFromLastScore() }
         .navigationTitle("AFT Calculator")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
@@ -414,17 +415,8 @@ struct AFTCalculatorView: View {
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(points)")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundStyle(pointsColor(points))
-                        .contentTransition(.numericText())
-                        .accessibilityLabel("\(title): \(points) points")
-
-                    Text("pts")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                }
+                EventScoreRing(points: points, minimumToPass: standard.minimumPerEvent)
+                    .accessibilityLabel("\(title): \(points) points")
             }
 
             HStack {
@@ -466,11 +458,7 @@ struct AFTCalculatorView: View {
             .padding(.horizontal, 12)
             .frame(height: 48)
             .frame(maxWidth: width)
-            .background(MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
-            }
+            .mvmCard(cornerRadius: 12)
     }
 
     private func timeFields(minText: Binding<String>, secText: Binding<String>, minField: CalculatorField, secField: CalculatorField) -> some View {
@@ -513,21 +501,17 @@ struct AFTCalculatorView: View {
     // MARK: - Total Score
 
     private var totalScoreCard: some View {
-        VStack(spacing: 12) {
-            Text("Total Score")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(MVMTheme.secondaryText)
-
-            Text("\(totalScore)")
-                .font(.system(size: 64, weight: .bold, design: .rounded))
-                .foregroundStyle(MVMTheme.primaryText)
-                .contentTransition(.numericText())
-                .animation(.snappy, value: totalScore)
-
-            Text("/ 500")
-                .font(.title3.weight(.medium))
+        VStack(spacing: 14) {
+            Text("TOTAL SCORE")
+                .font(.caption.weight(.heavy))
+                .tracking(1.4)
                 .foregroundStyle(MVMTheme.tertiaryText)
-                .padding(.top, -12)
+
+            TotalScoreGauge(
+                total: totalScore,
+                minimumToPass: standard.minimumTotal,
+                passed: overallPassed
+            )
 
             HStack(spacing: 8) {
                 scorePill("MDL", deadliftPoints)
@@ -682,5 +666,18 @@ struct AFTCalculatorView: View {
         if value >= standard.minimumPerEvent { return MVMTheme.success }
         if value >= 40 { return MVMTheme.warning }
         return MVMTheme.danger
+    }
+
+    /// Pre-fill inputs from the user's last saved score so re-testing takes seconds
+    /// (pattern from the best-rated logging apps: never make the user re-enter knowns).
+    private func prefillFromLastScore() {
+        guard let last = vm.aftScores.first else { return }
+        // Only prefill if the user hasn't already typed custom values this session
+        guard deadliftText == "180", pushUpText == "25" else { return }
+        deadliftText = String(last.deadliftLbs)
+        pushUpText = String(last.pushUpReps)
+        sdcMinText = String(last.sdcSeconds / 60); sdcSecText = String(format: "%02d", last.sdcSeconds % 60)
+        plankMinText = String(last.plankSeconds / 60); plankSecText = String(format: "%02d", last.plankSeconds % 60)
+        runMinText = String(last.runSeconds / 60); runSecText = String(format: "%02d", last.runSeconds % 60)
     }
 }

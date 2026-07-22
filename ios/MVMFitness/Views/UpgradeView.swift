@@ -160,12 +160,7 @@ struct UpgradeView: View {
             }
             .padding(16)
         }
-        .background(MVMTheme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(MVMTheme.border)
-        }
+        .mvmCard(cornerRadius: 18)
         .opacity(animateIn ? 1 : 0)
         .offset(y: animateIn ? 0 : 8)
         .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: animateIn)

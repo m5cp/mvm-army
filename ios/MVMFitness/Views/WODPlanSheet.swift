@@ -1111,12 +1111,7 @@ struct WODPlanPDFExportSheet: View {
                         pdfInfoRow(icon: "medal.fill", label: "Style", value: plan.heroPreference.rawValue)
                     }
                     .padding(16)
-                    .background(MVMTheme.card)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(MVMTheme.border)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .mvmCard(cornerRadius: 16)
 
                     VStack(spacing: 12) {
                         Button {

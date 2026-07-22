@@ -55,12 +55,7 @@ struct ResourcesView: View {
                 )
             }
             .padding(16)
-            .background(MVMTheme.card)
-            .clipShape(.rect(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(MVMTheme.border)
-            }
+            .mvmCard(cornerRadius: 14)
         }
     }
 
@@ -107,12 +102,7 @@ struct ResourcesView: View {
                 scoringQuickRefFemale
             }
             .padding(16)
-            .background(MVMTheme.card)
-            .clipShape(.rect(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(MVMTheme.border)
-            }
+            .mvmCard(cornerRadius: 14)
         }
     }
 
@@ -147,12 +137,7 @@ struct ResourcesView: View {
                         .foregroundStyle(MVMTheme.tertiaryText)
                 }
                 .padding(14)
-                .background(MVMTheme.card)
-                .clipShape(.rect(cornerRadius: 14))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(MVMTheme.border)
-                }
+                .mvmCard(cornerRadius: 14)
             }
             .buttonStyle(.plain)
         }

@@ -176,12 +176,7 @@ struct ProfileView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 28)
         .padding(.horizontal, 20)
-        .background(MVMTheme.card)
-        .clipShape(.rect(cornerRadius: 24))
-        .overlay {
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(MVMTheme.border)
-        }
+        .mvmCard(cornerRadius: 24)
     }
 
     @ViewBuilder
@@ -646,12 +641,7 @@ struct ProfileView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 4)
-            .background(MVMTheme.card)
-            .clipShape(.rect(cornerRadius: 16))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(MVMTheme.border)
-            }
+            .mvmCard(cornerRadius: 16)
         }
     }
 

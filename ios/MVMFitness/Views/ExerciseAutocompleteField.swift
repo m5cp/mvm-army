@@ -77,12 +77,7 @@ struct ExerciseAutocompleteField: View {
                         }
                     }
                 }
-                .background(MVMTheme.card)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(MVMTheme.border)
-                }
+                .mvmCard(cornerRadius: 12)
                 .transition(.opacity.combined(with: .move(edge: .top)))
                 .zIndex(10)
             }

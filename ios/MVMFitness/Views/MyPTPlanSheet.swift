@@ -745,12 +745,7 @@ struct MyPTPlanSheet: View {
                 .frame(width: 50, alignment: .trailing)
         }
         .padding(16)
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .mvmCard(cornerRadius: 16)
         .opacity(animateCards ? 1 : 0)
         .offset(y: animateCards ? 0 : 8)
     }
@@ -1183,12 +1178,7 @@ struct PlanPDFExportSheet: View {
                         planInfoRow(icon: "list.bullet", label: "Exercises", value: "\(plan.days.flatMap(\.exercises).count) total")
                     }
                     .padding(16)
-                    .background(MVMTheme.card)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(MVMTheme.border)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .mvmCard(cornerRadius: 16)
 
                     VStack(spacing: 12) {
                         Button {

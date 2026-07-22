@@ -173,12 +173,7 @@ struct ActiveQuickStartView: View {
             )
         }
         .padding(.vertical, 18)
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .mvmCard(cornerRadius: 18)
     }
 
     private func statCell(value: String, label: String, icon: String) -> some View {

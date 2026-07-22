@@ -274,12 +274,7 @@ struct PlanView: View {
                     .frame(width: 50, alignment: .trailing)
             }
             .padding(16)
-            .background(MVMTheme.card)
-            .overlay {
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(MVMTheme.border)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .mvmCard(cornerRadius: 16)
         }
     }
 

@@ -417,12 +417,7 @@ struct PTPlanDayDetailSheet: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .mvmCard(cornerRadius: 14)
     }
 
     private func strengthEditor(index: Int) -> some View {

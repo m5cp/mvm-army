@@ -186,12 +186,7 @@ struct QuickStartSelectionView: View {
                 Spacer(minLength: 0)
             }
             .padding(14)
-            .background(MVMTheme.card)
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(MVMTheme.border)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .mvmCard(cornerRadius: 14)
             .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
     }

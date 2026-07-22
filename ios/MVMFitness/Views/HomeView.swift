@@ -476,34 +476,59 @@ struct HomeView: View {
                             .foregroundStyle(.white)
                             .lineSpacing(2)
 
-                        Text("Fast scoring for graders and test takers")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.white.opacity(0.55))
+                        if let latest = vm.aftScores.first {
+                            HStack(spacing: 6) {
+                                Text("LAST: \(latest.totalScore)")
+                                    .font(.caption2.weight(.heavy))
+                                    .tracking(0.8)
+                                    .monospacedDigit()
+                                    .foregroundStyle(.white)
+                                Text("/ 500")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.white.opacity(0.5))
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(.white.opacity(0.12)))
+                        } else {
+                            Text("Fast scoring for graders and test takers")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.white.opacity(0.55))
+                        }
                     }
 
                     Spacer(minLength: 0)
 
                     ZStack {
                         Circle()
-                            .fill(.white.opacity(0.08))
-                            .frame(width: 80, height: 80)
+                            .stroke(.white.opacity(0.15), lineWidth: 1)
+                            .frame(width: 84, height: 84)
                         Circle()
-                            .fill(.white.opacity(0.06))
-                            .frame(width: 60, height: 60)
+                            .stroke(.white.opacity(0.08), lineWidth: 1)
+                            .frame(width: 66, height: 66)
                         Image(systemName: "shield.checkered")
                             .font(.system(size: 28, weight: .bold))
                             .foregroundStyle(.white)
+                            .symbolRenderingMode(.hierarchical)
                     }
                 }
-
-
             }
             .padding(22)
             .background {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 24)
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .fill(MVMTheme.aftGradient)
-                    RoundedRectangle(cornerRadius: 24)
+                    // Machined top-edge light catch
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.white.opacity(0.25), .white.opacity(0.05), .clear],
+                                startPoint: .top,
+                                endPoint: .center
+                            ),
+                            lineWidth: 1
+                        )
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [.clear, .white.opacity(0.04), .clear],
@@ -513,7 +538,7 @@ struct HomeView: View {
                         )
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .shadow(color: MVMTheme.brandGreen.opacity(0.3), radius: 24, y: 14)
         }
         .buttonStyle(PressScaleButtonStyle())
@@ -1101,12 +1126,7 @@ struct HomeView: View {
                     .foregroundStyle(MVMTheme.tertiaryText)
             }
             .padding(14)
-            .background(MVMTheme.card)
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(MVMTheme.border)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .mvmCard(cornerRadius: 14)
         }
         .buttonStyle(PressScaleButtonStyle())
     }
@@ -1148,12 +1168,7 @@ struct HomeView: View {
                 )
             }
             .padding(.vertical, 18)
-            .background(MVMTheme.card)
-            .overlay {
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(MVMTheme.border)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .mvmCard(cornerRadius: 20)
         }
         .opacity(animateMetrics ? 1 : 0)
         .offset(y: animateMetrics ? 0 : 12)

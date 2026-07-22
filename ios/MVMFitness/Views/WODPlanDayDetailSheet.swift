@@ -379,12 +379,7 @@ struct WODPlanDayDetailSheet: View {
             detailPill(icon: "wrench.and.screwdriver", value: day.template.equipment.rawValue, label: "Equipment")
         }
         .padding(.vertical, 14)
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .mvmCard(cornerRadius: 18)
     }
 
     private var detailDivider: some View {
@@ -531,12 +526,7 @@ struct WODPlanDayDetailSheet: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .mvmCard(cornerRadius: 14)
     }
 
     private func movementField(title: String, text: Binding<String>) -> some View {

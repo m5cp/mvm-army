@@ -366,11 +366,7 @@ struct PDFUploadView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(MVMTheme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
-        }
+        .mvmCard(cornerRadius: 12)
     }
 
     private func categoryColor(_ category: ExerciseCategory) -> Color {

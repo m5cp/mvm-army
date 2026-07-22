@@ -119,12 +119,7 @@ struct LegalDetailView: View {
                 .lineSpacing(4)
         }
         .padding(16)
-        .background(MVMTheme.card)
-        .clipShape(.rect(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(MVMTheme.border)
-        }
+        .mvmCard(cornerRadius: 14)
         .accessibilityElement(children: .combine)
     }
 

@@ -306,12 +306,7 @@ struct ShareCardEditorView: View {
                                     .foregroundStyle(MVMTheme.tertiaryText)
                             }
                             .padding(12)
-                            .background(MVMTheme.card)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(MVMTheme.border)
-                            }
+                            .mvmCard(cornerRadius: 12)
                         }
                         .buttonStyle(.plain)
                     }
@@ -1030,12 +1025,7 @@ struct TextOverlayEditorSheet: View {
             Spacer()
         }
         .padding(16)
-        .background(MVMTheme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(MVMTheme.border)
-        }
+        .mvmCard(cornerRadius: 16)
     }
 
     private var previewFont: Font {

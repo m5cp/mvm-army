@@ -357,11 +357,7 @@ struct AFTScoreSheet: View {
             .padding(.horizontal, 12)
             .frame(height: 48)
             .frame(maxWidth: 100)
-            .background(MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
-            }
+            .mvmCard(cornerRadius: 12)
     }
 
     private func timeInput(minutes: Binding<String>, seconds: Binding<String>) -> some View {

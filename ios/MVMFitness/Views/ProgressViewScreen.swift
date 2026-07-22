@@ -205,12 +205,7 @@ struct ProgressViewScreen: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
-        .background(MVMTheme.card)
-        .clipShape(.rect(cornerRadius: 20))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(MVMTheme.border)
-        }
+        .mvmCard(cornerRadius: 20)
         .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label), \(value) \(sublabel)")
@@ -517,11 +512,7 @@ struct ProgressViewScreen: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(minHeight: 100)
-        .background(MVMTheme.card)
-        .clipShape(.rect(cornerRadius: 20))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20).stroke(MVMTheme.border)
-        }
+        .mvmCard(cornerRadius: 20)
         .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
     }
 
@@ -551,9 +542,7 @@ struct ProgressViewScreen: View {
 
             if weekData.allSatisfy({ $0.count == 0 }) {
                 VStack(spacing: 12) {
-                    Image(systemName: "chart.bar")
-                        .font(.system(size: 28))
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                    GhostBars()
 
                     Text("No Training Data Yet")
                         .font(.subheadline.weight(.semibold))

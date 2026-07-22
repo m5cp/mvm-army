@@ -183,12 +183,7 @@ struct PTWODDetailView: View {
             detailPill(icon: "tag", value: workout.source.rawValue, label: "Type")
         }
         .padding(.vertical, 14)
-        .background(MVMTheme.card)
-        .overlay {
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(MVMTheme.border)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .mvmCard(cornerRadius: 18)
     }
 
     private var detailDivider: some View {
@@ -250,12 +245,7 @@ struct PTWODDetailView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(MVMTheme.card)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(MVMTheme.border)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .mvmCard(cornerRadius: 14)
             }
         }
     }
