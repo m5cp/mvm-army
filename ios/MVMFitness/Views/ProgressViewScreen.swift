@@ -13,6 +13,7 @@ struct ProgressViewScreen: View {
     @State private var selectedDayRecord: CompletedWorkoutRecord?
     @State private var showDayDetail: Bool = false
     @State private var showTrainingCalendar: Bool = false
+    @State private var showMyPTPlanSheet: Bool = false
 
 
     var body: some View {
@@ -76,6 +77,9 @@ struct ProgressViewScreen: View {
         .navigationDestination(isPresented: $showTrainingCalendar) {
             TrainingCalendarView()
         }
+        .sheet(isPresented: $showMyPTPlanSheet) {
+            MyPTPlanSheet()
+        }
         .onAppear {
             vm.pedometer.refreshTodaySteps()
             Task {
@@ -137,30 +141,38 @@ struct ProgressViewScreen: View {
     private var primaryMetricsRow: some View {
         let todaySteps = vm.pedometer.todaySteps
 
-        return HStack(spacing: 10) {
-            primaryMetricCard(
-                icon: "figure.walk",
-                iconColor: MVMTheme.success,
-                value: todaySteps.formatted(),
-                label: "Steps",
-                sublabel: "Today"
-            )
+        return VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                primaryMetricCard(
+                    icon: "figure.walk",
+                    iconColor: MVMTheme.success,
+                    value: todaySteps.formatted(),
+                    label: "Steps",
+                    sublabel: "Today"
+                )
 
-            primaryMetricCard(
-                icon: "checkmark.seal.fill",
-                iconColor: MVMTheme.accent,
-                value: "\(vm.totalWorkoutsCompleted)",
-                label: "Workouts",
-                sublabel: "Total"
-            )
+                primaryMetricCard(
+                    icon: "checkmark.seal.fill",
+                    iconColor: MVMTheme.accent,
+                    value: "\(vm.totalWorkoutsCompleted)",
+                    label: "Workouts",
+                    sublabel: "Total"
+                )
 
-            primaryMetricCard(
-                icon: "flame.fill",
-                iconColor: Color(hex: "#FF6B35"),
-                value: "\(vm.workoutsThisWeek)",
-                label: "This Week",
-                sublabel: "Sessions"
-            )
+                primaryMetricCard(
+                    icon: "flame.fill",
+                    iconColor: Color(hex: "#FF6B35"),
+                    value: "\(vm.workoutsThisWeek)",
+                    label: "This Week",
+                    sublabel: "Sessions"
+                )
+            }
+
+            if todaySteps == 0 {
+                Text("Walk with your phone to start tracking")
+                    .font(.caption2)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
         }
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
@@ -220,12 +232,16 @@ struct ProgressViewScreen: View {
             .padding(.bottom, 18)
 
             HStack(spacing: 0) {
-                heroStat(
-                    value: individualPTLabel,
-                    label: "Individual PT",
-                    icon: "figure.strengthtraining.traditional",
-                    color: MVMTheme.accent
-                )
+                if vm.currentPlan == nil {
+                    generateWeek1Button
+                } else {
+                    heroStat(
+                        value: individualPTLabel,
+                        label: "Individual PT",
+                        icon: "figure.strengthtraining.traditional",
+                        color: MVMTheme.accent
+                    )
+                }
 
                 Rectangle()
                     .fill(MVMTheme.border)
@@ -294,6 +310,26 @@ struct ProgressViewScreen: View {
                 .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var generateWeek1Button: some View {
+        Button {
+            showMyPTPlanSheet = true
+        } label: {
+            VStack(spacing: 6) {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.accent)
+                Text("Generate your Week 1 plan")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
     }
 
     private var individualPTLabel: String {

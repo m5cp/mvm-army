@@ -62,6 +62,27 @@ struct HomeView: View {
 
                     aftCalculatorHero
 
+                    ActivationChecklistCard(
+                        onScoreAFT: {
+                            toolTapTrigger.toggle()
+                            showAFTCalculator = true
+                        },
+                        onStartWorkout: {
+                            toolTapTrigger.toggle()
+                            showQuickStartSheet = true
+                        },
+                        onShare: {
+                            if let latestAFT = vm.aftScores.first {
+                                ShareCardRenderer.presentShareSheet(cardType: .aft(score: latestAFT, previous: vm.previousAFTScore))
+                            } else if let latestWorkout = vm.completedRecords.first {
+                                ShareCardRenderer.presentShareSheet(cardType: .completedWorkout(record: latestWorkout))
+                            } else {
+                                toolTapTrigger.toggle()
+                                showAFTCalculator = true
+                            }
+                        }
+                    )
+
                     quickStartSection
 
                     todayWorkoutSection

@@ -41,6 +41,7 @@ enum ShareCardRenderer {
     }
 
     static func presentShareSheet(cardType: ShareCardType, date: Date = .now) {
+        UserDefaults.standard.set(true, forKey: "hasSharedOnce")
         let items = shareItems(cardType: cardType, date: date)
         let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
 
