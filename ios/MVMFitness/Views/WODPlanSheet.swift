@@ -154,13 +154,13 @@ struct WODPlanSheet: View {
                     .frame(height: 52)
                     .background(
                         LinearGradient(
-                            colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706")],
+                            colors: [MVMTheme.functionalAmber, MVMTheme.functionalAmberDark],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: Color(hex: "#F59E0B").opacity(0.28), radius: 14, y: 8)
+                    .shadow(color: MVMTheme.functionalAmber.opacity(0.28), radius: 14, y: 8)
                 }
                 .disabled(calendarService.isExporting)
                 .sensoryFeedback(.success, trigger: approveCalendarTrigger)
@@ -195,7 +195,7 @@ struct WODPlanSheet: View {
                     } label: {
                         HStack(spacing: 8) {
                             if calendarService.isExporting {
-                                ProgressView().tint(Color(hex: "#F59E0B"))
+                                ProgressView().tint(MVMTheme.functionalAmber)
                             } else {
                                 Image(systemName: "arrow.triangle.2.circlepath")
                                     .font(.caption.weight(.bold))
@@ -203,10 +203,10 @@ struct WODPlanSheet: View {
                             Text("Re-Sync to Calendar")
                                 .font(.subheadline.weight(.semibold))
                         }
-                        .foregroundStyle(Color(hex: "#F59E0B"))
+                        .foregroundStyle(MVMTheme.functionalAmber)
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
-                        .background(Color(hex: "#F59E0B").opacity(0.12))
+                        .background(MVMTheme.functionalAmber.opacity(0.12))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .disabled(calendarService.isExporting)
@@ -242,9 +242,9 @@ struct WODPlanSheet: View {
             VStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(Color(hex: "#F59E0B"))
+                    .foregroundStyle(MVMTheme.functionalAmber)
                     .frame(width: 44, height: 44)
-                    .background(Color(hex: "#F59E0B").opacity(0.12))
+                    .background(MVMTheme.functionalAmber.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Text(label)
@@ -263,7 +263,7 @@ struct WODPlanSheet: View {
             VStack(spacing: 8) {
                 Image(systemName: "calendar.badge.plus")
                     .font(.system(size: 40))
-                    .foregroundStyle(Color(hex: "#F59E0B"))
+                    .foregroundStyle(MVMTheme.functionalAmber)
                     .padding(.top, 8)
 
                 Text("Sync to Calendar")
@@ -302,7 +302,7 @@ struct WODPlanSheet: View {
                         .frame(height: 52)
                         .background(
                             LinearGradient(
-                                colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706")],
+                                colors: [MVMTheme.functionalAmber, MVMTheme.functionalAmberDark],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -335,9 +335,9 @@ struct WODPlanSheet: View {
             VStack(spacing: 8) {
                 Image(systemName: "bolt.heart.fill")
                     .font(.system(size: 32, weight: .bold))
-                    .foregroundStyle(Color(hex: "#F59E0B"))
+                    .foregroundStyle(MVMTheme.functionalAmber)
                     .frame(width: 64, height: 64)
-                    .background(Color(hex: "#F59E0B").opacity(0.12))
+                    .background(MVMTheme.functionalAmber.opacity(0.12))
                     .clipShape(Circle())
 
                 Text("Plan My FunctionFitness")
@@ -384,7 +384,7 @@ struct WODPlanSheet: View {
                             .foregroundStyle(selectedWeeks == weeks ? .white : MVMTheme.secondaryText)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
-                            .background(selectedWeeks == weeks ? Color(hex: "#F59E0B") : Color.white.opacity(0.06))
+                            .background(selectedWeeks == weeks ? MVMTheme.functionalAmber : Color.white.opacity(0.06))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                         .buttonStyle(.plain)
@@ -414,7 +414,7 @@ struct WODPlanSheet: View {
                             .foregroundStyle(selectedTrainingFrequency == freq ? .white : MVMTheme.secondaryText)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
-                            .background(selectedTrainingFrequency == freq ? Color(hex: "#F59E0B") : Color.white.opacity(0.06))
+                            .background(selectedTrainingFrequency == freq ? MVMTheme.functionalAmber : Color.white.opacity(0.06))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                         .buttonStyle(.plain)
@@ -427,7 +427,7 @@ struct WODPlanSheet: View {
                     Text(splitRecommendation)
                         .font(.caption2.weight(.medium))
                 }
-                .foregroundStyle(Color(hex: "#F59E0B").opacity(0.7))
+                .foregroundStyle(MVMTheme.functionalAmber.opacity(0.7))
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -470,7 +470,7 @@ struct WODPlanSheet: View {
                 .frame(maxWidth: .infinity)
                 .background(
                     LinearGradient(
-                        colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706")],
+                        colors: [MVMTheme.functionalAmber, MVMTheme.functionalAmberDark],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -494,9 +494,9 @@ struct WODPlanSheet: View {
             HStack(spacing: 14) {
                 Image(systemName: pref.icon)
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(isSelected ? .white : Color(hex: "#F59E0B"))
+                    .foregroundStyle(isSelected ? .white : MVMTheme.functionalAmber)
                     .frame(width: 38, height: 38)
-                    .background(isSelected ? Color(hex: "#F59E0B") : Color(hex: "#F59E0B").opacity(0.12))
+                    .background(isSelected ? MVMTheme.functionalAmber : MVMTheme.functionalAmber.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -514,15 +514,15 @@ struct WODPlanSheet: View {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.body)
-                        .foregroundStyle(Color(hex: "#F59E0B"))
+                        .foregroundStyle(MVMTheme.functionalAmber)
                 }
             }
             .padding(12)
-            .background(isSelected ? Color(hex: "#F59E0B").opacity(0.08) : Color.white.opacity(0.03))
+            .background(isSelected ? MVMTheme.functionalAmber.opacity(0.08) : Color.white.opacity(0.03))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay {
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? Color(hex: "#F59E0B").opacity(0.3) : MVMTheme.border)
+                    .stroke(isSelected ? MVMTheme.functionalAmber.opacity(0.3) : MVMTheme.border)
             }
         }
         .buttonStyle(.plain)
@@ -539,9 +539,9 @@ struct WODPlanSheet: View {
             HStack(spacing: 14) {
                 Image(systemName: goal.icon)
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(isSelected ? .white : Color(hex: "#F59E0B"))
+                    .foregroundStyle(isSelected ? .white : MVMTheme.functionalAmber)
                     .frame(width: 38, height: 38)
-                    .background(isSelected ? Color(hex: "#F59E0B") : Color(hex: "#F59E0B").opacity(0.12))
+                    .background(isSelected ? MVMTheme.functionalAmber : MVMTheme.functionalAmber.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -559,15 +559,15 @@ struct WODPlanSheet: View {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.body)
-                        .foregroundStyle(Color(hex: "#F59E0B"))
+                        .foregroundStyle(MVMTheme.functionalAmber)
                 }
             }
             .padding(12)
-            .background(isSelected ? Color(hex: "#F59E0B").opacity(0.08) : Color.white.opacity(0.03))
+            .background(isSelected ? MVMTheme.functionalAmber.opacity(0.08) : Color.white.opacity(0.03))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay {
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? Color(hex: "#F59E0B").opacity(0.3) : MVMTheme.border)
+                    .stroke(isSelected ? MVMTheme.functionalAmber.opacity(0.3) : MVMTheme.border)
             }
         }
         .buttonStyle(.plain)
@@ -579,7 +579,7 @@ struct WODPlanSheet: View {
                 .font(.title3.weight(.bold))
                 .foregroundStyle(.white)
                 .frame(width: 44, height: 44)
-                .background(Color(hex: "#F59E0B").opacity(0.3))
+                .background(MVMTheme.functionalAmber.opacity(0.3))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
             VStack(alignment: .leading, spacing: 3) {
@@ -609,7 +609,7 @@ struct WODPlanSheet: View {
             RoundedRectangle(cornerRadius: 18)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706").opacity(0.9)],
+                        colors: [MVMTheme.functionalAmber, MVMTheme.functionalAmberDark.opacity(0.9)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -651,7 +651,7 @@ struct WODPlanSheet: View {
                             HStack(spacing: 6) {
                                 Text(day.template.format.rawValue)
                                     .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(Color(hex: "#F59E0B"))
+                                    .foregroundStyle(MVMTheme.functionalAmber)
                                 Text("~\(day.template.durationMinutes) min")
                                     .font(.caption2.weight(.medium))
                                     .foregroundStyle(MVMTheme.tertiaryText)
@@ -699,7 +699,7 @@ struct WODPlanSheet: View {
                     .font(.system(size: 15, weight: .bold, design: .rounded))
                     .foregroundStyle(
                         day.isCompleted ? MVMTheme.success :
-                        isToday ? Color(hex: "#F59E0B") :
+                        isToday ? MVMTheme.functionalAmber :
                         MVMTheme.secondaryText
                     )
             }
@@ -733,7 +733,7 @@ struct WODPlanSheet: View {
                         }
                         Text(day.template.format.rawValue)
                             .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Color(hex: "#F59E0B"))
+                            .foregroundStyle(MVMTheme.functionalAmber)
                         Text("~\(day.template.durationMinutes) min")
                             .font(.caption2.weight(.medium))
                             .foregroundStyle(MVMTheme.tertiaryText)
@@ -753,7 +753,7 @@ struct WODPlanSheet: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color(hex: "#F59E0B"))
+                    .background(MVMTheme.functionalAmber)
                     .clipShape(Capsule())
             } else if day.isRestDay {
                 Image(systemName: "leaf.fill")
@@ -772,13 +772,13 @@ struct WODPlanSheet: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(
-            isToday ? Color(hex: "#F59E0B").opacity(0.08) :
+            isToday ? MVMTheme.functionalAmber.opacity(0.08) :
             MVMTheme.card
         )
         .overlay {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(
-                    isToday ? Color(hex: "#F59E0B").opacity(0.2) :
+                    isToday ? MVMTheme.functionalAmber.opacity(0.2) :
                     MVMTheme.border
                 )
         }
@@ -813,10 +813,10 @@ struct WODPlanSheet: View {
                 Text("Refresh Week")
                     .font(.subheadline.weight(.semibold))
             }
-            .foregroundStyle(Color(hex: "#F59E0B"))
+            .foregroundStyle(MVMTheme.functionalAmber)
             .frame(height: 48)
             .frame(maxWidth: .infinity)
-            .background(Color(hex: "#F59E0B").opacity(0.12))
+            .background(MVMTheme.functionalAmber.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(PressScaleButtonStyle())
@@ -865,7 +865,7 @@ struct WODPlanSheet: View {
                     HStack(spacing: 8) {
                         Image(systemName: trainingGoalIcon(goal))
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(isSelected ? .white : Color(hex: "#F59E0B"))
+                            .foregroundStyle(isSelected ? .white : MVMTheme.functionalAmber)
 
                         Text(goal.rawValue)
                             .font(.caption.weight(.semibold))
@@ -874,7 +874,7 @@ struct WODPlanSheet: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 42)
-                    .background(isSelected ? Color(hex: "#F59E0B") : Color.white.opacity(0.06))
+                    .background(isSelected ? MVMTheme.functionalAmber : Color.white.opacity(0.06))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
                 .buttonStyle(.plain)
@@ -897,7 +897,7 @@ struct WODPlanSheet: View {
     private func intensityColor(_ grade: IntensityGrade) -> Color {
         switch grade {
         case .low: return .green
-        case .moderate: return Color(hex: "#F59E0B")
+        case .moderate: return MVMTheme.functionalAmber
         case .high: return .orange
         case .extreme: return .red
         }
@@ -959,7 +959,7 @@ struct WODPlanShareSheet: View {
                             } else {
                                 VStack(spacing: 12) {
                                     ProgressView()
-                                        .tint(Color(hex: "#F59E0B"))
+                                        .tint(MVMTheme.functionalAmber)
                                     Text("Generating share card...")
                                         .font(.caption)
                                         .foregroundStyle(MVMTheme.secondaryText)
@@ -997,7 +997,7 @@ struct WODPlanShareSheet: View {
                                             .frame(maxWidth: .infinity)
                                             .background(
                                                 LinearGradient(
-                                                    colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706")],
+                                                    colors: [MVMTheme.functionalAmber, MVMTheme.functionalAmberDark],
                                                     startPoint: .leading,
                                                     endPoint: .trailing
                                                 )
@@ -1021,7 +1021,7 @@ struct WODPlanShareSheet: View {
                                         .foregroundStyle(.white)
                                         .frame(height: 52)
                                         .frame(maxWidth: .infinity)
-                                        .background(Color(hex: "#D97706"))
+                                        .background(MVMTheme.functionalAmberDark)
                                         .clipShape(RoundedRectangle(cornerRadius: 16))
                                     }
                                     .buttonStyle(PressScaleButtonStyle())
@@ -1033,10 +1033,10 @@ struct WODPlanShareSheet: View {
                                         Text("Share as Text")
                                     }
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Color(hex: "#F59E0B"))
+                                    .foregroundStyle(MVMTheme.functionalAmber)
                                     .frame(height: 44)
                                     .frame(maxWidth: .infinity)
-                                    .background(Color(hex: "#F59E0B").opacity(0.12))
+                                    .background(MVMTheme.functionalAmber.opacity(0.12))
                                     .clipShape(RoundedRectangle(cornerRadius: 14))
                                 }
                                 .buttonStyle(PressScaleButtonStyle())
@@ -1090,7 +1090,7 @@ struct WODPlanPDFExportSheet: View {
                     VStack(spacing: 12) {
                         Image(systemName: "doc.richtext")
                             .font(.system(size: 44))
-                            .foregroundStyle(Color(hex: "#F59E0B"))
+                            .foregroundStyle(MVMTheme.functionalAmber)
                             .padding(.top, 20)
 
                         Text("Export as PDF")
@@ -1138,7 +1138,7 @@ struct WODPlanPDFExportSheet: View {
                             .frame(height: 52)
                             .background(
                                 LinearGradient(
-                                    colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706")],
+                                    colors: [MVMTheme.functionalAmber, MVMTheme.functionalAmberDark],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
@@ -1176,9 +1176,9 @@ struct WODPlanPDFExportSheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color(hex: "#F59E0B"))
+                .foregroundStyle(MVMTheme.functionalAmber)
                 .frame(width: 28, height: 28)
-                .background(Color(hex: "#F59E0B").opacity(0.12))
+                .background(MVMTheme.functionalAmber.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             Text(label)

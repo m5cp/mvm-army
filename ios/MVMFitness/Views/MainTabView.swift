@@ -89,10 +89,13 @@ struct MainTabView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(tab.title)
+                .accessibilityAddTraits(selectedTab == tab ? [.isSelected] : [])
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
+        .sensoryFeedback(.impact(weight: .light), trigger: selectedTab)
         .background {
             if #available(iOS 26.0, *) {
                 Capsule()

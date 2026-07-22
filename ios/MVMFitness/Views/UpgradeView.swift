@@ -303,7 +303,7 @@ struct UpgradeView: View {
                                 .font(.caption2.weight(.heavy))
                                 .tracking(1.2)
                         }
-                        .foregroundStyle(Color(hex: "#0C0F0E"))
+                        .foregroundStyle(MVMTheme.background)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 9)
                         .frame(maxWidth: .infinity)
@@ -354,15 +354,7 @@ struct UpgradeView: View {
                         .padding(20)
                         .background {
                             ZStack {
-                                LinearGradient(
-                                    colors: [
-                                        Color(hex: "#1A1A2E"),
-                                        Color(hex: "#16213E"),
-                                        Color(hex: "#0F3460").opacity(0.8)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                                MVMTheme.lifetimeGradient
                                 MVMTheme.subtleGradient
                             }
                         }

@@ -886,7 +886,7 @@ struct ProgressViewScreen: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: "bolt.fill")
-                    .foregroundStyle(Color(hex: "#059669"))
+                    .foregroundStyle(MVMTheme.emeraldAccent)
                     .font(.subheadline.weight(.semibold))
                 Text("Quick Start")
                     .font(.headline)

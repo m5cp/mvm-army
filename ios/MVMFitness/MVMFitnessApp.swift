@@ -4,7 +4,6 @@ import RevenueCat
 
 @main
 struct MVMFitnessApp: App {
-    @AppStorage("appearanceMode") private var appearanceModeRaw = AppearanceMode.system.rawValue
     @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel = AppViewModel()
     @State private var store = StoreViewModel()
@@ -24,7 +23,7 @@ struct MVMFitnessApp: App {
             RootView()
                 .environment(viewModel)
                 .environment(store)
-                .preferredColorScheme(AppearanceMode(rawValue: appearanceModeRaw)?.colorScheme)
+                .preferredColorScheme(.dark)
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
                         viewModel.pedometer.refreshTodaySteps()

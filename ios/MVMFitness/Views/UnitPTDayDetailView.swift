@@ -261,7 +261,7 @@ struct UnitPTDayDetailView: View {
             HStack(spacing: 8) {
                 Image(systemName: "doc.text.fill")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(Color(hex: "#F59E0B"))
+                    .foregroundStyle(MVMTheme.functionalAmber)
                 Text("Task, Condition, Standard")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
@@ -280,7 +280,7 @@ struct UnitPTDayDetailView: View {
             HStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Color(hex: "#F59E0B").opacity(0.7))
+                    .foregroundStyle(MVMTheme.functionalAmber.opacity(0.7))
                 Text(label)
                     .font(.caption2.weight(.heavy))
                     .tracking(0.6)

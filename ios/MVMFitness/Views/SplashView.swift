@@ -177,7 +177,8 @@ struct SplashView: View {
             particlesVisible = true
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+        let splashDelay: TimeInterval = UIAccessibility.isReduceMotionEnabled ? 0.1 : 0.8
+        DispatchQueue.main.asyncAfter(deadline: .now() + splashDelay) {
             onFinished()
         }
     }

@@ -11,7 +11,7 @@ struct AddMovementSheet: View {
     @State private var weight: String = ""
     @State private var notes: String = ""
 
-    private let wodAccent = Color(hex: "#F59E0B")
+    private let wodAccent = MVMTheme.functionalAmber
 
     var body: some View {
         NavigationStack {
@@ -57,7 +57,7 @@ struct AddMovementSheet: View {
                             .frame(height: 52)
                             .background(
                                 LinearGradient(
-                                    colors: [wodAccent, Color(hex: "#D97706")],
+                                    colors: [wodAccent, MVMTheme.functionalAmberDark],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )

@@ -18,7 +18,7 @@ struct WODPlanDayDetailSheet: View {
         self.day = day
     }
 
-    private let wodAccent = Color(hex: "#F59E0B")
+    private let wodAccent = MVMTheme.functionalAmber
 
     var body: some View {
         NavigationStack {
@@ -100,7 +100,7 @@ struct WODPlanDayDetailSheet: View {
                 .frame(height: 52)
                 .background(
                     LinearGradient(
-                        colors: [wodAccent, Color(hex: "#D97706")],
+                        colors: [wodAccent, MVMTheme.functionalAmberDark],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -361,7 +361,7 @@ struct WODPlanDayDetailSheet: View {
             RoundedRectangle(cornerRadius: 24)
                 .fill(
                     LinearGradient(
-                        colors: [Color(hex: "#D97706"), Color(hex: "#B45309").opacity(0.95)],
+                        colors: [MVMTheme.functionalAmberDark, Color(hex: "#B45309").opacity(0.95)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )

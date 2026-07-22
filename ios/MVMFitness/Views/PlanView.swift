@@ -391,7 +391,7 @@ struct PlanView: View {
                             Text("Review")
                                 .font(.subheadline.weight(.bold))
                         }
-                        .foregroundStyle(Color(hex: "#1A1A2E"))
+                        .foregroundStyle(MVMTheme.lifetimeNavy1)
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
                         .background(.white)
@@ -410,7 +410,7 @@ struct PlanView: View {
                             Text("Start Workout")
                                 .font(.subheadline.weight(.bold))
                         }
-                        .foregroundStyle(Color(hex: "#1A1A2E"))
+                        .foregroundStyle(MVMTheme.lifetimeNavy1)
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
                         .background(.white)
@@ -478,7 +478,7 @@ struct PlanView: View {
                     .fill(
                         day.isCompleted ?
                         LinearGradient(
-                            colors: [Color(hex: "#059669"), Color(hex: "#10B981").opacity(0.9)],
+                            colors: [MVMTheme.emeraldAccent, Color(hex: "#10B981").opacity(0.9)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ) :
@@ -493,7 +493,7 @@ struct PlanView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 22))
-        .shadow(color: (day.isCompleted ? Color(hex: "#059669") : MVMTheme.accent).opacity(0.2), radius: 20, y: 12)
+        .shadow(color: (day.isCompleted ? MVMTheme.emeraldAccent : MVMTheme.accent).opacity(0.2), radius: 20, y: 12)
     }
 
     private func selectedRecoveryCard(_ day: WorkoutDay) -> some View {

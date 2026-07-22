@@ -782,14 +782,14 @@ struct HomeView: View {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(
                         LinearGradient(
-                            colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706").opacity(0.95)],
+                            colors: [MVMTheme.functionalAmber, MVMTheme.functionalAmberDark.opacity(0.95)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
             }
             .clipShape(RoundedRectangle(cornerRadius: 20))
-            .shadow(color: Color(hex: "#F59E0B").opacity(0.2), radius: 16, y: 10)
+            .shadow(color: MVMTheme.functionalAmber.opacity(0.2), radius: 16, y: 10)
         }
         .buttonStyle(PressScaleButtonStyle())
         .accessibilityLabel("Today's FunctionFitness: \(template.title), \(template.movements.count) movements")
@@ -820,7 +820,7 @@ struct HomeView: View {
                 .frame(height: 40)
                 .background(
                     LinearGradient(
-                        colors: [Color(hex: "#F59E0B"), Color(hex: "#D97706")],
+                        colors: [MVMTheme.functionalAmber, MVMTheme.functionalAmberDark],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -937,7 +937,7 @@ struct HomeView: View {
                     .frame(width: 36, height: 36)
                     .background(
                         LinearGradient(
-                            colors: [Color(hex: "#059669"), Color(hex: "#047857")],
+                            colors: [MVMTheme.emeraldAccent, MVMTheme.emeraldAccentDark],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -957,14 +957,14 @@ struct HomeView: View {
 
                 Image(systemName: "play.circle.fill")
                     .font(.title2.weight(.semibold))
-                    .foregroundStyle(Color(hex: "#059669"))
+                    .foregroundStyle(MVMTheme.emeraldAccent)
             }
             .padding(14)
             .background(MVMTheme.card)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay {
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color(hex: "#059669").opacity(0.2))
+                    .stroke(MVMTheme.emeraldAccent.opacity(0.2))
             }
         }
         .buttonStyle(PressScaleButtonStyle())

@@ -129,7 +129,7 @@ struct CompetitorComparisonView: View {
                     .font(.caption2.weight(.heavy))
                     .tracking(1.2)
             }
-            .foregroundStyle(Color(hex: "#0C0F0E"))
+            .foregroundStyle(MVMTheme.background)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity)
@@ -166,7 +166,7 @@ struct CompetitorComparisonView: View {
                         Text("50% OFF")
                             .font(.caption2.weight(.heavy))
                             .tracking(0.5)
-                            .foregroundStyle(Color(hex: "#0C0F0E"))
+                            .foregroundStyle(MVMTheme.background)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
                             .background(MVMTheme.heroAmber)
@@ -207,9 +207,9 @@ struct CompetitorComparisonView: View {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color(hex: "#1A1A2E"),
-                                    Color(hex: "#16213E"),
-                                    Color(hex: "#0F3460").opacity(0.8)
+                                    MVMTheme.lifetimeNavy1,
+                                    MVMTheme.lifetimeNavy2,
+                                    MVMTheme.lifetimeNavy3.opacity(0.8)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -306,7 +306,7 @@ struct CompetitorComparisonView: View {
                 Text("BEST VALUE")
                     .font(.system(size: 8, weight: .heavy))
                     .tracking(0.5)
-                    .foregroundStyle(Color(hex: "#0C0F0E"))
+                    .foregroundStyle(MVMTheme.background)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(MVMTheme.heroAmber)
@@ -340,7 +340,7 @@ struct CompetitorComparisonView: View {
         .padding(.horizontal, 4)
         .background(
             highlight ?
-            Color(hex: "#1A1A2E") :
+            MVMTheme.lifetimeNavy1 :
             MVMTheme.card
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -603,7 +603,7 @@ struct CompetitorComparisonView: View {
 
                 Text("50% OFF")
                     .font(.system(size: 9, weight: .heavy))
-                    .foregroundStyle(Color(hex: "#0C0F0E"))
+                    .foregroundStyle(MVMTheme.background)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(MVMTheme.heroAmber)
@@ -616,7 +616,7 @@ struct CompetitorComparisonView: View {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(
                         LinearGradient(
-                            colors: [Color(hex: "#1B5E3B"), Color(hex: "#2E7D52").opacity(0.9)],
+                            colors: [Color(hex: "#1B5E3B"), MVMTheme.accent.opacity(0.9)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

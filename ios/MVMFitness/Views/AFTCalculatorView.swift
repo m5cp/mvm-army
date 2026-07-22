@@ -139,6 +139,7 @@ struct AFTCalculatorView: View {
             }
             .scrollDismissesKeyboard(.interactively)
         }
+        .sensoryFeedback(.success, trigger: didSave)
         .navigationTitle("AFT Calculator")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
@@ -514,6 +515,7 @@ struct AFTCalculatorView: View {
                 .font(.system(size: 64, weight: .bold, design: .rounded))
                 .foregroundStyle(MVMTheme.primaryText)
                 .contentTransition(.numericText())
+                .animation(.snappy, value: totalScore)
 
             Text("/ 500")
                 .font(.title3.weight(.medium))

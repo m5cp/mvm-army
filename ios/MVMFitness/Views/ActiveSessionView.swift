@@ -261,7 +261,7 @@ struct ActiveSessionView: View {
                         Text(exercise.isCompleted ? "Undo" : "Mark Done")
                             .font(.headline.weight(.bold))
                     }
-                    .foregroundStyle(exercise.isCompleted ? .white : Color(hex: "#1A1A2E"))
+                    .foregroundStyle(exercise.isCompleted ? .white : MVMTheme.lifetimeNavy1)
                     .frame(height: 54)
                     .frame(maxWidth: .infinity)
                     .background(exercise.isCompleted ? .white.opacity(0.18) : .white)

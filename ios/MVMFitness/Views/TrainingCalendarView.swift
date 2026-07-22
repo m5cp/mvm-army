@@ -516,9 +516,9 @@ struct TrainingCalendarView: View {
         switch source {
         case .individual: return MVMTheme.accent
         case .unit: return Color(hex: "#2563EB")
-        case .wod: return Color(hex: "#F59E0B")
+        case .wod: return MVMTheme.functionalAmber
         case .random: return Color(hex: "#6366F1")
-        case .imported: return Color(hex: "#059669")
+        case .imported: return MVMTheme.emeraldAccent
         }
     }
 
