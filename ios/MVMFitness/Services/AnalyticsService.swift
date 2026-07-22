@@ -1,20 +1,14 @@
 import Foundation
-import TelemetryDeck
 
-/// Privacy-first analytics. Event names + counts only.
-/// NEVER attach PII, fitness values, scores, names, or health data.
+/// Analytics is currently disabled (TelemetryDeck was removed).
+/// This stub keeps every call site compiling as a harmless no-op — if
+/// analytics is wanted again later, swap the no-op bodies below for a
+/// real provider without touching any call sites.
 enum AnalyticsService {
 
-    /// Call once at app launch. App ID comes from the TelemetryDeck dashboard —
-    /// the developer replaces the placeholder with their real App ID.
-    static func configure() {
-        let config = TelemetryDeck.Config(appID: "TELEMETRYDECK-APP-ID-PLACEHOLDER")
-        TelemetryDeck.initialize(config: config)
-    }
+    static func configure() {}
 
-    static func track(_ event: Event) {
-        TelemetryDeck.signal(event.rawValue)
-    }
+    static func track(_ event: Event) {}
 
     enum Event: String {
         case onboardingStepCompleted = "onboarding.stepCompleted"
