@@ -36,16 +36,16 @@ final class CFTStore {
     private static let storageKey = "cftRecords"
 
     init() {
-        records = LocalStore.load([CFTRecord].self, forKey: Self.storageKey, fallback: [])
+        records = DataStore.load([CFTRecord].self, forKey: Self.storageKey, fallback: [])
     }
 
     func add(_ record: CFTRecord) {
         records.insert(record, at: 0)
-        LocalStore.save(records, forKey: Self.storageKey)
+        DataStore.save(records, forKey: Self.storageKey)
     }
 
     func delete(_ record: CFTRecord) {
         records.removeAll { $0.id == record.id }
-        LocalStore.save(records, forKey: Self.storageKey)
+        DataStore.save(records, forKey: Self.storageKey)
     }
 }

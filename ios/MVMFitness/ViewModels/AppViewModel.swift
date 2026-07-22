@@ -38,38 +38,44 @@ final class AppViewModel {
     }
 
     init() {
+        DataStore.migrateFromUserDefaultsIfNeeded(keys: [
+            "completedRecords", "stepHistory", "unitPTPlans", "aftScores",
+            "aftCalculatorResults", "currentPlan", "quickStartRecords",
+            "unitPTFullPlan", "scheduledUnitPT", "importedWorkouts", "wodPlan",
+            "whtrRecords", "cftRecords"
+        ])
         loadLocalData()
     }
 
     func loadLocalData() {
-        currentPlan = LocalStore.load(WeeklyPlan?.self, forKey: "currentPlan", fallback: nil)
-        completedRecords = LocalStore.load([CompletedWorkoutRecord].self, forKey: "completedRecords", fallback: [])
-        stepHistory = LocalStore.load([StepDay].self, forKey: "stepHistory", fallback: [])
+        currentPlan = DataStore.load(WeeklyPlan?.self, forKey: "currentPlan", fallback: nil)
+        completedRecords = DataStore.load([CompletedWorkoutRecord].self, forKey: "completedRecords", fallback: [])
+        stepHistory = DataStore.load([StepDay].self, forKey: "stepHistory", fallback: [])
         lastWorkoutTag = UserDefaults.standard.string(forKey: "lastWorkoutTag") ?? ""
-        unitPTPlans = LocalStore.load([UnitPTPlan].self, forKey: "unitPTPlans", fallback: [])
-        unitPTFullPlan = LocalStore.load(UnitPTFullPlan?.self, forKey: "unitPTFullPlan", fallback: nil)
-        scheduledUnitPT = LocalStore.load([WorkoutDay].self, forKey: "scheduledUnitPT", fallback: [])
-        importedWorkouts = LocalStore.load([WorkoutDay].self, forKey: "importedWorkouts", fallback: [])
-        aftScores = LocalStore.load([AFTScoreRecord].self, forKey: "aftScores", fallback: [])
-        aftCalculatorResults = LocalStore.load([AFTCalculatorResult].self, forKey: "aftCalculatorResults", fallback: [])
-        wodPlan = LocalStore.load(WODPlan?.self, forKey: "wodPlan", fallback: nil)
-        quickStartRecords = LocalStore.load([QuickStartRecord].self, forKey: "quickStartRecords", fallback: [])
+        unitPTPlans = DataStore.load([UnitPTPlan].self, forKey: "unitPTPlans", fallback: [])
+        unitPTFullPlan = DataStore.load(UnitPTFullPlan?.self, forKey: "unitPTFullPlan", fallback: nil)
+        scheduledUnitPT = DataStore.load([WorkoutDay].self, forKey: "scheduledUnitPT", fallback: [])
+        importedWorkouts = DataStore.load([WorkoutDay].self, forKey: "importedWorkouts", fallback: [])
+        aftScores = DataStore.load([AFTScoreRecord].self, forKey: "aftScores", fallback: [])
+        aftCalculatorResults = DataStore.load([AFTCalculatorResult].self, forKey: "aftCalculatorResults", fallback: [])
+        wodPlan = DataStore.load(WODPlan?.self, forKey: "wodPlan", fallback: nil)
+        quickStartRecords = DataStore.load([QuickStartRecord].self, forKey: "quickStartRecords", fallback: [])
         loadTodayFunctionalWOD()
     }
 
     func persistAll() {
-        LocalStore.save(currentPlan, forKey: "currentPlan")
-        LocalStore.save(completedRecords, forKey: "completedRecords")
-        LocalStore.save(stepHistory, forKey: "stepHistory")
+        DataStore.save(currentPlan, forKey: "currentPlan")
+        DataStore.save(completedRecords, forKey: "completedRecords")
+        DataStore.save(stepHistory, forKey: "stepHistory")
         UserDefaults.standard.set(lastWorkoutTag, forKey: "lastWorkoutTag")
-        LocalStore.save(unitPTPlans, forKey: "unitPTPlans")
-        LocalStore.save(unitPTFullPlan, forKey: "unitPTFullPlan")
-        LocalStore.save(scheduledUnitPT, forKey: "scheduledUnitPT")
-        LocalStore.save(importedWorkouts, forKey: "importedWorkouts")
-        LocalStore.save(aftScores, forKey: "aftScores")
-        LocalStore.save(aftCalculatorResults, forKey: "aftCalculatorResults")
-        LocalStore.save(wodPlan, forKey: "wodPlan")
-        LocalStore.save(quickStartRecords, forKey: "quickStartRecords")
+        DataStore.save(unitPTPlans, forKey: "unitPTPlans")
+        DataStore.save(unitPTFullPlan, forKey: "unitPTFullPlan")
+        DataStore.save(scheduledUnitPT, forKey: "scheduledUnitPT")
+        DataStore.save(importedWorkouts, forKey: "importedWorkouts")
+        DataStore.save(aftScores, forKey: "aftScores")
+        DataStore.save(aftCalculatorResults, forKey: "aftCalculatorResults")
+        DataStore.save(wodPlan, forKey: "wodPlan")
+        DataStore.save(quickStartRecords, forKey: "quickStartRecords")
         syncWidgetData()
     }
 
@@ -518,16 +524,27 @@ final class AppViewModel {
     func markUnitPTCompleted(id: UUID) {
         guard let idx = scheduledUnitPT.firstIndex(where: { $0.id == id }) else { return }
         scheduledUnitPT[idx].isCompleted = true
+        let day = scheduledUnitPT[idx]
         completedRecords.insert(
             CompletedWorkoutRecord(
-                title: scheduledUnitPT[idx].title,
-                exerciseCount: scheduledUnitPT[idx].exercises.count,
-                exercises: scheduledUnitPT[idx].exercises,
+                title: day.title,
+                exerciseCount: day.exercises.count,
+                exercises: day.exercises,
                 source: .unit
             ), at: 0
         )
-        showRecap(PerformanceHighlightsService.workoutRecap(title: scheduledUnitPT[idx].title, exerciseCount: scheduledUnitPT[idx].exercises.count))
+        showRecap(PerformanceHighlightsService.workoutRecap(title: day.title, exerciseCount: day.exercises.count))
         persistAll()
+
+        Task {
+            if await HealthKitManager.shared.requestAuthorization() {
+                await HealthKitManager.shared.saveWorkout(
+                    activityTag: day.title,
+                    start: day.startTime ?? .now,
+                    end: day.endTime ?? .now
+                )
+            }
+        }
     }
 
     // MARK: - Delete All Data
@@ -681,13 +698,14 @@ final class AppViewModel {
         currentPlan = plan
 
         if !alreadyCompleted {
-            SmartWorkoutBrain.recordWorkoutPatterns(plan.days[idx].exercises)
+            let day = plan.days[idx]
+            SmartWorkoutBrain.recordWorkoutPatterns(day.exercises)
             completedRecords.insert(
                 CompletedWorkoutRecord(
-                    title: plan.days[idx].title,
-                    exerciseCount: plan.days[idx].exercises.count,
-                    exercises: plan.days[idx].exercises,
-                    source: plan.days[idx].source
+                    title: day.title,
+                    exerciseCount: day.exercises.count,
+                    exercises: day.exercises,
+                    source: day.source
                 ), at: 0
             )
 
@@ -695,6 +713,16 @@ final class AppViewModel {
             let total = plan.totalWorkoutDays
             showRecap(PerformanceHighlightsService.planDayRecap(dayNumber: completed, totalDays: total))
             checkMilestonesAfterWorkout()
+
+            Task {
+                if await HealthKitManager.shared.requestAuthorization() {
+                    await HealthKitManager.shared.saveWorkout(
+                        activityTag: day.title,
+                        start: day.startTime ?? .now,
+                        end: day.endTime ?? .now
+                    )
+                }
+            }
         }
         persistAll()
     }
@@ -721,6 +749,16 @@ final class AppViewModel {
         showRecap(PerformanceHighlightsService.workoutRecap(title: workout.title, exerciseCount: workout.exercises.count))
         checkMilestonesAfterWorkout()
         persistAll()
+
+        Task {
+            if await HealthKitManager.shared.requestAuthorization() {
+                await HealthKitManager.shared.saveWorkout(
+                    activityTag: workout.title,
+                    start: workout.startTime ?? .now,
+                    end: workout.endTime ?? .now
+                )
+            }
+        }
     }
 
     func reorderPTDays(from source: IndexSet, to destination: Int) {
@@ -1478,6 +1516,18 @@ final class AppViewModel {
         showRecap(PerformanceHighlightsService.workoutRecap(title: record.activity.rawValue, exerciseCount: 1))
         persistAll()
 
+        Task {
+            if await HealthKitManager.shared.requestAuthorization() {
+                let kcal = record.distanceMeters > 0 ? record.distanceMeters / 1609.34 * 100 : nil
+                await HealthKitManager.shared.saveWorkout(
+                    activityTag: record.activity.rawValue,
+                    start: record.startDate,
+                    end: record.endDate,
+                    distanceMeters: record.distanceMeters > 0 ? record.distanceMeters : nil,
+                    kilocalories: kcal
+                )
+            }
+        }
     }
 
     func exportQuickStartToCalendar(_ record: QuickStartRecord, calendarService: CalendarExportService) async -> CalendarExportService.ExportResult {

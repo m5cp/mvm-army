@@ -30,18 +30,18 @@ final class ABCPStore {
     private static let storageKey = "whtrRecords"
 
     init() {
-        records = LocalStore.load([WHtRRecord].self, forKey: Self.storageKey, fallback: [])
+        records = DataStore.load([WHtRRecord].self, forKey: Self.storageKey, fallback: [])
     }
 
     func add(waistInches: Double, heightInches: Double) {
         let record = WHtRRecord(waistInches: waistInches, heightInches: heightInches)
         records.insert(record, at: 0)
-        LocalStore.save(records, forKey: Self.storageKey)
+        DataStore.save(records, forKey: Self.storageKey)
     }
 
     func delete(_ record: WHtRRecord) {
         records.removeAll { $0.id == record.id }
-        LocalStore.save(records, forKey: Self.storageKey)
+        DataStore.save(records, forKey: Self.storageKey)
     }
 
     var latest: WHtRRecord? { records.first }
