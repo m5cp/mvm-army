@@ -4,7 +4,9 @@ import CoreImage.CIFilterBuiltins
 struct MyPTPlanSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppViewModel.self) private var vm
+    @Environment(StoreViewModel.self) private var store
 
+    @State private var showUpgradeFromGate: Bool = false
     @State private var hasGenerated: Bool = false
     @State private var animateCards: Bool = false
     @State private var refreshTrigger: Bool = false
@@ -96,6 +98,9 @@ struct MyPTPlanSheet: View {
                 if let plan = vm.currentPlan {
                     PlanPDFExportSheet(plan: plan, goal: vm.currentPTGoal)
                 }
+            }
+            .sheet(isPresented: $showUpgradeFromGate) {
+                UpgradeView()
             }
             .alert("Saved", isPresented: $showSavedAlert) {
                 Button("OK") {}
@@ -424,6 +429,8 @@ struct MyPTPlanSheet: View {
 
                 HStack(spacing: 8) {
                     ForEach([2, 4, 6, 8, 12], id: \.self) { weeks in
+                        let isShortestOption = weeks == 2
+                        let isLocked = !store.isPremium && !isShortestOption
                         Button {
                             withAnimation(.spring(response: 0.25)) {
                                 selectedWeeks = weeks
@@ -434,6 +441,10 @@ struct MyPTPlanSheet: View {
                                     .font(.headline.weight(.bold))
                                 Text("wks")
                                     .font(.caption2.weight(.medium))
+                                if isLocked {
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 8, weight: .bold))
+                                }
                             }
                             .foregroundStyle(selectedWeeks == weeks ? .white : MVMTheme.secondaryText)
                             .frame(maxWidth: .infinity)
@@ -455,13 +466,17 @@ struct MyPTPlanSheet: View {
             goalImpactPreview
 
             Button {
-                vm.generateGoalPlan(goal: selectedGoal, weeks: selectedWeeks)
-                hasGenerated = true
-                showGoalSetup = false
-                isPlanApproved = false
-                animateCards = false
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) {
-                    animateCards = true
+                if ProGate.isUnlocked(.multiWeekPlans, isPremium: store.isPremium) || selectedWeeks == 2 {
+                    vm.generateGoalPlan(goal: selectedGoal, weeks: selectedWeeks)
+                    hasGenerated = true
+                    showGoalSetup = false
+                    isPlanApproved = false
+                    animateCards = false
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) {
+                        animateCards = true
+                    }
+                } else {
+                    showUpgradeFromGate = true
                 }
             } label: {
                 HStack(spacing: 10) {

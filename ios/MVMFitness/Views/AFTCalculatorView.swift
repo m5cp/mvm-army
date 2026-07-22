@@ -2,7 +2,9 @@ import SwiftUI
 
 struct AFTCalculatorView: View {
     @Environment(AppViewModel.self) private var vm
+    @Environment(StoreViewModel.self) private var store
 
+    @State private var showUpgradeFromGate = false
     @State private var soldierName: String = ""
     @State private var ageText: String = "25"
     @State private var sex: SoldierSex = .male
@@ -172,6 +174,9 @@ struct AFTCalculatorView: View {
         }
         .sheet(isPresented: $showExportSheet) {
             DAForm705ExportView(result: preview)
+        }
+        .sheet(isPresented: $showUpgradeFromGate) {
+            UpgradeView()
         }
     }
 
@@ -610,11 +615,31 @@ struct AFTCalculatorView: View {
 
             Button {
                 normalizeSecondsFields()
-                showExportSheet = true
+                if ProGate.isUnlocked(.da705Export, isPremium: store.isPremium) {
+                    showExportSheet = true
+                } else {
+                    showUpgradeFromGate = true
+                }
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "doc.text.fill")
                     Text("Export Score Report")
+                    if !store.isPremium {
+                        Text("PRO")
+                            .font(.caption2.weight(.heavy))
+                            .tracking(0.5)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(
+                                LinearGradient(
+                                    colors: [MVMTheme.accent, MVMTheme.accent2],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .clipShape(Capsule())
+                    }
                 }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(MVMTheme.accent)

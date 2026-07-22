@@ -16,7 +16,7 @@ struct OnboardingView: View {
     @State private var isGenerating: Bool = false
     @State private var hasAgreed: Bool = false
 
-    private let totalSteps: Int = 5
+    private let totalSteps: Int = 7 // steps 5 (paywall) and 6 (notification primer) added in Phase 4
 
     var body: some View {
         GeometryReader { geo in
@@ -57,11 +57,13 @@ struct OnboardingView: View {
                             .padding(.bottom, 24)
                     }
 
-                    bottomButtons
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, geo.safeAreaInsets.bottom > 0 ? 12 : 20)
-                        .frame(maxWidth: min(geo.size.width - 48, 440))
-                        .frame(maxWidth: .infinity)
+                    if step < 5 {
+                        bottomButtons
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, geo.safeAreaInsets.bottom > 0 ? 12 : 20)
+                            .frame(maxWidth: min(geo.size.width - 48, 440))
+                            .frame(maxWidth: .infinity)
+                    }
                 }
             }
         }
@@ -78,7 +80,7 @@ struct OnboardingView: View {
 
     private var progressIndicator: some View {
         HStack(spacing: 6) {
-            ForEach(1..<totalSteps, id: \.self) { i in
+            ForEach(1..<5, id: \.self) { i in
                 Capsule()
                     .fill(i <= step ? MVMTheme.accent : Color.white.opacity(0.1))
                     .frame(height: 4)
@@ -97,6 +99,8 @@ struct OnboardingView: View {
         case 2: scheduleStep
         case 3: disclaimerStep
         case 4: reviewStep
+        case 5: OnboardingPaywallView { withAnimation { step = 6 } }
+        case 6: NotificationPrimerView { onboardingComplete = true }
         default: EmptyView()
         }
     }
@@ -447,27 +451,29 @@ struct OnboardingView: View {
     private var nextButtonTitle: String {
         switch step {
         case 0: return "Get Started"
-        case totalSteps - 1: return isGenerating ? "Building Your Plan..." : (hasAgreed ? "Build My Plan" : "Enter App")
+        case 4: return isGenerating ? "Building Your Plan..." : (hasAgreed ? "Build My Plan" : "Enter App")
         default: return "Continue"
         }
     }
 
     private func handleNext() {
-        if step < totalSteps - 1 {
+        if step < 4 {
             withAnimation { step += 1 }
-        } else {
+        } else if step == 4 {
             disclaimerAccepted = hasAgreed
             if hasAgreed {
                 isGenerating = true
                 Task {
                     try? await Task.sleep(for: .milliseconds(600))
                     vm.generateWeeklyPlan()
-                    onboardingComplete = true
+                    isGenerating = false
+                    withAnimation { step = 5 }
                 }
             } else {
-                onboardingComplete = true
+                withAnimation { step = 5 }
             }
         }
+        // Steps 5 and 6 advance via their own buttons (paywall / primer views).
     }
 
     // MARK: - Reusable Components

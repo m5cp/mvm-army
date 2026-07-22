@@ -10,18 +10,18 @@ struct UpgradeView: View {
     @State private var pulseGlow: Bool = false
 
     private let proFeatures: [(icon: String, title: String)] = [
-        ("bolt.shield.fill", "Advanced PT Plans"),
-        ("chart.line.uptrend.xyaxis", "AI Insights & Analytics"),
-        ("person.3.fill", "Unit PT Builder"),
-        ("doc.text.fill", "PDF & Calendar Export"),
-        ("square.and.arrow.up.fill", "Share Cards & QR"),
+        ("bolt.shield.fill", "Full Multi-Week PT Plans"),
+        ("person.3.fill", "Unlimited Unit PT Plans"),
+        ("doc.text.fill", "DA-705 & Plan PDF Export"),
+        ("square.and.arrow.up.fill", "All Share Card Templates"),
         ("star.fill", "Priority Support")
     ]
 
     private let freeFeatures: [(icon: String, title: String)] = [
         ("figure.run", "AFT Score Calculator"),
         ("bolt.fill", "Quick Start Activities"),
-        ("dumbbell.fill", "Basic Workouts"),
+        ("dumbbell.fill", "Basic Workouts & Week-1 Plans"),
+        ("sparkles", "AI Insights (on-device)"),
         ("chart.bar.fill", "Step Tracking")
     ]
 

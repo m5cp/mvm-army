@@ -5,6 +5,7 @@ struct HomeView: View {
     @Environment(StoreViewModel.self) private var store
 
     @State private var showUpgrade: Bool = false
+    @State private var showUpgradeFromGate: Bool = false
 
     @State private var animateHero: Bool = false
     @State private var animateMetrics: Bool = false
@@ -219,6 +220,9 @@ struct HomeView: View {
             TrainingCalendarView()
         }
         .sheet(isPresented: $showUpgrade) {
+            UpgradeView()
+        }
+        .sheet(isPresented: $showUpgradeFromGate) {
             UpgradeView()
         }
         .sheet(isPresented: $showWODSheet) {
@@ -1012,7 +1016,11 @@ struct HomeView: View {
                     color: MVMTheme.accent
                 ) {
                     toolTapTrigger.toggle()
-                    showUnitPTSheet = true
+                    if ProGate.isUnlocked(.unitPTBuilder, isPremium: store.isPremium, savedUnitPTPlanCount: vm.unitPTPlans.count) {
+                        showUnitPTSheet = true
+                    } else {
+                        showUpgradeFromGate = true
+                    }
                 }
 
             }
