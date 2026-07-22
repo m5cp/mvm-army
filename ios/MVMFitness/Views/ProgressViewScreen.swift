@@ -3,6 +3,7 @@ import Charts
 
 struct ProgressViewScreen: View {
     @Environment(AppViewModel.self) private var vm
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     @State private var showAFTSheet: Bool = false
     @State private var appeared: Bool = false
@@ -586,7 +587,7 @@ struct ProgressViewScreen: View {
                             .foregroundStyle(MVMTheme.secondaryText)
                     }
                 }
-                .frame(height: 150)
+                .frame(height: isLandscape ? 230 : 150)
 
                 Button {
                     showCompletedWorkouts = true
@@ -999,4 +1000,10 @@ struct ProgressViewScreen: View {
         formatter.dateFormat = "EEE"
         return String(formatter.string(from: date).prefix(2)).uppercased()
     }
+
+    // MARK: - Orientation
+
+    /// True when the device is in a landscape orientation (compact height),
+    /// giving data-heavy charts more horizontal room to breathe.
+    private var isLandscape: Bool { verticalSizeClass == .compact }
 }

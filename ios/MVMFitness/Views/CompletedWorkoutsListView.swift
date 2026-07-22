@@ -41,30 +41,40 @@ struct CompletedWorkoutsListView: View {
                         .foregroundStyle(MVMTheme.tertiaryText)
                 }
             } else {
-                ScrollView(showsIndicators: false) {
-                    LazyVStack(spacing: 20) {
-                        ForEach(groupedRecords, id: \.0) { section in
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text(section.0)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(MVMTheme.secondaryText)
-                                    .padding(.horizontal, 4)
+                GeometryReader { geo in
+                    // In landscape / wide layouts, show two columns so more
+                    // history is visible at once without extra scrolling.
+                    let columns = geo.size.width > 600
+                        ? [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+                        : [GridItem(.flexible())]
 
-                                ForEach(section.1) { record in
-                                    Button {
-                                        selectedRecord = record
-                                        showDetail = true
-                                    } label: {
-                                        recordRow(record)
+                    ScrollView(showsIndicators: false) {
+                        LazyVStack(alignment: .leading, spacing: 20) {
+                            ForEach(groupedRecords, id: \.0) { section in
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text(section.0)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(MVMTheme.secondaryText)
+                                        .padding(.horizontal, 4)
+
+                                    LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
+                                        ForEach(section.1) { record in
+                                            Button {
+                                                selectedRecord = record
+                                                showDetail = true
+                                            } label: {
+                                                recordRow(record)
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
                                     }
-                                    .buttonStyle(.plain)
                                 }
                             }
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                        .padding(.bottom, 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 40)
                 }
             }
         }
