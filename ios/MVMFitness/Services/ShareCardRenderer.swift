@@ -70,20 +70,20 @@ enum ShareCardRenderer {
     static func fallbackText(cardType: ShareCardType) -> String {
         switch cardType {
         case .workout(let title, let exercises, _):
-            return "MVM Fitness — \(title)\n\(exercises.count) exercises\n#MVMFitness"
+            return "MVM Fitness — \(title)\n\(exercises.count) exercises\n#MVMFitness\(AppLinks.shareSuffix)"
         case .progress(let completed, let planned, let streak, let steps):
-            return "MVM Fitness — Weekly Progress\n\(completed)/\(planned) PT done · \(streak) day streak · \(steps) steps\n#MVMFitness"
+            return "MVM Fitness — Weekly Progress\n\(completed)/\(planned) PT done · \(streak) day streak · \(steps) steps\n#MVMFitness\(AppLinks.shareSuffix)"
         case .aft(let score, _):
-            return "MVM Fitness — AFT Score: \(score.totalScore)\n#MVMFitness"
+            return "MVM Fitness — AFT Score: \(score.totalScore)\n#MVMFitness\(AppLinks.shareSuffix)"
         case .unitPT(let plan):
-            return "MVM Fitness — \(plan.title)\n\(plan.objective)\n#MVMFitness"
+            return "MVM Fitness — \(plan.title)\n\(plan.objective)\n#MVMFitness\(AppLinks.shareSuffix)"
         case .completion(let title, let count, let duration):
-            return "MVM Fitness — Completed: \(title)\n\(count) exercises · \(duration)\n#MVMFitness"
+            return "MVM Fitness — Completed: \(title)\n\(count) exercises · \(duration)\n#MVMFitness\(AppLinks.shareSuffix)"
         case .completedWorkout(let record):
             let prefix = record.source == .wod ? "FunctionFitness: " : ""
-            return "MVM Fitness — \(prefix)\(record.title)\n\(record.exerciseCount) exercises\n#MVMFitness"
+            return "MVM Fitness — \(prefix)\(record.title)\n\(record.exerciseCount) exercises\n#MVMFitness\(AppLinks.shareSuffix)"
         case .quickStart(let record):
-            return "MVM Fitness — \(record.activity.rawValue)\nDuration: \(record.formattedDuration)\n#MVMFitness"
+            return "MVM Fitness — \(record.activity.rawValue)\nDuration: \(record.formattedDuration)\n#MVMFitness\(AppLinks.shareSuffix)"
         }
     }
 }
@@ -168,10 +168,10 @@ enum ShareCardCGHelpers {
         leftStr.draw(at: CGPoint(x: 60, y: y + 20))
 
         let rightAttrs: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 20, weight: .medium),
-            .foregroundColor: UIColor.white.withAlphaComponent(0.2)
+            .font: UIFont.systemFont(ofSize: 20, weight: .bold),
+            .foregroundColor: successGreen.withAlphaComponent(0.85)
         ]
-        let rightStr = NSAttributedString(string: "#MVMFitness", attributes: rightAttrs)
+        let rightStr = NSAttributedString(string: "Free on the App Store", attributes: rightAttrs)
         let rightSize = rightStr.size()
         rightStr.draw(at: CGPoint(x: width - 60 - rightSize.width, y: y + 20))
     }

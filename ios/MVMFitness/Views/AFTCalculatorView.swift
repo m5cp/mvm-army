@@ -120,6 +120,9 @@ struct AFTCalculatorView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
+                    if let error = engine.loadError {
+                        scoringUnavailableBanner(error)
+                    }
                     soldierInfoCard
                     deadliftEventCard
                     pushUpEventCard
@@ -168,6 +171,33 @@ struct AFTCalculatorView: View {
         }
         .sheet(isPresented: $showExportSheet) {
             DAForm705ExportView(result: preview)
+        }
+    }
+
+    // MARK: - Scoring Unavailable Banner
+
+    private func scoringUnavailableBanner(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.body.weight(.bold))
+                .foregroundStyle(MVMTheme.warning)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Scoring Unavailable")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+                Text("\(message) Scores will show as 0 until this is fixed. Your inputs are still saved.")
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.secondaryText)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(MVMTheme.warning.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.warning.opacity(0.3))
         }
     }
 

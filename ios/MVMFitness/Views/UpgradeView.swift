@@ -184,7 +184,7 @@ struct UpgradeView: View {
             } else if let current = store.offerings?.current {
                 ForEach(sortedPackages(from: current), id: \.identifier) { package in
                     if package.packageType != .lifetime {
-                        subscriptionCard(package)
+                        subscriptionCard(package, offering: current)
                     }
                 }
             } else {
@@ -209,7 +209,7 @@ struct UpgradeView: View {
         .animation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.25), value: animateIn)
     }
 
-    private func subscriptionCard(_ package: Package) -> some View {
+    private func subscriptionCard(_ package: Package, offering: Offering) -> some View {
         let isSelected = selectedPackageID == package.identifier
         let isAnnual = package.packageType == .annual
 
@@ -254,8 +254,8 @@ struct UpgradeView: View {
                                 .font(.caption2.weight(.semibold))
                         }
                         .foregroundStyle(MVMTheme.success)
-                    } else if isAnnual {
-                        Text("Save 58% vs monthly")
+                    } else if isAnnual, let savingsText = annualSavingsText(for: package, in: offering) {
+                        Text(savingsText)
                             .font(.caption2.weight(.medium))
                             .foregroundStyle(MVMTheme.success)
                     }
@@ -328,22 +328,6 @@ struct UpgradeView: View {
                             }
 
                             VStack(spacing: 6) {
-                                HStack(spacing: 6) {
-                                    Text("$99.99")
-                                        .font(.subheadline.weight(.bold))
-                                        .strikethrough(color: .white.opacity(0.5))
-                                        .foregroundStyle(.white.opacity(0.4))
-
-                                    Text("50% OFF")
-                                        .font(.caption2.weight(.heavy))
-                                        .tracking(0.5)
-                                        .foregroundStyle(Color(hex: "#0C0F0E"))
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 3)
-                                        .background(MVMTheme.heroAmber)
-                                        .clipShape(Capsule())
-                                }
-
                                 Text("One payment. Yours forever.")
                                     .font(.caption.weight(.medium))
                                     .foregroundStyle(.white.opacity(0.5))
@@ -355,15 +339,12 @@ struct UpgradeView: View {
                             VStack(spacing: 9) {
                                 lifetimePerk(icon: "infinity", text: "Every feature, every update — forever")
                                 lifetimePerk(icon: "lock.open.fill", text: "No recurring charges, no surprises")
-                                lifetimePerk(icon: "chart.line.uptrend.xyaxis", text: "Pays for itself in under 13 months vs annual")
-                                lifetimePerk(icon: "shield.checkered", text: "Lock in before price goes to $99.99")
+                                if let paybackText = lifetimePaybackText(for: lifetimePackage, in: current) {
+                                    lifetimePerk(icon: "chart.line.uptrend.xyaxis", text: paybackText)
+                                }
                             }
 
                             VStack(spacing: 4) {
-                                Text("Half the cost of one year at the leading fitness tracker")
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(MVMTheme.success)
-
                                 Text("Career soldiers save hundreds over a 20-year service")
                                     .font(.caption2.weight(.medium))
                                     .foregroundStyle(.white.opacity(0.4))
@@ -480,6 +461,32 @@ struct UpgradeView: View {
         return offering.availablePackages.first { $0.packageType == .annual }
             ?? offering.availablePackages.first { $0.packageType == .lifetime }
             ?? offering.availablePackages.first
+    }
+
+    /// Computed savings of the annual plan vs. paying monthly for a year, based on live StoreKit prices.
+    private func annualSavingsText(for annualPackage: Package, in offering: Offering) -> String? {
+        guard let monthly = offering.availablePackages.first(where: { $0.packageType == .monthly }) else { return nil }
+        let monthlyPrice = NSDecimalNumber(decimal: monthly.storeProduct.price).doubleValue
+        let annualPrice = NSDecimalNumber(decimal: annualPackage.storeProduct.price).doubleValue
+        guard monthlyPrice > 0 else { return nil }
+        let yearlyAtMonthlyRate = monthlyPrice * 12
+        guard yearlyAtMonthlyRate > annualPrice else { return nil }
+        let percent = Int((((yearlyAtMonthlyRate - annualPrice) / yearlyAtMonthlyRate) * 100).rounded())
+        guard percent > 0 else { return nil }
+        return "Save \(percent)% vs monthly"
+    }
+
+    /// Computed months for the lifetime price to break even against the annual plan's monthly-equivalent rate.
+    private func lifetimePaybackText(for lifetimePackage: Package, in offering: Offering) -> String? {
+        guard let annual = offering.availablePackages.first(where: { $0.packageType == .annual }) else { return nil }
+        let lifetimePrice = NSDecimalNumber(decimal: lifetimePackage.storeProduct.price).doubleValue
+        let annualPrice = NSDecimalNumber(decimal: annual.storeProduct.price).doubleValue
+        guard annualPrice > 0 else { return nil }
+        let monthlyEquivalent = annualPrice / 12
+        guard monthlyEquivalent > 0 else { return nil }
+        let months = Int((lifetimePrice / monthlyEquivalent).rounded(.up))
+        guard months > 0, months < 240 else { return nil }
+        return "Pays for itself in under \(months) months vs annual"
     }
 
     // MARK: - Legal

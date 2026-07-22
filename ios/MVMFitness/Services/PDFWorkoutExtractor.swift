@@ -129,7 +129,7 @@ enum PDFWorkoutExtractor {
                     let sets = Int(setsStr) ?? 3
                     let reps = Int(repsStr) ?? 10
 
-                    let matchRange = Range(match.range, in: line)!
+                    guard let matchRange = Range(match.range, in: line) else { return nil }
                     var name = line
                     name.removeSubrange(matchRange)
                     name = cleanExerciseName(name)
@@ -164,7 +164,7 @@ enum PDFWorkoutExtractor {
                     seconds = value
                 }
 
-                let matchRange = Range(match.range, in: line)!
+                guard let matchRange = Range(match.range, in: line) else { return nil }
                 var name = line
                 name.removeSubrange(matchRange)
                 name = cleanExerciseName(name)
@@ -187,7 +187,7 @@ enum PDFWorkoutExtractor {
                 let repsStr = (line as NSString).substring(with: match.range(at: 1))
                 let reps = Int(repsStr) ?? 10
 
-                let matchRange = Range(match.range, in: line)!
+                guard let matchRange = Range(match.range, in: line) else { return nil }
                 var name = line
                 name.removeSubrange(matchRange)
                 name = cleanExerciseName(name)

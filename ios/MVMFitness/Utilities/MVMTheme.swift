@@ -12,7 +12,7 @@ enum MVMTheme {
     static let danger = Color(hex: "#EF4444")
     static let primaryText = Color.white
     static let secondaryText = Color(hex: "#9CA3AF")
-    static let tertiaryText = Color(hex: "#6B7280")
+    static let tertiaryText = Color(hex: "#7C8590")
 
     static let brandGreen = Color(hex: "#1B5E3B")
     static let brandGreenLight = Color(hex: "#2E7D52")

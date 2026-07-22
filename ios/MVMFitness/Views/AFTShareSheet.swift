@@ -127,7 +127,7 @@ struct AFTShareSheet: View {
     }
 
     private func shareCaption(for score: AFTScoreRecord) -> String {
-        let appStoreURL = "https://apps.apple.com/app/mvm-fitness/id6746823289"
+        let appStoreURL = AppLinks.appStoreURLString
         let passStatus = score.totalScore >= 300 ? "PASSED ✅" : "in training 💪"
         return """
         Just scored \(score.totalScore) on my Army Fitness Test — \(passStatus) 🎯

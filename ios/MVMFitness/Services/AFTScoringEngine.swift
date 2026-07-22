@@ -47,19 +47,26 @@ final class AFTScoringEngine: @unchecked Sendable {
     static let shared: AFTScoringEngine = {
         do {
             let engine = try loadFromBundle()
-            guard !engine.allEntries.isEmpty else {
-                fatalError("AFTScoringEngine: aft_scoring_2025_06_01.json loaded but contains zero entries.")
+            if engine.allEntries.isEmpty {
+                return AFTScoringEngine(entries: [], loadError: "Scoring data loaded but contains no entries.")
             }
             return engine
         } catch {
-            fatalError("AFTScoringEngine: Failed to load aft_scoring_2025_06_01.json — \(error.localizedDescription)")
+            return AFTScoringEngine(entries: [], loadError: "Failed to load scoring data: \(error.localizedDescription)")
         }
     }()
 
     private let allEntries: [AFTScoreEntry]
 
-    init(entries: [AFTScoreEntry]) {
+    /// Non-nil if the bundled scoring table failed to load. When set, all scores return 0.
+    let loadError: String?
+
+    /// False when the scoring engine has no usable data (see `loadError`).
+    var isOperational: Bool { loadError == nil }
+
+    init(entries: [AFTScoreEntry], loadError: String? = nil) {
         self.allEntries = entries
+        self.loadError = loadError
     }
 
     func entries(for event: AFTEventType, ageBand: String, column: AFTColumn) -> [AFTScoreEntry] {

@@ -33,7 +33,7 @@ enum MilestoneManager {
             icon: milestone.icon,
             title: milestone.title,
             message: milestone.message,
-            shareText: "Just hit \(totalCompleted) workouts on MVM Fitness 💪 #MVMFitness",
+            shareText: "Just hit \(totalCompleted) workouts on MVM Fitness 💪 #MVMFitness\(AppLinks.shareSuffix)",
             suggestUpgrade: suggestUpgrade
         )
     }
@@ -57,7 +57,7 @@ enum MilestoneManager {
             icon: milestone.icon,
             title: milestone.title,
             message: milestone.message,
-            shareText: "🔥 \(streak)-day training streak on MVM Fitness #MVMFitness",
+            shareText: "🔥 \(streak)-day training streak on MVM Fitness #MVMFitness\(AppLinks.shareSuffix)",
             suggestUpgrade: false
         )
     }
@@ -74,7 +74,7 @@ enum MilestoneManager {
                 icon: "shield.checkered",
                 title: "You Passed!",
                 message: "Crossed the 300-point threshold. Outstanding.",
-                shareText: "Just passed my AFT with a \(newScore) on MVM Fitness 🎯 #MVMFitness",
+                shareText: "Just passed my AFT with a \(newScore) on MVM Fitness 🎯 #MVMFitness\(AppLinks.shareSuffix)",
                 suggestUpgrade: false
             )
         }
@@ -84,7 +84,7 @@ enum MilestoneManager {
                 icon: "chart.line.uptrend.xyaxis",
                 title: "+\(improvement) Points!",
                 message: "Score jumped from \(prev) to \(newScore). The work is paying off.",
-                shareText: "AFT score up +\(improvement) points to \(newScore) on MVM Fitness 📈 #MVMFitness",
+                shareText: "AFT score up +\(improvement) points to \(newScore) on MVM Fitness 📈 #MVMFitness\(AppLinks.shareSuffix)",
                 suggestUpgrade: false
             )
         }
@@ -101,7 +101,7 @@ enum MilestoneManager {
             icon: "shield.fill",
             title: "First Score Logged",
             message: "Your baseline is set. Now let's improve it.",
-            shareText: "Logged my first AFT score on MVM Fitness 🎯 #MVMFitness",
+            shareText: "Logged my first AFT score on MVM Fitness 🎯 #MVMFitness\(AppLinks.shareSuffix)",
             suggestUpgrade: true
         )
     }
