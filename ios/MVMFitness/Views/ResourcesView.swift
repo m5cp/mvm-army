@@ -222,7 +222,7 @@ struct ResourcesView: View {
                     .foregroundStyle(MVMTheme.tertiaryText)
             }
 
-            Text("This information is based on publicly available military fitness standards and is provided for general reference only. This app is not affiliated with, endorsed by, or sponsored by the U.S. Department of War or the Department of the Army.")
+            Text("This information is based on publicly available military fitness standards and is provided for general reference only.\n\n" + LegalText.nonAffiliation)
                 .font(.caption2)
                 .foregroundStyle(MVMTheme.tertiaryText)
                 .lineSpacing(3)

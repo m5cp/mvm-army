@@ -25,6 +25,8 @@ struct ProfileView: View {
     @State private var isEditingName: Bool = false
     @State private var hasAppearedOnce: Bool = false
     @State private var showDeleteConfirm: Bool = false
+    @State private var showABCP = false
+    @State private var showCFT = false
     @FocusState private var nameFieldFocused: Bool
 
     var body: some View {
@@ -36,6 +38,7 @@ struct ProfileView: View {
                     profileHeader
                     subscriptionSection
                     currentGoalSection
+                    fitnessStandardsSection
                     notificationsSection
                     appControlsSection
                     legalSection
@@ -88,6 +91,8 @@ struct ProfileView: View {
                 imageManager.selectedItem = nil
             }
         }
+        .sheet(isPresented: $showABCP) { ABCPView() }
+        .sheet(isPresented: $showCFT) { CFTView() }
     }
 
     // MARK: - Header
@@ -394,6 +399,20 @@ struct ProfileView: View {
         }
     }
 
+    // MARK: - Fitness Standards
+
+    private var fitnessStandardsSection: some View {
+        settingsSection(title: "FITNESS STANDARDS", icon: "shield.checkered") {
+            Button { showABCP = true } label: {
+                settingsRowWithSubtitle(icon: "figure.stand", title: "Body Composition (ABCP)", subtitle: "WHtR calculator & screening history")
+            }
+            sectionDivider
+            Button { showCFT = true } label: {
+                settingsRowWithSubtitle(icon: "timer", title: "Combat Field Test (CFT)", subtitle: "7-event test day timer & history")
+            }
+        }
+    }
+
     // MARK: - Notifications
 
     private var notificationsSection: some View {
@@ -596,7 +615,7 @@ struct ProfileView: View {
                 .font(.caption2)
                 .foregroundStyle(MVMTheme.tertiaryText)
 
-            Text("Not affiliated with, endorsed by, or sponsored by the U.S. Department of War, the Department of the Army, or any government agency.")
+            Text(LegalText.nonAffiliation)
                 .font(.system(size: 9))
                 .foregroundStyle(MVMTheme.tertiaryText)
                 .multilineTextAlignment(.center)
@@ -657,6 +676,29 @@ struct ProfileView: View {
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(MVMTheme.tertiaryText)
             }
+        }
+        .frame(minHeight: 48)
+        .contentShape(Rectangle())
+    }
+
+    private func settingsRowWithSubtitle(icon: String, title: String, subtitle: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(MVMTheme.accent)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(MVMTheme.primaryText)
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(MVMTheme.tertiaryText)
         }
         .frame(minHeight: 48)
         .contentShape(Rectangle())
