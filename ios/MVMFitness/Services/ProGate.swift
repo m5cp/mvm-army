@@ -11,12 +11,14 @@ enum ProGate {
         case da705Export        // pro only
         case planPDFExport      // pro only
         case shareCardTemplates // free: default template only
+        case squadMembers       // free: up to 4 members
     }
 
     /// Free tier limits
     static let freeUnitPTPlanLimit = 1
+    static let freeSquadMemberLimit = 4
 
-    static func isUnlocked(_ feature: Feature, isPremium: Bool, savedUnitPTPlanCount: Int = 0) -> Bool {
+    static func isUnlocked(_ feature: Feature, isPremium: Bool, savedUnitPTPlanCount: Int = 0, squadMemberCount: Int = 0) -> Bool {
         if isPremium { return true }
         switch feature {
         case .multiWeekPlans: return false
@@ -24,6 +26,7 @@ enum ProGate {
         case .da705Export: return false
         case .planPDFExport: return false
         case .shareCardTemplates: return false
+        case .squadMembers: return squadMemberCount < freeSquadMemberLimit
         }
     }
 }

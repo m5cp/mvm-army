@@ -11,6 +11,7 @@ struct UpgradeView: View {
 
     private let proFeatures: [(icon: String, title: String)] = [
         ("bolt.shield.fill", "Full Multi-Week PT Plans"),
+        ("shield.lefthalf.filled", "Unlimited Squad Members"),
         ("person.3.fill", "Unlimited Unit PT Plans"),
         ("doc.text.fill", "DA-705 & Plan PDF Export"),
         ("square.and.arrow.up.fill", "All Share Card Templates"),

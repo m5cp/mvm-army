@@ -50,6 +50,7 @@ struct HomeView: View {
     @State private var showFunctionalWODSheet: Bool = false
     @State private var showQuickStartSheet: Bool = false
     @State private var showActiveQuickStart: Bool = false
+    @State private var showSquadSheet: Bool = false
     @State private var quickStartVM: QuickStartViewModel = QuickStartViewModel()
 
     private let calendar = Calendar.current
@@ -245,6 +246,9 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showUpgradeFromGate) {
             UpgradeView()
+        }
+        .sheet(isPresented: $showSquadSheet) {
+            SquadView()
         }
         .sheet(isPresented: $showWODSheet) {
             WODDetailView()
@@ -1042,6 +1046,16 @@ struct HomeView: View {
                     } else {
                         showUpgradeFromGate = true
                     }
+                }
+
+                planRow(
+                    title: "My Squad",
+                    subtitle: "Roster, test days & readiness",
+                    icon: "shield.lefthalf.filled",
+                    color: MVMTheme.emeraldAccent
+                ) {
+                    toolTapTrigger.toggle()
+                    showSquadSheet = true
                 }
 
             }
