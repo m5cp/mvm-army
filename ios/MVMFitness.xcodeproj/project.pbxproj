@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		XX298127CFBB2CF3FA631BXX /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = XXDCC169DE7B2F3C1C8B10XX /* RevenueCat */; };
+		XX7A3D0D2443CF0B2F9E68XX /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = XXB815405D7868809FA7A3XX /* TelemetryDeck */; };
 		XX84D57CB3933792060CCBXX /* MVMFitnessWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = XXE403B271EAFDBE7CB94DXX /* MVMFitnessWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		XXC1003CB96D61CABF4F40XX /* MVMFitnessWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = XX266854D8D95C71CDA804XX /* MVMFitnessWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -77,7 +78,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		XX2764503E520D2C0AAA71XX /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		XX2764503E520D2C0AAA71XX /* Exceptions for "MVMFitnessWidget" folder in "MVMFitnessWidget" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -87,12 +88,27 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		105FC57C2E9EAD3100EA8BCF /* MVMFitness */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MVMFitness;
+			sourceTree = "<group>";
+		};
+		105FC58C2E9EAD3200EA8BCF /* MVMFitnessTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MVMFitnessTests;
+			sourceTree = "<group>";
+		};
+		105FC5962E9EAD3200EA8BCF /* MVMFitnessUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MVMFitnessUITests;
+			sourceTree = "<group>";
+		};
 		XX3EBE0810CD8D752D6C50XX /* MVMFitnessWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = MVMFitnessWidget;
 			sourceTree = "<group>";
 			exceptions = (
-				XX2764503E520D2C0AAA71XX /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+				XX2764503E520D2C0AAA71XX /* Exceptions for "MVMFitnessWidget" folder in "MVMFitnessWidget" target */,
 			);
 		};
 		XX7BD1621C6EF0141D112DXX /* MVMFitnessWatch */ = {
@@ -108,6 +124,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				XX298127CFBB2CF3FA631BXX /* RevenueCat in Frameworks */,
+				XX7A3D0D2443CF0B2F9E68XX /* TelemetryDeck in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,24 +157,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		105FC57C2E9EAD3100EA8BCF /* MVMFitness */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MVMFitness;
-			sourceTree = "<group>";
-		};
-		105FC58C2E9EAD3200EA8BCF /* MVMFitnessTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MVMFitnessTests;
-			sourceTree = "<group>";
-		};
-		105FC5962E9EAD3200EA8BCF /* MVMFitnessUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MVMFitnessUITests;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXGroup section */
 		105FC5712E9EAD3100EA8BCF = {
@@ -209,6 +208,7 @@
 			name = MVMFitness;
 			packageProductDependencies = (
 				XXDCC169DE7B2F3C1C8B10XX /* RevenueCat */,
+				XXB815405D7868809FA7A3XX /* TelemetryDeck */,
 			);
 			productName = MVMFitness;
 			productReference = 105FC57A2E9EAD3100EA8BCF /* MVMFitness.app */;
@@ -345,6 +345,7 @@
 			);
 			packageReferences = (
 				XX4AC81916604C4344ADC0XX /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
+				XX8A00A9FFE431FA0948ADXX /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 			);
 		};
 /* End PBXProject section */
@@ -787,8 +788,10 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = app.rork.sf0lrvsw5r0bpccfi1669;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "MVM Fitness reads your heart rate and calories during Watch workouts.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MVM Fitness saves your Watch workouts to Apple Health.";
+				INFOPLIST_KEY_UIBackgroundModes = "workout-processing";
 				CODE_SIGN_ENTITLEMENTS = MVMFitnessWatch/MVMFitnessWatch.entitlements;
-
 			};
 			name = Release;
 		};
@@ -841,8 +844,10 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = app.rork.sf0lrvsw5r0bpccfi1669;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "MVM Fitness reads your heart rate and calories during Watch workouts.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MVM Fitness saves your Watch workouts to Apple Health.";
+				INFOPLIST_KEY_UIBackgroundModes = "workout-processing";
 				CODE_SIGN_ENTITLEMENTS = MVMFitnessWatch/MVMFitnessWatch.entitlements;
-
 			};
 			name = Debug;
 		};
@@ -914,9 +919,22 @@
 				minimumVersion = 5.0.0;
 			};
 		};
+		XX8A00A9FFE431FA0948ADXX /* XCRemoteSwiftPackageReference "SwiftSDK" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = https://github.com/TelemetryDeck/SwiftSDK.git;
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		XXB815405D7868809FA7A3XX /* TelemetryDeck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = XX8A00A9FFE431FA0948ADXX /* XCRemoteSwiftPackageReference "SwiftSDK" */;
+			productName = TelemetryDeck;
+		};
 		XXDCC169DE7B2F3C1C8B10XX /* RevenueCat */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = XX4AC81916604C4344ADC0XX /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;

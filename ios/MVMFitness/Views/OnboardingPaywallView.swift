@@ -37,6 +37,7 @@ struct OnboardingPaywallView: View {
 
             if let current = store.offerings?.current, let selected = selectedPackage(from: current) {
                 Button {
+                    AnalyticsService.track(.paywallPurchaseStarted)
                     Task { await store.purchase(package: selected) }
                 } label: {
                     HStack {
@@ -53,7 +54,10 @@ struct OnboardingPaywallView: View {
                 .disabled(store.isPurchasing)
             }
 
-            Button("Continue with Free") { onContinue() }
+            Button("Continue with Free") {
+                AnalyticsService.track(.paywallContinuedFree)
+                onContinue()
+            }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(MVMTheme.secondaryText)
                 .padding(.top, 2)
@@ -62,7 +66,10 @@ struct OnboardingPaywallView: View {
         .onChange(of: store.isPremium) { _, isPremium in
             if isPremium { onContinue() }
         }
-        .task { if store.offerings == nil { await store.fetchOfferings() } }
+        .task {
+            if store.offerings == nil { await store.fetchOfferings() }
+            AnalyticsService.track(.paywallViewed)
+        }
     }
 
     /// Trial wording is derived ONLY from the StoreKit intro offer (configured in App Store Connect).

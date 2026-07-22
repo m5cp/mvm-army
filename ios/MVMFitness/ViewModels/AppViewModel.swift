@@ -535,6 +535,7 @@ final class AppViewModel {
         )
         showRecap(PerformanceHighlightsService.workoutRecap(title: day.title, exerciseCount: day.exercises.count))
         persistAll()
+        AnalyticsService.track(.workoutCompleted)
 
         Task {
             if await HealthKitManager.shared.requestAuthorization() {
@@ -588,6 +589,7 @@ final class AppViewModel {
         showRecap(PerformanceHighlightsService.aftScoreRecap(newScore: record, previousScores: previousScores))
         checkAFTMilestone(newScore: record.totalScore, previousScore: previousScores.first?.totalScore)
         persistAll()
+        AnalyticsService.track(.aftScoreSaved)
     }
 
     var latestAFTScore: AFTScoreRecord? {
@@ -628,6 +630,7 @@ final class AppViewModel {
         showRecap(PerformanceHighlightsService.aftScoreRecap(newScore: scoreRecord, previousScores: previousScores))
         checkAFTMilestone(newScore: result.totalScore, previousScore: previousScores.first?.totalScore)
         persistAll()
+        AnalyticsService.track(.aftScoreSaved)
     }
 
     func generateFocusWorkout(weakEvents: [String]) -> WorkoutDay? {
@@ -723,6 +726,7 @@ final class AppViewModel {
                     )
                 }
             }
+            AnalyticsService.track(.workoutCompleted)
         }
         persistAll()
     }
@@ -749,6 +753,7 @@ final class AppViewModel {
         showRecap(PerformanceHighlightsService.workoutRecap(title: workout.title, exerciseCount: workout.exercises.count))
         checkMilestonesAfterWorkout()
         persistAll()
+        AnalyticsService.track(.workoutCompleted)
 
         Task {
             if await HealthKitManager.shared.requestAuthorization() {

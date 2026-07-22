@@ -419,6 +419,7 @@ struct AFTCalculatorView: View {
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundStyle(pointsColor(points))
                         .contentTransition(.numericText())
+                        .accessibilityLabel("\(title): \(points) points")
 
                     Text("pts")
                         .font(.caption2.weight(.semibold))
@@ -450,6 +451,7 @@ struct AFTCalculatorView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: .black.opacity(0.25), radius: 18, y: 10)
+        .accessibilityElement(children: .contain)
     }
 
     // MARK: - Input Fields

@@ -16,6 +16,7 @@ struct MVMFitnessApp: App {
         Purchases.configure(withAPIKey: Config.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY)
         #endif
         MVMFitnessShortcuts.updateAppShortcutParameters()
+        AnalyticsService.configure()
     }
 
     var body: some Scene {

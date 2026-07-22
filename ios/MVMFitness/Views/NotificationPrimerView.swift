@@ -22,6 +22,7 @@ struct NotificationPrimerView: View {
             Button {
                 Task {
                     _ = await NotificationManager.requestPermission()
+                    AnalyticsService.track(.notificationPrimerEnabled)
                     onFinished()
                 }
             } label: {
@@ -34,7 +35,10 @@ struct NotificationPrimerView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
 
-            Button("Not Now") { onFinished() }
+            Button("Not Now") {
+                AnalyticsService.track(.notificationPrimerSkipped)
+                onFinished()
+            }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(MVMTheme.secondaryText)
         }

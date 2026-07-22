@@ -122,6 +122,7 @@ final class QuickStartViewModel {
         isActive = false
         isPaused = false
         showCompletion = true
+        AnalyticsService.track(.quickStartCompleted)
     }
 
     func dismiss() {

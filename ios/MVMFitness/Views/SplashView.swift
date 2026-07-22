@@ -169,8 +169,10 @@ struct SplashView: View {
             shimmerPhase = 400
         }
 
-        withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true).delay(0.6)) {
-            pulseScale = 1.15
+        if !UIAccessibility.isReduceMotionEnabled {
+            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true).delay(0.6)) {
+                pulseScale = 1.15
+            }
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

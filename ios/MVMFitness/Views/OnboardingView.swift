@@ -74,6 +74,7 @@ struct OnboardingView: View {
         disclaimerAccepted = false
         hasAgreed = false
         onboardingComplete = true
+        AnalyticsService.track(.onboardingSkipped)
     }
 
     // MARK: - Progress
@@ -459,6 +460,7 @@ struct OnboardingView: View {
     private func handleNext() {
         if step < 4 {
             withAnimation { step += 1 }
+            AnalyticsService.track(.onboardingStepCompleted)
         } else if step == 4 {
             disclaimerAccepted = hasAgreed
             if hasAgreed {
@@ -468,9 +470,11 @@ struct OnboardingView: View {
                     vm.generateWeeklyPlan()
                     isGenerating = false
                     withAnimation { step = 5 }
+                    AnalyticsService.track(.onboardingStepCompleted)
                 }
             } else {
                 withAnimation { step = 5 }
+                AnalyticsService.track(.onboardingStepCompleted)
             }
         }
         // Steps 5 and 6 advance via their own buttons (paywall / primer views).

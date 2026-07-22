@@ -106,6 +106,7 @@ struct ABCPView: View {
                 if let w = waist, let h = height, h > 0, w > 0 {
                     store.add(waistInches: w, heightInches: h)
                     focused = false
+                    AnalyticsService.track(.whtrRecorded)
                 }
             } label: {
                 Text("Save Screening")

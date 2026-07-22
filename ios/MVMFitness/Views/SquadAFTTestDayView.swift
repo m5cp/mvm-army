@@ -137,6 +137,7 @@ struct SquadAFTTestDayView: View {
                 sdcSeconds: raw.sdc, plkSeconds: raw.plk, runSeconds: raw.run,
                 eventPoints: points, total: r.total, passed: r.passedOverall
             ))
+            AnalyticsService.track(.squadTestDayRun)
             clearFields()
             if memberIndex < store.activeMembers.count - 1 { memberIndex += 1 } else { dismiss() }
         } label: {

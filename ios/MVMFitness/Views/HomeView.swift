@@ -145,6 +145,7 @@ struct HomeView: View {
                             .font(.body.weight(.semibold))
                             .foregroundStyle(MVMTheme.secondaryText)
                     }
+                    .accessibilityLabel("Training Calendar")
 
                     Button {
                         toolTapTrigger.toggle()
@@ -154,6 +155,7 @@ struct HomeView: View {
                             .font(.body.weight(.semibold))
                             .foregroundStyle(MVMTheme.secondaryText)
                     }
+                    .accessibilityLabel("Scan QR Code")
 
                     Menu {
                         if vm.currentPlan != nil {
@@ -173,6 +175,7 @@ struct HomeView: View {
                             .font(.body.weight(.semibold))
                             .foregroundStyle(MVMTheme.secondaryText)
                     }
+                    .accessibilityLabel("More Options")
                 }
             }
         }
@@ -665,6 +668,7 @@ struct HomeView: View {
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
+            .accessibilityLabel("Share")
 
             Button {
                 let saved = ShareCardRenderer.saveToPhotos(
@@ -689,6 +693,7 @@ struct HomeView: View {
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
+            .accessibilityLabel("Save to Photos")
 
             Button {
                 showTodayQRSheet = true
@@ -705,6 +710,7 @@ struct HomeView: View {
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
+            .accessibilityLabel("QR Code")
         }
     }
 
@@ -876,6 +882,7 @@ struct HomeView: View {
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
+            .accessibilityLabel("Share")
 
             Button {
                 let saved = ShareCardRenderer.saveToPhotos(
@@ -900,6 +907,7 @@ struct HomeView: View {
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
+            .accessibilityLabel("Save to Photos")
 
             Button {
                 showTodayQRSheet = true
@@ -916,6 +924,7 @@ struct HomeView: View {
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
+            .accessibilityLabel("QR Code")
         }
     }
 

@@ -6,6 +6,9 @@ struct ContentView: View {
     var body: some View {
         TabView {
             WatchHomeView()
+            NavigationStack {
+                WatchWorkoutView()
+            }
             WatchStatsView()
             WatchWorkoutTimerView()
             WatchAFTView()

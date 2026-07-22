@@ -6,5 +6,9 @@
 	<array>
 		<string>group.app.rork.sf0lrvsw5r0bpccfi1669</string>
 	</array>
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<key>com.apple.developer.healthkit.access</key>
+	<array/>
 </dict>
 </plist>

@@ -217,6 +217,7 @@ struct CFTResultSheet: View {
 
                     Button {
                         onSave(CFTRecord(totalSeconds: totalSeconds, isGo: isGo, graderName: graderName, eventSplits: splits))
+                        AnalyticsService.track(.cftRecorded)
                         dismiss()
                     } label: {
                         Text("Save Result")

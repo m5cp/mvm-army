@@ -74,8 +74,10 @@ struct UpgradeView: View {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.1)) {
                     animateIn = true
                 }
-                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true).delay(0.6)) {
-                    pulseGlow = true
+                if !UIAccessibility.isReduceMotionEnabled {
+                    withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true).delay(0.6)) {
+                        pulseGlow = true
+                    }
                 }
             }
         }
