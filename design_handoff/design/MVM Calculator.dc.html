@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#0b0908; }
+  a { color:#e8a33d; } a:hover { color:#f2b358; }
+  input, select { font-family:'Archivo',sans-serif; }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+</style>
+</helmet>
+<div style="width:390px;height:844px;box-sizing:border-box;background:#0b0908;display:flex;flex-direction:column;overflow:hidden;font-family:'Space Grotesk',sans-serif">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px 0;height:36px;font:600 15px 'Space Grotesk',sans-serif;color:#f2ede4;flex:none"><span>9:41</span><span style="width:23px;height:11.5px;border:1px solid rgba(242,237,228,.5);border-radius:3px;padding:1.4px;display:flex"><span style="flex:1;background:#f2ede4;border-radius:1.5px"></span></span></div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 0;flex:none">
+    <span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M15 4.5 7.5 12l7.5 7.5" stroke="#e8a33d" stroke-width="2.3" stroke-linecap="round"></path></svg></span>
+    <span style="font:600 17px 'Space Grotesk',sans-serif;color:#f2ede4;letter-spacing:-.01em">Record 07</span>
+    <span style="min-width:44px;height:44px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font:700 15px 'IBM Plex Mono',monospace;color:#e8a33d">{{ total }}</span>
+  </div>
+
+  <div style="padding:6px 22px 0;flex:none">
+    <div style="display:flex;gap:8px">
+      <div style="flex:none;display:flex;padding:3px;gap:3px;border-radius:14px;background:#0d0a09;box-shadow:inset 0 2px 6px rgba(0,0,0,.85)">
+        <span style="{{ mStyle }}" onClick="{{ setMale }}">M</span>
+        <span style="{{ fStyle }}" onClick="{{ setFemale }}">F</span>
+      </div>
+      <div style="flex:1;display:flex;align-items:center;border-radius:14px;background:#0d0a09;box-shadow:inset 0 2px 6px rgba(0,0,0,.85);padding:0 14px;min-height:46px;box-sizing:border-box">
+        <span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.12em;color:rgba(242,237,228,.45);flex:none">AGE</span>
+        <select style="flex:1;margin-left:8px;background:transparent;border:none;outline:none;color:#f2ede4;font:600 13px 'Space Grotesk',sans-serif;cursor:pointer;appearance:none;text-align:right" value="{{ age }}" onChange="{{ onAge }}">
+          <option value="17-21">17–21</option>
+          <option value="22-26">22–26</option>
+          <option value="27-31">27–31</option>
+          <option value="32-36">32–36</option>
+          <option value="37-41">37–41</option>
+          <option value="42+">42+</option>
+        </select>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:6px;flex:none"><path d="M7 10l5 5 5-5" stroke="rgba(242,237,228,.5)" stroke-width="2.4" stroke-linecap="round"></path></svg>
+      </div>
+    </div>
+    <div style="display:flex;gap:3px;margin-top:8px;padding:3px;border-radius:14px;background:#0d0a09;box-shadow:inset 0 2px 6px rgba(0,0,0,.85)">
+      <span style="{{ genStyle }}" onClick="{{ setGeneral }}">General</span>
+      <span style="{{ combStyle }}" onClick="{{ setCombat }}">Combat</span>
+    </div>
+    <div style="font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:rgba(242,237,228,.42);margin-top:9px">{{ standardNote }}</div>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;padding:12px 22px 0;display:flex;flex-direction:column;gap:10px;min-height:0">
+    <sc-for list="{{ rows }}" as="row" hint-placeholder-count="5">
+      <div style="border-radius:20px;padding:14px 16px;background:linear-gradient(180deg,#1c1613,#141010);border:1px solid rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 12px 24px -16px #000;flex:none">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="flex:none;width:40px;height:40px;border-radius:12px;background:#0d0a09;box-shadow:inset 0 2px 5px rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;font:700 11px 'IBM Plex Mono',monospace;color:#e8a33d">{{ row.code }}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font:600 13.5px 'Space Grotesk',sans-serif;color:#f2ede4">{{ row.name }}</div>
+            <div style="font:500 10.5px 'IBM Plex Mono',monospace;color:{{ row.stateColor }};margin-top:3px">{{ row.stateLabel }}</div>
+          </div>
+          <span style="flex:none;font:700 26px 'Archivo',sans-serif;letter-spacing:-.03em;color:{{ row.ptsColor }}">{{ row.points }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;margin-top:11px">
+          <label style="flex:1;height:54px;border-radius:15px;background:#0c0908;box-shadow:inset 0 2px 7px rgba(0,0,0,.9),inset 0 -1px 0 rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;gap:8px;cursor:text">
+            <input type="text" value="{{ row.value }}" onChange="{{ row.onInput }}" placeholder="{{ row.placeholder }}" style="width:88px;background:transparent;border:none;outline:none;text-align:right;font:700 29px 'Archivo',sans-serif;letter-spacing:-.03em;color:#f2ede4">
+            <span style="font:600 11.5px 'IBM Plex Mono',monospace;color:rgba(242,237,228,.45);width:40px">{{ row.unit }}</span>
+          </label>
+          <span style="flex:none;width:54px;height:54px;border-radius:16px;background:linear-gradient(180deg,#221a15,#161110);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.11),0 6px 14px -6px #000;display:flex;align-items:center;justify-content:center;cursor:pointer" onClick="{{ row.dec }}"><svg width="17" height="17" viewBox="0 0 24 24"><rect x="4" y="10.9" width="16" height="2.4" rx="1.2" fill="#f2ede4"></rect></svg></span>
+          <span style="flex:none;width:54px;height:54px;border-radius:16px;background:linear-gradient(180deg,#f2b358,#dd9027);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 8px 18px -6px rgba(221,144,39,.55);display:flex;align-items:center;justify-content:center;cursor:pointer" onClick="{{ row.inc }}"><svg width="17" height="17" viewBox="0 0 24 24"><rect x="4" y="10.9" width="16" height="2.4" rx="1.2" fill="#180f06"></rect><rect x="10.8" y="4" width="2.4" height="16" rx="1.2" fill="#180f06"></rect></svg></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font:500 10.5px 'IBM Plex Mono',monospace;color:rgba(242,237,228,.42)">
+          <span>{{ row.minLabel }}</span>
+          <span>{{ row.maxLabel }}</span>
+        </div>
+      </div>
+    </sc-for>
+    <div style="border-radius:16px;padding:12px 15px;background:#0d0a09;box-shadow:inset 0 2px 6px rgba(0,0,0,.8);font:400 11px/1.55 'Space Grotesk',sans-serif;color:rgba(242,237,228,.5);flex:none;margin-bottom:6px">Thresholds interpolate linearly between the 60- and 100-point marks and are illustrative. Swap in the official scoring tables before release — the layout renders whatever the table returns.</div>
+  </div>
+
+  <div style="flex:none;background:rgba(13,10,9,.86);backdrop-filter:blur(22px) saturate(1.4);border-top:1px solid rgba(255,255,255,.11);padding:13px 22px 30px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div style="flex:none">
+        <div style="font:600 10.5px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:rgba(242,237,228,.5)">TOTAL</div>
+        <div style="display:flex;align-items:baseline;gap:5px;margin-top:1px">
+          <span style="font:700 38px 'Archivo',sans-serif;letter-spacing:-.04em;color:#f2ede4">{{ total }}</span>
+          <span style="font:600 12px 'IBM Plex Mono',monospace;color:rgba(242,237,228,.4)">/600</span>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <span style="{{ chipStyle }}">{{ chipLabel }}</span>
+        <span style="min-height:46px;display:flex;align-items:center;padding:0 20px;border-radius:15px;background:linear-gradient(180deg,#f2b358,#dd9027);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 10px 22px -8px rgba(221,144,39,.5);font:700 15px 'Space Grotesk',sans-serif;color:#180f06;cursor:pointer">See result</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+const SEG_ON = "min-width:46px;padding:11px 14px;text-align:center;border-radius:11px;font:600 13px 'Space Grotesk',sans-serif;cursor:pointer;background:linear-gradient(180deg,#f2b358,#dd9027);color:#180f06;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)";
+const SEG_OFF = "min-width:46px;padding:11px 14px;text-align:center;border-radius:11px;font:600 13px 'Space Grotesk',sans-serif;cursor:pointer;background:transparent;color:rgba(242,237,228,.55)";
+const SEG_ON_W = SEG_ON.replace('min-width:46px', 'flex:1');
+const SEG_OFF_W = SEG_OFF.replace('min-width:46px', 'flex:1');
+
+// Illustrative thresholds: male, 22-26, general standard. raw at 60 pts / raw at 100 pts.
+const BASE = {
+  MDL: { name: '3-Rep Max Deadlift', unit: 'LB',   step: 10, kind: 'up',   p60: 140, p100: 340 },
+  HRP: { name: 'Hand-Release Push-Up', unit: 'REPS', step: 1, kind: 'up',   p60: 10,  p100: 57 },
+  SDC: { name: 'Sprint-Drag-Carry', unit: 'TIME',  step: 1,  kind: 'down', p60: 180, p100: 93 },
+  PLK: { name: 'Plank', unit: 'TIME',              step: 5,  kind: 'up',   p60: 90,  p100: 220 },
+  MMR: { name: '2-Mile Run', unit: 'TIME',         step: 5,  kind: 'down', p60: 1290, p100: 802 }
+};
+const AGE_F = { '17-21': 1.02, '22-26': 1.0, '27-31': 0.97, '32-36': 0.93, '37-41': 0.89, '42+': 0.84 };
+const COMBAT_F = 1.14;
+
+function fmtTime(s) {
+  s = Math.max(0, Math.round(s));
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+function parseTime(str) {
+  const t = String(str).trim();
+  if (t.indexOf(':') === -1) { const n = parseInt(t, 10); return isNaN(n) ? null : n; }
+  const p = t.split(':');
+  const m = parseInt(p[0], 10), sec = parseInt(p[1], 10);
+  if (isNaN(m)) return null;
+  return m * 60 + (isNaN(sec) ? 0 : sec);
+}
+
+class Component extends DCLogic {
+  state = { sex: 'M', age: '27-31', standard: 'combat', raw: { MDL: 250, HRP: 45, SDC: 96, PLK: 215, MMR: 838 } };
+
+  thresholds(code) {
+    const b = BASE[code];
+    let f = AGE_F[this.state.age] || 1;
+    if (this.state.sex === 'F') f *= (b.unit === 'TIME' ? 1 : 0.64);
+    let p60 = b.p60, p100 = b.p100;
+    if (b.kind === 'up') { p60 = b.p60 * f; p100 = b.p100 * f; }
+    else { p60 = b.p60 / f; p100 = b.p100 / f; }
+    if (this.state.sex === 'F' && b.unit === 'TIME') { p60 *= 1.16; p100 *= 1.16; }
+    if (this.state.standard === 'combat') {
+      if (b.kind === 'up') p60 *= COMBAT_F; else p60 /= COMBAT_F;
+    }
+    return { p60: Math.round(p60), p100: Math.round(p100), kind: b.kind };
+  }
+
+  points(code) {
+    const raw = this.state.raw[code];
+    if (raw === null || raw === undefined || raw <= 0) return 0;
+    const t = this.thresholds(code);
+    if (t.kind === 'up') {
+      if (raw < t.p60) return Math.max(0, Math.min(59, Math.round(60 * raw / t.p60)));
+      return Math.min(100, Math.round(60 + 40 * (raw - t.p60) / (t.p100 - t.p60)));
+    }
+    if (raw > t.p60) return Math.max(0, Math.min(59, Math.round(60 * t.p60 / raw)));
+    return Math.min(100, Math.round(60 + 40 * (t.p60 - raw) / (t.p60 - t.p100)));
+  }
+
+  set(code, v) {
+    this.setState(s => ({ raw: Object.assign({}, s.raw, { [code]: v }) }));
+  }
+
+  renderVals() {
+    const codes = ['MDL', 'HRP', 'SDC', 'PLK', 'MMR'];
+    const pts = {};
+    codes.forEach(c => { pts[c] = this.points(c); });
+    const total = codes.reduce((a, c) => a + pts[c], 0);
+    const entered = codes.filter(c => this.state.raw[c] > 0);
+    const failing = entered.filter(c => pts[c] < 60);
+    const complete = entered.length === 5;
+
+    const rows = codes.map(code => {
+      const b = BASE[code];
+      const t = this.thresholds(code);
+      const raw = this.state.raw[code];
+      const isTime = b.unit === 'TIME';
+      const p = pts[code];
+      const has = raw > 0;
+      const disp = !has ? '' : (isTime ? fmtTime(raw) : String(raw));
+      return {
+        code: code === 'MMR' ? '2MR' : code,
+        name: b.name,
+        unit: isTime ? '' : b.unit,
+        placeholder: isTime ? '0:00' : '0',
+        value: disp,
+        points: has ? p : '—',
+        ptsColor: !has ? 'rgba(242,237,228,.28)' : (p < 60 ? '#f87171' : '#e8a33d'),
+        stateLabel: !has ? 'NOT ENTERED' : (p < 60 ? 'BELOW STANDARD' : (p >= 100 ? 'MAXED' : 'SCORED')),
+        stateColor: !has ? 'rgba(242,237,228,.35)' : (p < 60 ? '#f87171' : 'rgba(74,222,128,.85)'),
+        minLabel: 'MIN ' + (isTime ? fmtTime(t.p60) : t.p60) + ' → 60 PTS',
+        maxLabel: 'MAX ' + (isTime ? fmtTime(t.p100) : t.p100) + ' → 100 PTS',
+        onInput: e => {
+          const v = e.target.value;
+          if (v.trim() === '') return this.set(code, 0);
+          const n = isTime ? parseTime(v) : parseInt(v.replace(/[^0-9]/g, ''), 10);
+          if (n === null || isNaN(n)) return;
+          this.set(code, n);
+        },
+        inc: () => this.set(code, Math.max(0, (raw || 0) + b.step),),
+        dec: () => this.set(code, Math.max(0, (raw || 0) - b.step))
+      };
+    });
+
+    const chipBase = 'display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:99px;font:600 11.5px \'Space Grotesk\',sans-serif;';
+    let chipStyle, chipLabel;
+    if (!complete) {
+      chipStyle = chipBase + 'background:rgba(242,237,228,.07);border:1px solid rgba(255,255,255,.12);color:rgba(242,237,228,.55)';
+      chipLabel = (5 - entered.length) + ' event' + (entered.length === 4 ? '' : 's') + ' left';
+    } else if (failing.length) {
+      chipStyle = chipBase + 'background:rgba(248,113,113,.13);border:1px solid rgba(248,113,113,.4);color:#f87171';
+      chipLabel = 'Below standard · ' + failing.map(c => c === 'MMR' ? '2MR' : c).join(', ');
+    } else {
+      chipStyle = chipBase + 'background:rgba(74,222,128,.13);border:1px solid rgba(74,222,128,.4);color:#4ade80';
+      chipLabel = (this.state.standard === 'combat' ? 'Combat' : 'General') + ' standard met';
+    }
+
+    return {
+      total, rows, chipStyle, chipLabel,
+      age: this.state.age,
+      mStyle: this.state.sex === 'M' ? SEG_ON : SEG_OFF,
+      fStyle: this.state.sex === 'F' ? SEG_ON : SEG_OFF,
+      genStyle: this.state.standard === 'general' ? SEG_ON_W : SEG_OFF_W,
+      combStyle: this.state.standard === 'combat' ? SEG_ON_W : SEG_OFF_W,
+      standardNote: this.state.standard === 'combat'
+        ? 'Combat standard · every event must clear 60 points'
+        : 'General standard · 60 points per event, 360 total',
+      setMale: () => this.setState({ sex: 'M' }),
+      setFemale: () => this.setState({ sex: 'F' }),
+      setGeneral: () => this.setState({ standard: 'general' }),
+      setCombat: () => this.setState({ standard: 'combat' }),
+      onAge: e => this.setState({ age: e.target.value })
+    };
+  }
+}
+
+</script>
+</body>
+</html>
