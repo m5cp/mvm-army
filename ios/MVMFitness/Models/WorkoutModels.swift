@@ -304,3 +304,34 @@ nonisolated struct CompletedWorkoutRecord: Codable, Identifiable, Hashable, Send
         source = try container.decodeIfPresent(WorkoutSource.self, forKey: .source) ?? .individual
     }
 }
+
+/// One row per calendar day — a rolling local history of activity so users
+/// can look back at any past day even after the app restarts. Purely
+/// additive: aggregates data that is already tracked elsewhere (steps,
+/// completed workouts, AFT scores); it does not replace those stores.
+nonisolated struct DailyFitnessLog: Codable, Identifiable, Hashable, Sendable {
+    let id: UUID
+    var date: Date
+    var steps: Int
+    var workoutTitles: [String]
+    var aftScoreLogged: Int?
+
+    init(date: Date, steps: Int = 0, workoutTitles: [String] = [], aftScoreLogged: Int? = nil) {
+        self.id = UUID()
+        self.date = Calendar.current.startOfDay(for: date)
+        self.steps = steps
+        self.workoutTitles = workoutTitles
+        self.aftScoreLogged = aftScoreLogged
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        date = try c.decode(Date.self, forKey: .date)
+        steps = try c.decodeIfPresent(Int.self, forKey: .steps) ?? 0
+        workoutTitles = try c.decodeIfPresent([String].self, forKey: .workoutTitles) ?? []
+        aftScoreLogged = try c.decodeIfPresent(Int.self, forKey: .aftScoreLogged)
+    }
+
+    var workoutCount: Int { workoutTitles.count }
+}

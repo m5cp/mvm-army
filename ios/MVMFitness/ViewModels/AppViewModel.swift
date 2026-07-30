@@ -22,6 +22,7 @@ final class AppViewModel {
     var quickStartRecords: [QuickStartRecord] = []
     var activeMilestone: Milestone?
     var showMilestoneUpgrade: Bool = false
+    var dailyLogs: [DailyFitnessLog] = []
 
     var performanceHighlights: [PerformanceHighlight] {
         PerformanceHighlightsService.generateHighlights(
@@ -42,7 +43,7 @@ final class AppViewModel {
             "completedRecords", "stepHistory", "unitPTPlans", "aftScores",
             "aftCalculatorResults", "currentPlan", "quickStartRecords",
             "unitPTFullPlan", "scheduledUnitPT", "importedWorkouts", "wodPlan",
-            "whtrRecords", "cftRecords"
+            "whtrRecords", "cftRecords", "dailyLogs"
         ])
         loadLocalData()
     }
@@ -60,6 +61,7 @@ final class AppViewModel {
         aftCalculatorResults = DataStore.load([AFTCalculatorResult].self, forKey: "aftCalculatorResults", fallback: [])
         wodPlan = DataStore.load(WODPlan?.self, forKey: "wodPlan", fallback: nil)
         quickStartRecords = DataStore.load([QuickStartRecord].self, forKey: "quickStartRecords", fallback: [])
+        dailyLogs = DataStore.load([DailyFitnessLog].self, forKey: "dailyLogs", fallback: [])
         loadTodayFunctionalWOD()
     }
 
@@ -76,6 +78,7 @@ final class AppViewModel {
         DataStore.save(aftCalculatorResults, forKey: "aftCalculatorResults")
         DataStore.save(wodPlan, forKey: "wodPlan")
         DataStore.save(quickStartRecords, forKey: "quickStartRecords")
+        DataStore.save(dailyLogs, forKey: "dailyLogs")
         syncWidgetData()
     }
 
@@ -105,6 +108,7 @@ final class AppViewModel {
             stepHistory.append(StepDay(date: today, steps: pedometer.todaySteps))
         }
         stepHistory.sort { $0.date < $1.date }
+        recordDailyLog()
         persistAll()
     }
 
@@ -534,6 +538,7 @@ final class AppViewModel {
             ), at: 0
         )
         showRecap(PerformanceHighlightsService.workoutRecap(title: day.title, exerciseCount: day.exercises.count))
+        recordDailyLog(workoutTitle: day.title)
         persistAll()
         AnalyticsService.track(.workoutCompleted)
 
@@ -565,6 +570,7 @@ final class AppViewModel {
         quickStartRecords = []
         activeMilestone = nil
         lastWorkoutTag = ""
+        dailyLogs = []
 
         let keysToDelete = [
             "currentPlan", "completedRecords", "stepHistory",
@@ -588,6 +594,7 @@ final class AppViewModel {
         aftScores.insert(record, at: 0)
         showRecap(PerformanceHighlightsService.aftScoreRecap(newScore: record, previousScores: previousScores))
         checkAFTMilestone(newScore: record.totalScore, previousScore: previousScores.first?.totalScore)
+        recordDailyLog(aftScore: record.totalScore)
         persistAll()
         AnalyticsService.track(.aftScoreSaved)
     }
@@ -629,6 +636,7 @@ final class AppViewModel {
         aftScores.insert(scoreRecord, at: 0)
         showRecap(PerformanceHighlightsService.aftScoreRecap(newScore: scoreRecord, previousScores: previousScores))
         checkAFTMilestone(newScore: result.totalScore, previousScore: previousScores.first?.totalScore)
+        recordDailyLog(aftScore: result.totalScore)
         persistAll()
         AnalyticsService.track(.aftScoreSaved)
     }
@@ -715,6 +723,7 @@ final class AppViewModel {
             let completed = plan.days.filter(\.isCompleted).count
             let total = plan.totalWorkoutDays
             showRecap(PerformanceHighlightsService.planDayRecap(dayNumber: completed, totalDays: total))
+            recordDailyLog(workoutTitle: day.title)
             checkMilestonesAfterWorkout()
 
             Task {
@@ -751,6 +760,7 @@ final class AppViewModel {
             ), at: 0
         )
         showRecap(PerformanceHighlightsService.workoutRecap(title: workout.title, exerciseCount: workout.exercises.count))
+        recordDailyLog(workoutTitle: workout.title)
         checkMilestonesAfterWorkout()
         persistAll()
         AnalyticsService.track(.workoutCompleted)
@@ -1003,6 +1013,47 @@ final class AppViewModel {
     var previousAFTScore: AFTScoreRecord? {
         guard aftScores.count > 1 else { return nil }
         return aftScores[1]
+    }
+
+    /// The highest-scoring saved AFT test on record — powers the personal-best
+    /// badge in the stats view. Pure lookup over the existing store.
+    var bestAFTScore: AFTScoreRecord? {
+        aftScores.max { $0.totalScore < $1.totalScore }
+    }
+
+    func isPersonalBest(_ score: AFTScoreRecord) -> Bool {
+        guard let best = bestAFTScore else { return false }
+        return score.id == best.id
+    }
+
+    // MARK: - Daily Fitness Log
+
+    /// Upserts today's rolling activity log so users can browse past days'
+    /// activity (steps, workouts, AFT test) after restarting the app. Reads
+    /// from data that is already tracked elsewhere; adds no new source of truth.
+    func recordDailyLog(workoutTitle: String? = nil, aftScore: Int? = nil) {
+        let today = Calendar.current.startOfDay(for: .now)
+        var log = dailyLogs.first { $0.date == today } ?? DailyFitnessLog(date: today)
+
+        log.steps = max(log.steps, pedometer.todaySteps)
+        if let workoutTitle {
+            log.workoutTitles.append(workoutTitle)
+        }
+        if let aftScore {
+            log.aftScoreLogged = aftScore
+        }
+
+        if let idx = dailyLogs.firstIndex(where: { $0.date == today }) {
+            dailyLogs[idx] = log
+        } else {
+            dailyLogs.append(log)
+        }
+        dailyLogs.sort { $0.date > $1.date }
+        persistAll()
+    }
+
+    var dailyLogsSorted: [DailyFitnessLog] {
+        dailyLogs.sorted { $0.date > $1.date }
     }
 
     var aftScoreDifference: Int? {

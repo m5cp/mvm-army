@@ -15,6 +15,7 @@ struct ProgressViewScreen: View {
     @State private var showDayDetail: Bool = false
     @State private var showTrainingCalendar: Bool = false
     @State private var showMyPTPlanSheet: Bool = false
+    @State private var showDailyLog: Bool = false
 
 
     var body: some View {
@@ -32,6 +33,7 @@ struct ProgressViewScreen: View {
                         quickStartHistoryCard
                     }
                     weeklyFrequencyChart
+                    dailyLogCard
                     aftCard
                     if !vm.aftScores.isEmpty {
                         aftHistoryCard
@@ -77,6 +79,9 @@ struct ProgressViewScreen: View {
         }
         .navigationDestination(isPresented: $showTrainingCalendar) {
             TrainingCalendarView()
+        }
+        .navigationDestination(isPresented: $showDailyLog) {
+            DailyLogHistoryView()
         }
         .sheet(isPresented: $showMyPTPlanSheet) {
             MyPTPlanSheet()
@@ -609,6 +614,44 @@ struct ProgressViewScreen: View {
         }
         .padding(20)
         .premiumCard()
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
+    }
+
+    // MARK: - Daily Log
+
+    private var dailyLogCard: some View {
+        Button {
+            showDailyLog = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 44, height: 44)
+                    .background(MVMTheme.accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Daily Log")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text(vm.dailyLogsSorted.isEmpty ? "Your activity history will appear here" : "\(vm.dailyLogsSorted.count) day\(vm.dailyLogsSorted.count == 1 ? "" : "s") logged \u{2014} saved on this device")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+            .padding(14)
+            .mvmCard(cornerRadius: 16)
+        }
+        .buttonStyle(PressScaleButtonStyle())
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
     }
