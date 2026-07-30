@@ -52,6 +52,15 @@ struct DailyLogHistoryView: View {
 
                                 ForEach(section.1) { log in
                                     logRow(log)
+                                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                            Button(role: .destructive) {
+                                                withAnimation(.easeOut(duration: 0.2)) {
+                                                    vm.deleteDailyLog(log)
+                                                }
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
                                 }
                             }
                         }

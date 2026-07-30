@@ -1056,6 +1056,13 @@ final class AppViewModel {
         dailyLogs.sorted { $0.date > $1.date }
     }
 
+    /// Removes a daily log entry (e.g. an accidental or incorrect record) and
+    /// persists the change through the same `DataStore` mechanism used to save it.
+    func deleteDailyLog(_ log: DailyFitnessLog) {
+        dailyLogs.removeAll { $0.id == log.id }
+        persistAll()
+    }
+
     var aftScoreDifference: Int? {
         guard let latest = latestAFTScore, let previous = previousAFTScore else { return nil }
         return latest.totalScore - previous.totalScore

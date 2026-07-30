@@ -33,6 +33,9 @@ struct ProgressViewScreen: View {
                         quickStartHistoryCard
                     }
                     weeklyFrequencyChart
+                    if vm.dailyLogsSorted.count >= 2 {
+                        dailyLogTrendChart
+                    }
                     dailyLogCard
                     aftCard
                     if !vm.aftScores.isEmpty {
@@ -652,6 +655,75 @@ struct ProgressViewScreen: View {
             .mvmCard(cornerRadius: 16)
         }
         .buttonStyle(PressScaleButtonStyle())
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
+    }
+
+    // MARK: - Daily Log Trend Chart
+
+    private var dailyLogTrendChart: some View {
+        let points = Array(vm.dailyLogsSorted.prefix(30).sorted { $0.date < $1.date })
+
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .foregroundStyle(MVMTheme.accent)
+                    .font(.subheadline.weight(.semibold))
+                Text("Daily Log Trend")
+                    .font(.headline)
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Spacer()
+
+                Text("Steps \u{2014} last \(points.count) days")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+
+            Chart {
+                ForEach(points) { log in
+                    LineMark(
+                        x: .value("Date", log.date, unit: .day),
+                        y: .value("Steps", log.steps)
+                    )
+                    .foregroundStyle(MVMTheme.accent)
+                    .interpolationMethod(.catmullRom)
+                    .symbol(Circle())
+
+                    AreaMark(
+                        x: .value("Date", log.date, unit: .day),
+                        y: .value("Steps", log.steps)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [MVMTheme.accent.opacity(0.22), .clear],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.catmullRom)
+                }
+            }
+            .chartYAxis {
+                AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                        .foregroundStyle(MVMTheme.border)
+                    AxisValueLabel()
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .day, count: max(1, points.count / 5))) { value in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                        .foregroundStyle(MVMTheme.border)
+                    AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+            }
+            .frame(height: isLandscape ? 220 : 150)
+        }
+        .padding(20)
+        .premiumCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
     }
