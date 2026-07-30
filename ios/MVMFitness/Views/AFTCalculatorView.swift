@@ -23,6 +23,9 @@ struct AFTCalculatorView: View {
     @State private var showExportSheet = false
     @State private var showAFTShareSheet: Bool = false
     @State private var showScoreHistory: Bool = false
+    @State private var showResultPDFSheet: Bool = false
+    @State private var resultPDFURL: URL?
+    @State private var isGeneratingResultPDF: Bool = false
     @FocusState private var focusedField: CalculatorField?
 
     private enum CalculatorField: Hashable {
@@ -209,6 +212,11 @@ struct AFTCalculatorView: View {
         }
         .sheet(isPresented: $showExportSheet) {
             DAForm705ExportView(result: preview)
+        }
+        .sheet(isPresented: $showResultPDFSheet) {
+            if let url = resultPDFURL {
+                ShareSheet(items: [url])
+            }
         }
         .sheet(isPresented: $showUpgradeFromGate) {
             UpgradeView()
@@ -687,6 +695,49 @@ struct AFTCalculatorView: View {
                 }
             }
             .buttonStyle(PressScaleButtonStyle())
+
+            Button {
+                normalizeSecondsFields()
+                generateAndShareResultPDF()
+            } label: {
+                HStack(spacing: 8) {
+                    if isGeneratingResultPDF {
+                        ProgressView().tint(MVMTheme.text)
+                    } else {
+                        Image(systemName: "doc.plaintext")
+                    }
+                    Text(isGeneratingResultPDF ? "Preparing PDF…" : "Share Result PDF")
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(MVMTheme.text)
+                .frame(height: 50)
+                .frame(maxWidth: .infinity)
+                .background(MVMTheme.well)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.hairline, lineWidth: 1)
+                }
+            }
+            .buttonStyle(PressScaleButtonStyle())
+            .disabled(isGeneratingResultPDF)
+        }
+    }
+
+    /// Renders the compact result-plaque PDF (total + margin table) from the
+    /// on-screen preview and presents the system share sheet. All figures come
+    /// from `preview`, itself built entirely from `AFTScoringEngine` output.
+    private func generateAndShareResultPDF() {
+        isGeneratingResultPDF = true
+        let previousTotal = vm.latestAFTScore?.totalScore
+        Task {
+            guard let data = AFTResultPDFService.generatePDF(from: preview, previousTotal: previousTotal),
+                  let url = AFTResultPDFService.savePDFToTemp(data: data, soldierName: soldierName) else {
+                isGeneratingResultPDF = false
+                return
+            }
+            resultPDFURL = url
+            showResultPDFSheet = true
+            isGeneratingResultPDF = false
         }
     }
 

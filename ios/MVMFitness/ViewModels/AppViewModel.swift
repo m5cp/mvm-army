@@ -1010,6 +1010,45 @@ final class AppViewModel {
         return latest.totalScore - previous.totalScore
     }
 
+    // MARK: - AFT Trend Date-Range Filter
+
+    /// Date-range filter for the saved AFT results store — powers the You tab
+    /// trend chart. Reads only already-saved `aftScores`; no new persistence,
+    /// no scoring math, pure date filtering.
+    enum AFTDateRange: String, CaseIterable, Identifiable {
+        case oneMonth = "1M"
+        case threeMonths = "3M"
+        case sixMonths = "6M"
+        case oneYear = "1Y"
+        case all = "ALL"
+
+        var id: String { rawValue }
+
+        /// Number of days to look back, or nil for "ALL" (no lower bound).
+        var days: Int? {
+            switch self {
+            case .oneMonth: return 30
+            case .threeMonths: return 90
+            case .sixMonths: return 182
+            case .oneYear: return 365
+            case .all: return nil
+            }
+        }
+    }
+
+    /// Saved AFT results within the given date range, oldest first (chart order).
+    /// `aftScores` itself is stored newest-first; this only filters/reorders,
+    /// it never mutates the underlying store.
+    func aftScores(in range: AFTDateRange) -> [AFTScoreRecord] {
+        let filtered: [AFTScoreRecord]
+        if let days = range.days, let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: .now) {
+            filtered = aftScores.filter { $0.date >= cutoff }
+        } else {
+            filtered = aftScores
+        }
+        return filtered.sorted { $0.date < $1.date }
+    }
+
     var weeklyStepAverage: Int {
         let calendar = Calendar.current
         let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: .now) ?? .now
