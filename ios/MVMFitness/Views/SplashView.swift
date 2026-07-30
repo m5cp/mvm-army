@@ -13,6 +13,7 @@ struct SplashView: View {
     @State private var videoFailed = false
     @State private var didFinish = false
     @State private var endObserver: NSObjectProtocol?
+    @State private var opacity: Double = 1
 
     var body: some View {
         ZStack {
@@ -53,6 +54,7 @@ struct SplashView: View {
                 Spacer().frame(height: 90)
             }
         }
+        .opacity(opacity)
         .contentShape(Rectangle())
         .onTapGesture { finish() }
         .onAppear { setUpPlayer() }
@@ -97,6 +99,11 @@ struct SplashView: View {
         guard !didFinish else { return }
         didFinish = true
         tearDownPlayer()
-        onFinished()
+        withAnimation(.easeOut(duration: 0.5)) {
+            opacity = 0
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            onFinished()
+        }
     }
 }
