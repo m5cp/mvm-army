@@ -23,6 +23,10 @@ final class AppViewModel {
     var activeMilestone: Milestone?
     var showMilestoneUpgrade: Bool = false
     var dailyLogs: [DailyFitnessLog] = []
+    /// Set by a screen that wants to hand off navigation to another tab
+    /// (e.g. Trend's first-run CTAs). MainTabView observes this, switches
+    /// tabs, then clears it back to nil.
+    var requestedTab: AppTab?
 
     var performanceHighlights: [PerformanceHighlight] {
         PerformanceHighlightsService.generateHighlights(

@@ -78,6 +78,13 @@ struct MainTabView: View {
             set: { vm.activeRecap = $0 }
         ))
         .milestoneOverlay()
+        .onChange(of: vm.requestedTab) { _, newTab in
+            guard let newTab else { return }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                selectedTab = newTab
+            }
+            vm.requestedTab = nil
+        }
     }
 
     private var customTabBar: some View {

@@ -25,32 +25,37 @@ struct ProgressViewScreen: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     topSummaryHeader
-                    primaryMetricsRow
-                    thisWeekHero
-                    interactiveWeekStrip
-                    localActivitySection
-                    if !vm.quickStartRecords.isEmpty {
-                        quickStartHistoryCard
-                    }
-                    weeklyFrequencyChart
-                    if vm.dailyLogsSorted.count >= 2 {
-                        dailyLogTrendChart
-                    }
-                    dailyLogCard
-                    aftCard
-                    if !vm.aftScores.isEmpty {
-                        aftHistoryCard
-                    }
-                    AIInsightsCard()
+
+                    if hasMeaningfulHistory {
+                        primaryMetricsRow
+                        thisWeekHero
+                        interactiveWeekStrip
+                        localActivitySection
+                        if !vm.quickStartRecords.isEmpty {
+                            quickStartHistoryCard
+                        }
+                        weeklyFrequencyChart
+                        if vm.dailyLogsSorted.count >= 2 {
+                            dailyLogTrendChart
+                        }
+                        dailyLogCard
+                        aftCard
+                        if !vm.aftScores.isEmpty {
+                            aftHistoryCard
+                        }
+                        AIInsightsCard()
+                            .opacity(appeared ? 1 : 0)
+                            .offset(y: appeared ? 0 : 16)
+
+                        PerformanceHighlightsView(
+                            highlights: vm.performanceHighlights,
+                            showEmptyState: vm.performanceHighlights.isEmpty
+                        )
                         .opacity(appeared ? 1 : 0)
                         .offset(y: appeared ? 0 : 16)
-
-                    PerformanceHighlightsView(
-                        highlights: vm.performanceHighlights,
-                        showEmptyState: vm.performanceHighlights.isEmpty
-                    )
-                    .opacity(appeared ? 1 : 0)
-                    .offset(y: appeared ? 0 : 16)
+                    } else {
+                        trendFirstRunCard
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 4)
@@ -143,6 +148,81 @@ struct ProgressViewScreen: View {
         let f = DateFormatter()
         f.dateFormat = "EEEE, MMM d"
         return f.string(from: .now)
+    }
+
+    // MARK: - First-Run State
+
+    /// True once there's anything worth charting. Until then the dashboard
+    /// would just be a wall of dead zeros, so we show a guided state instead.
+    private var hasMeaningfulHistory: Bool {
+        !vm.aftScores.isEmpty || !vm.completedRecords.isEmpty
+    }
+
+    private var trendFirstRunCard: some View {
+        RaisedCard(radius: MVMTheme.rCard) {
+            VStack(spacing: 18) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(MVMTheme.amber)
+                    .frame(width: 64, height: 64)
+                    .background(MVMTheme.well)
+                    .clipShape(Circle())
+
+                VStack(spacing: 6) {
+                    Text("Your trends build here")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(MVMTheme.text)
+                        .multilineTextAlignment(.center)
+
+                    Text("Log an AFT score or finish a workout and this tab turns into your progress dashboard \u{2014} charts, streaks, and history, all in one place.")
+                        .font(.subheadline)
+                        .foregroundStyle(MVMTheme.textMuted)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                VStack(spacing: 10) {
+                    AmberButton(title: "Take Your First AFT Score") {
+                        vm.requestedTab = .score
+                    }
+
+                    Button {
+                        vm.requestedTab = .train
+                    } label: {
+                        Text("Start a Workout")
+                            .font(.system(size: 15.5, weight: .semibold))
+                            .foregroundStyle(MVMTheme.text)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: 50)
+                    }
+                    .background(MVMTheme.well)
+                    .clipShape(RoundedRectangle(cornerRadius: MVMTheme.rButton))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: MVMTheme.rButton)
+                            .stroke(MVMTheme.hairline, lineWidth: 1)
+                    }
+                }
+
+                if vm.pedometer.todaySteps > 0 || vm.streak > 0 {
+                    InsetWell {
+                        HStack(spacing: 10) {
+                            Image(systemName: "figure.walk")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(MVMTheme.amber)
+                            Text("\(vm.pedometer.todaySteps.formatted()) steps today \u{2014} your full trend chart will appear once you log a score or workout")
+                                .font(.caption)
+                                .foregroundStyle(MVMTheme.textMuted)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(12)
+                    }
+                }
+            }
+            .padding(24)
+        }
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
     }
 
     // MARK: - Primary Metrics Row
