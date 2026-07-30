@@ -530,8 +530,11 @@ struct HomeView: View {
                         eventStatusChip(.plk, latest.plankPoints, standard: latest.standard)
                         eventStatusChip(.run2mi, latest.runPoints, standard: latest.standard)
                     }
+                    .accessibilityElement(children: .combine)
                 }
                 .padding(20)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Readiness, \(latest.totalScore) out of 500, \(passedOverall(latest) ? "go" : "no go"), \(marginLabel(for: latest))")
             } else {
                 Button {
                     toolTapTrigger.toggle()
@@ -609,6 +612,8 @@ struct HomeView: View {
         .padding(.vertical, 8)
         .background(MVMTheme.well)
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(event.fullName), \(points) points")
     }
 
     // MARK: - Today Workout Section — graded session card (lowKeyGym)

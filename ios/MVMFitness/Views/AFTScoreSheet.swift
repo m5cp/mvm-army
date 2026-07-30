@@ -164,12 +164,15 @@ struct AFTScoreSheet: View {
                                     .background(sex == option ? MVMTheme.accent : MVMTheme.cardSoft)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityAddTraits(sex == option ? [.isSelected] : [])
                         }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay {
                         RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
                     }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Sex")
                 }
             }
 
@@ -198,8 +201,12 @@ struct AFTScoreSheet: View {
                             .background(standard == option ? MVMTheme.accent : MVMTheme.cardSoft)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("\(option.rawValue), minimum \(option.minimumPerEvent) per event")
+                        .accessibilityAddTraits(standard == option ? [.isSelected] : [])
                     }
                 }
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Standard")
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay {
                     RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)

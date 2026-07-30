@@ -26,6 +26,16 @@ nonisolated enum AppTab: Int, CaseIterable, Sendable {
         case .you: return "person.fill"
         }
     }
+
+    var accessibilityHint: String {
+        switch self {
+        case .home: return "Today's overview and quick actions"
+        case .score: return "Log and calculate your AFT score"
+        case .train: return "Workout plans and quick start"
+        case .trend: return "Progress charts and history"
+        case .you: return "Profile and settings"
+        }
+    }
 }
 
 struct MainTabView: View {
@@ -120,10 +130,12 @@ struct MainTabView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(tab.title)
                 .accessibilityAddTraits(selectedTab == tab ? [.isSelected] : [])
+                .accessibilityHint(tab.accessibilityHint)
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
         .sensoryFeedback(.impact(weight: .light), trigger: selectedTab)
         .background {
             if #available(iOS 26.0, *) {

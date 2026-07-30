@@ -24,6 +24,17 @@ extension AFTEventType {
         case .run2mi: return "2MR"
         }
     }
+
+    /// Full spoken event name for VoiceOver — the visible chip only ever shows `displayCode`.
+    var fullName: String {
+        switch self {
+        case .mdl: return "Deadlift"
+        case .hrp: return "Hand-release push-up"
+        case .sdc: return "Sprint-drag-carry"
+        case .plk: return "Plank"
+        case .run2mi: return "Two-mile run"
+        }
+    }
 }
 
 // MARK: - Elevation
@@ -87,6 +98,8 @@ struct MetricCell: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12).frame(height: 46)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label), \(value)")
     }
 }
 
@@ -102,6 +115,8 @@ struct EventTagChip: View {
             .frame(width: 44, height: 44)
             .background(MVMTheme.well)
             .clipShape(RoundedRectangle(cornerRadius: 13))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(event.fullName)
     }
 }
 
@@ -133,6 +148,8 @@ enum PhotoGrade { case heroDuotone, lowKeyGym, goldenSilhouette, thumbnailNeutra
 
 /// Applies the four grade recipes. The amber comes from THIS layer, never the photo
 /// (golden silhouettes are the one exception — original color survives).
+/// Always purely decorative background art, so it's hidden from VoiceOver;
+/// any meaningful text/controls are layered on top by the caller and remain reachable.
 struct GradedPhoto: View {
     let name: String // asset name (imagesets committed to Assets.xcassets)
     let grade: PhotoGrade
@@ -173,6 +190,7 @@ struct GradedPhoto: View {
                 img.saturation(0.28).brightness(-0.08) // no overlay, no scrim
             }
         }
+        .accessibilityHidden(true)
     }
 }
 
@@ -218,6 +236,8 @@ struct BadgeCoin: View {
         .overlay(RoundedRectangle(cornerRadius: 18).stroke(MVMTheme.hairline, lineWidth: 1))
         .onAppear { if isNewlyEarned { playEarnAnimation() } }
         .onChange(of: isNewlyEarned) { _, newValue in if newValue { playEarnAnimation() } }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(name), \(earned ? "earned \(status)" : "locked")")
     }
 
     private func playEarnAnimation() {

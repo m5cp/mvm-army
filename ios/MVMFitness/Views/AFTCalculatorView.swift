@@ -302,7 +302,7 @@ struct AFTCalculatorView: View {
                             .kerning(1.2)
                             .foregroundStyle(MVMTheme.textFaint)
 
-                        segmentedToggle(SoldierSex.allCases, selection: $sex, height: 48) { $0.rawValue }
+                        segmentedToggle(SoldierSex.allCases, selection: $sex, height: 48, accessibilityLabel: "Sex") { $0.rawValue }
                     }
                 }
 
@@ -336,17 +336,22 @@ struct AFTCalculatorView: View {
                                         standard = option
                                     }
                                 }
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel("\(option.rawValue) standard, \(option == .combat ? "350 total, 60 minimum each event" : "300 total, 60 minimum each event")")
+                                .accessibilityAddTraits(selected ? [.isButton, .isSelected] : [.isButton])
                             }
                         }
                         .padding(3)
                     }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Standard")
                 }
             }
             .padding(16)
         }
     }
 
-    private func segmentedToggle<T: Hashable>(_ options: [T], selection: Binding<T>, height: CGFloat, label: @escaping (T) -> String) -> some View {
+    private func segmentedToggle<T: Hashable>(_ options: [T], selection: Binding<T>, height: CGFloat, accessibilityLabel: String, label: @escaping (T) -> String) -> some View {
         InsetWell {
             HStack(spacing: 3) {
                 ForEach(options, id: \.self) { opt in
@@ -364,10 +369,15 @@ struct AFTCalculatorView: View {
                                 selection.wrappedValue = opt
                             }
                         }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(label(opt))
+                        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : [.isButton])
                 }
             }
             .padding(3)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(accessibilityLabel)
     }
 
     // MARK: - Event Rows (spec-sheet: chip · title + min/max refs · points, then input well)
@@ -438,12 +448,43 @@ struct AFTCalculatorView: View {
                         .contentTransition(.numericText())
                         .lineLimit(1)
                         .fixedSize()
-                        .accessibilityLabel("\(title): \(points) points")
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(eventRowAccessibilityLabel(event: event, title: title, points: points))
 
                 input()
             }
             .padding(14)
+        }
+    }
+
+    /// Builds the combined VoiceOver announcement for one event row, e.g.
+    /// "Deadlift, 300 pounds, 87 points, minimum 140, maximum 340."
+    private func eventRowAccessibilityLabel(event: AFTEventType, title: String, points: Int) -> String {
+        let min60 = engine.rawNeeded(event: event, age: scoringAge, sex: sex, standard: standard, targetPoints: 60)
+        let max100 = engine.rawNeeded(event: event, age: scoringAge, sex: sex, standard: standard, targetPoints: 100)
+        let minStr = min60.map { spokenRaw(event, $0) } ?? "unavailable"
+        let maxStr = max100.map { spokenRaw(event, $0) } ?? "unavailable"
+        let currentStr = spokenRaw(event, currentRawValue(for: event))
+        return "\(title), \(currentStr), \(points) points, minimum \(minStr), maximum \(maxStr)"
+    }
+
+    private func currentRawValue(for event: AFTEventType) -> Int {
+        switch event {
+        case .mdl: return deadliftLbs
+        case .hrp: return pushUpReps
+        case .sdc: return sdcTotalSeconds
+        case .plk: return plankTotalSeconds
+        case .run2mi: return runTotalSeconds
+        }
+    }
+
+    private func spokenRaw(_ event: AFTEventType, _ v: Int) -> String {
+        switch event {
+        case .mdl: return "\(v) pounds"
+        case .hrp: return "\(v) reps"
+        case .sdc, .plk, .run2mi:
+            return "\(v / 60) minutes \(v % 60) seconds"
         }
     }
 
@@ -540,6 +581,8 @@ struct AFTCalculatorView: View {
                     minimumToPass: standard.minimumTotal,
                     passed: overallPassed
                 )
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(totalScoreAccessibilityLabel)
 
                 if let delta = deltaVsPrevious {
                     Text((delta >= 0 ? "+" : "\u{2212}") + "\(abs(delta)) VS LAST")
@@ -569,6 +612,16 @@ struct AFTCalculatorView: View {
         }
     }
 
+    /// "Total score 340, pass, 10 points above the 330 minimum" style announcement.
+    private var totalScoreAccessibilityLabel: String {
+        let statusWord = overallPassed ? "pass" : "fail"
+        let margin = totalScore - standard.minimumTotal
+        let marginPhrase = margin >= 0
+            ? "\(margin) points above the \(standard.minimumTotal) minimum"
+            : "\(abs(margin)) points below the \(standard.minimumTotal) minimum"
+        return "Total score \(totalScore), \(statusWord), \(marginPhrase)"
+    }
+
     // MARK: - Margin Over Minimum (plaque table — 10c/10d)
 
     private var marginOverMinimumCard: some View {
@@ -592,6 +645,8 @@ struct AFTCalculatorView: View {
                     }
                     .padding(.horizontal, 14)
                     .frame(height: 58)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(event.fullName), \(margin >= 0 ? "\(margin) points over the minimum" : "\(abs(margin)) points under the minimum")")
                     if index < marginsOverMinimum.count - 1 {
                         Divider().overlay(MVMTheme.hairline)
                     }
@@ -629,6 +684,8 @@ struct AFTCalculatorView: View {
             }
             .padding(18)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(overallPassed ? "Go" : "No go"), \(standard == .combat ? "Combat standard, 350 total, 60 minimum each event" : "General standard, 300 total, 60 minimum each event")")
     }
 
     // MARK: - Action Buttons

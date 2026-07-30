@@ -394,6 +394,8 @@ struct ProgressViewScreen: View {
                 .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label), \(value)")
     }
 
     private var generateWeek1Button: some View {
@@ -603,6 +605,8 @@ struct ProgressViewScreen: View {
         .frame(minHeight: 100)
         .mvmCard(cornerRadius: 20)
         .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(name), \(value), \(sublabel)")
     }
 
     // MARK: - Weekly Frequency Chart
