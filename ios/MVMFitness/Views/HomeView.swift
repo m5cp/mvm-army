@@ -54,14 +54,15 @@ struct HomeView: View {
     @State private var quickStartVM: QuickStartViewModel = QuickStartViewModel()
 
     private let calendar = Calendar.current
+    private let engine = AFTScoringEngine.shared
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 0) {
-                VStack(spacing: 24) {
-                    greetingHeader
+            VStack(alignment: .leading, spacing: 0) {
+                heroSection
 
-                    aftCalculatorHero
+                VStack(spacing: 24) {
+                    readinessPlaque
 
                     ActivationChecklistCard(
                         onScoreAFT: {
@@ -92,14 +93,14 @@ struct HomeView: View {
                     dailyActivitySection
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.top, 22)
                 .padding(.bottom, 48)
                 .adaptiveContainer()
             }
         }
         .background {
             ZStack {
-                MVMTheme.background.ignoresSafeArea()
+                MVMTheme.screen.ignoresSafeArea()
                 backgroundAmbience
             }
         }
@@ -124,16 +125,10 @@ struct HomeView: View {
                                     .font(.caption2.weight(.heavy))
                                     .tracking(0.5)
                             }
-                            .foregroundStyle(.white)
+                            .foregroundStyle(MVMTheme.onAmber)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
-                            .background(
-                                LinearGradient(
-                                    colors: [MVMTheme.accent, MVMTheme.accent2],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                            .background(MVMTheme.amberButtonGradient)
                             .clipShape(Capsule())
                         }
                     }
@@ -179,7 +174,7 @@ struct HomeView: View {
                 }
             }
         }
-        .toolbarBackground(MVMTheme.background, for: .navigationBar)
+        .toolbarBackground(MVMTheme.screen, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationDestination(isPresented: $showWorkoutDetail) {
             if let today = vm.todayWorkout {
@@ -423,7 +418,6 @@ struct HomeView: View {
         .ignoresSafeArea()
     }
 
-
     private func workoutIcon(for workout: WorkoutDay) -> String {
         let title = workout.title.lowercased()
         if title.contains("run") || title.contains("cardio") || title.contains("endurance") { return "figure.run" }
@@ -433,21 +427,53 @@ struct HomeView: View {
         return "figure.mixed.cardio"
     }
 
-    // MARK: - Greeting Header
+    // MARK: - Hero (13a / 13b)
 
-    private var greetingHeader: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(greetingText)
-                .font(.title2.weight(.bold))
-                .foregroundStyle(MVMTheme.primaryText)
+    /// Alternates between the two screened hero photos day-to-day for variety.
+    private var heroImageName: String {
+        calendar.component(.day, from: .now).isMultiple(of: 2) ? "hero-runner-dusk" : "hero-rucker-night"
+    }
 
-            Text(todaySubtitle)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(MVMTheme.tertiaryText)
+    private var hasAFTRecord: Bool {
+        !vm.aftScores.isEmpty
+    }
+
+    private var heroSection: some View {
+        ZStack(alignment: .bottomLeading) {
+            GradedPhoto(name: heroImageName, grade: .heroDuotone)
+                .frame(height: hasAFTRecord ? 232 : 280)
+                .clipped()
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(dateLine)
+                    .font(MVMTheme.mono(11))
+                    .kerning(2)
+                    .foregroundStyle(MVMTheme.amber)
+                    .lineLimit(1)
+                    .fixedSize()
+
+                Text(hasAFTRecord ? "Me vs Me." : "Start here.")
+                    .font(.system(size: 36, weight: .bold))
+                    .tracking(-1.2)
+                    .foregroundStyle(MVMTheme.text)
+
+                Text(hasAFTRecord ? todaySubtitle : "Five events, one score. Log a test and everything after it compares back to today.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(MVMTheme.textMuted)
+                    .frame(maxWidth: 300, alignment: .leading)
+                    .lineLimit(2)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 18)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .opacity(animateHero ? 1 : 0)
-        .offset(y: animateHero ? 0 : 8)
+    }
+
+    private var dateLine: String {
+        let f = DateFormatter()
+        f.dateFormat = "EEE d MMM " + MVMTheme.dot + " HHmm"
+        return f.string(from: .now).uppercased()
     }
 
     private var todaySubtitle: String {
@@ -456,106 +482,143 @@ struct HomeView: View {
         return "\(count) workout\(count == 1 ? "" : "s") today"
     }
 
-    // MARK: - AFT Calculator Hero (PRIORITY 1)
+    // MARK: - Readiness Plaque (latest AFT record — engine-derived only)
 
-    private var aftCalculatorHero: some View {
-        Button {
-            toolTapTrigger.toggle()
-            showAFTCalculator = true
-        } label: {
-            VStack(spacing: 18) {
-                HStack(spacing: 0) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("AFT CALCULATOR")
-                            .font(.caption.weight(.heavy))
-                            .tracking(1.4)
-                            .foregroundStyle(.white.opacity(0.7))
+    private var readinessPlaque: some View {
+        RaisedCard(radius: 24) {
+            if let latest = vm.aftScores.first {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(alignment: .top, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("READINESS")
+                                .font(MVMTheme.mono(11))
+                                .kerning(1.8)
+                                .foregroundStyle(MVMTheme.textMuted)
 
-                        Text("Score Your\nFitness Test")
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(.white)
-                            .lineSpacing(2)
-
-                        if let latest = vm.aftScores.first {
-                            HStack(spacing: 6) {
-                                Text("LAST: \(latest.totalScore)")
-                                    .font(.caption2.weight(.heavy))
-                                    .tracking(0.8)
-                                    .monospacedDigit()
-                                    .foregroundStyle(.white)
+                            HStack(alignment: .firstTextBaseline, spacing: 7) {
+                                Text("\(latest.totalScore)")
+                                    .font(MVMTheme.scoreDisplay(64))
+                                    .foregroundStyle(MVMTheme.text)
+                                    .lineLimit(1)
+                                    .fixedSize()
                                 Text("/ 500")
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.white.opacity(0.5))
+                                    .font(MVMTheme.mono(14))
+                                    .foregroundStyle(MVMTheme.textFaint)
+                                    .lineLimit(1)
+                                    .fixedSize()
                             }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Capsule().fill(.white.opacity(0.12)))
-                        } else {
-                            Text("Fast scoring for graders and test takers")
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(.white.opacity(0.55))
+
+                            Text(marginLabel(for: latest))
+                                .font(MVMTheme.mono(10))
+                                .kerning(0.4)
+                                .foregroundStyle(marginColor(for: latest))
+                                .lineLimit(1)
+                                .fixedSize()
                         }
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: passedOverall(latest) ? "checkmark.seal.fill" : "exclamationmark.seal.fill")
+                            .font(.system(size: 26))
+                            .foregroundStyle(passedOverall(latest) ? MVMTheme.success : MVMTheme.warning)
                     }
 
-                    Spacer(minLength: 0)
-
-                    ZStack {
-                        Circle()
-                            .stroke(.white.opacity(0.15), lineWidth: 1)
-                            .frame(width: 84, height: 84)
-                        Circle()
-                            .stroke(.white.opacity(0.08), lineWidth: 1)
-                            .frame(width: 66, height: 66)
+                    HStack(spacing: 8) {
+                        eventStatusChip(.mdl, latest.deadliftPoints, standard: latest.standard)
+                        eventStatusChip(.hrp, latest.pushUpPoints, standard: latest.standard)
+                        eventStatusChip(.sdc, latest.sdcPoints, standard: latest.standard)
+                        eventStatusChip(.plk, latest.plankPoints, standard: latest.standard)
+                        eventStatusChip(.run2mi, latest.runPoints, standard: latest.standard)
+                    }
+                }
+                .padding(20)
+            } else {
+                Button {
+                    toolTapTrigger.toggle()
+                    showAFTCalculator = true
+                } label: {
+                    HStack(spacing: 14) {
                         Image(systemName: "shield.checkered")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundStyle(.white)
-                            .symbolRenderingMode(.hierarchical)
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(MVMTheme.amber)
+                            .frame(width: 52, height: 52)
+                            .background(MVMTheme.well)
+                            .clipShape(Circle())
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("No AFT Score Yet")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(MVMTheme.text)
+                            Text("Log a baseline test to start tracking readiness")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(MVMTheme.textMuted)
+                                .lineLimit(2)
+                        }
+
+                        Spacer(minLength: 0)
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(MVMTheme.textFaint)
                     }
+                    .padding(20)
                 }
+                .buttonStyle(PressScaleButtonStyle())
+                .accessibilityLabel("Log your first AFT score")
             }
-            .padding(22)
-            .background {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .fill(MVMTheme.aftGradient)
-                    // Machined top-edge light catch
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [.white.opacity(0.25), .white.opacity(0.05), .clear],
-                                startPoint: .top,
-                                endPoint: .center
-                            ),
-                            lineWidth: 1
-                        )
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [.clear, .white.opacity(0.04), .clear],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: MVMTheme.brandGreen.opacity(0.3), radius: 24, y: 14)
         }
-        .buttonStyle(PressScaleButtonStyle())
-        .accessibilityLabel("AFT Calculator")
-        .accessibilityHint("Open the Army Fitness Test score calculator")
-        .scaleEffect(animateHero ? 1 : 0.96)
         .opacity(animateHero ? 1 : 0)
+        .offset(y: animateHero ? 0 : 8)
     }
 
-    // MARK: - Today Workout Section (PRIORITY 2)
+    /// Every value below comes straight from `AFTScoringEngine` — no thresholds computed here.
+    private func passedOverall(_ record: AFTScoreRecord) -> Bool {
+        let minimum = engine.minimumTotal(for: record.standard)
+        let eventsPassed = [record.deadliftPoints, record.pushUpPoints, record.sdcPoints, record.plankPoints, record.runPoints]
+            .allSatisfy { $0 >= record.standard.minimumPerEvent }
+        return eventsPassed && record.totalScore >= minimum
+    }
+
+    private func marginLabel(for record: AFTScoreRecord) -> String {
+        let minimum = engine.minimumTotal(for: record.standard)
+        let margin = record.totalScore - minimum
+        return margin >= 0
+            ? "+\(margin) OVER MINIMUM \(MVMTheme.dot) \(minimum) REQ"
+            : "\(margin) BELOW MINIMUM \(MVMTheme.dot) \(minimum) REQ"
+    }
+
+    private func marginColor(for record: AFTScoreRecord) -> Color {
+        let minimum = engine.minimumTotal(for: record.standard)
+        return record.totalScore - minimum >= 0 ? MVMTheme.success : MVMTheme.danger
+    }
+
+    private func eventStatusChip(_ event: AFTEventType, _ points: Int, standard: AFTStandard) -> some View {
+        VStack(spacing: 4) {
+            Text(event.displayCode)
+                .font(MVMTheme.mono(9, weight: .bold))
+                .foregroundStyle(MVMTheme.textMuted)
+                .lineLimit(1)
+                .fixedSize()
+            Text("\(points)")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(points >= standard.minimumPerEvent ? MVMTheme.success : MVMTheme.danger)
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(MVMTheme.well)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    // MARK: - Today Workout Section — graded session card (lowKeyGym)
 
     private var todayWorkoutSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("TODAY'S INDIVIDUAL PT")
-                .font(.caption.weight(.heavy))
-                .tracking(1.2)
-                .foregroundStyle(MVMTheme.tertiaryText)
+                .font(MVMTheme.mono(11))
+                .kerning(1.2)
+                .foregroundStyle(MVMTheme.textFaint)
                 .padding(.leading, 4)
 
             if let today = vm.todayWorkout, !today.isRestDay {
@@ -573,64 +636,57 @@ struct HomeView: View {
             startWorkoutTrigger.toggle()
             showPTWorkoutSheet = true
         } label: {
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Image(systemName: workoutIcon(for: workout))
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 28, height: 28)
-                            .background(.white.opacity(0.15))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+            RaisedCard(radius: 20) {
+                ZStack(alignment: .bottomLeading) {
+                    GradedPhoto(name: "lowkey-kettlebells", grade: .lowKeyGym)
+                        .frame(height: 176)
 
-                        if workout.isCompleted {
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.caption2)
-                                Text("DONE")
-                                    .font(.caption2.weight(.heavy))
-                                    .tracking(0.5)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            Image(systemName: workoutIcon(for: workout))
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(MVMTheme.onAmber)
+                                .frame(width: 26, height: 26)
+                                .background(MVMTheme.amber)
+                                .clipShape(RoundedRectangle(cornerRadius: 7))
+
+                            if workout.isCompleted {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.caption2)
+                                    Text("DONE")
+                                        .font(.caption2.weight(.heavy))
+                                        .kerning(0.5)
+                                }
+                                .foregroundStyle(MVMTheme.success)
                             }
-                            .foregroundStyle(MVMTheme.success)
+
+                            Spacer(minLength: 0)
+
+                            Image(systemName: "play.fill")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(MVMTheme.onAmber)
+                                .frame(width: 34, height: 34)
+                                .background(MVMTheme.amberButtonGradient)
+                                .clipShape(Circle())
                         }
+
+                        Text(workout.title)
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundStyle(MVMTheme.text)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+
+                        HStack(spacing: 10) {
+                            Label("\(workout.exercises.count) exercises", systemImage: "list.bullet")
+                            Label(estimatedDuration(workout), systemImage: "clock")
+                        }
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(MVMTheme.textMuted)
                     }
-
-                    Text(workout.title)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-
-                    HStack(spacing: 8) {
-                        Label("\(workout.exercises.count) exercises", systemImage: "list.bullet")
-                        Label(estimatedDuration(workout), systemImage: "clock")
-                    }
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.6))
-                }
-
-                Spacer(minLength: 0)
-
-                VStack(spacing: 6) {
-                    Image(systemName: "play.fill")
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 48, height: 48)
-                        .background(.white.opacity(0.15))
-                        .clipShape(Circle())
-
-                    Text("Start")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                    .padding(16)
                 }
             }
-            .padding(18)
-            .background {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(MVMTheme.ptGradient)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .shadow(color: Color(hex: "#2E5A7C").opacity(0.2), radius: 16, y: 10)
         }
         .buttonStyle(PressScaleButtonStyle())
         .accessibilityLabel("Today's Individual PT: \(workout.title), \(workout.exercises.count) exercises")
@@ -650,10 +706,10 @@ struct HomeView: View {
                         Text("Log Complete")
                             .font(.caption.weight(.bold))
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(MVMTheme.onAmber)
                     .frame(maxWidth: .infinity)
                     .frame(height: 40)
-                    .background(MVMTheme.heroGradient)
+                    .background(MVMTheme.amberButtonGradient)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
                 .sensoryFeedback(.success, trigger: todayCompleteTrigger)
@@ -685,11 +741,11 @@ struct HomeView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(MVMTheme.secondaryText)
                     .frame(width: 40, height: 40)
-                    .background(MVMTheme.cardSoft)
+                    .background(MVMTheme.well)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay {
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(MVMTheme.border)
+                            .stroke(MVMTheme.hairline)
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
@@ -710,11 +766,11 @@ struct HomeView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(MVMTheme.secondaryText)
                     .frame(width: 40, height: 40)
-                    .background(MVMTheme.cardSoft)
+                    .background(MVMTheme.well)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay {
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(MVMTheme.border)
+                            .stroke(MVMTheme.hairline)
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
@@ -727,11 +783,11 @@ struct HomeView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(MVMTheme.secondaryText)
                     .frame(width: 40, height: 40)
-                    .background(MVMTheme.cardSoft)
+                    .background(MVMTheme.well)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay {
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(MVMTheme.border)
+                            .stroke(MVMTheme.hairline)
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
@@ -744,9 +800,9 @@ struct HomeView: View {
     private var todayFunctionalSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("TODAY'S FUNCTIONFITNESS")
-                .font(.caption.weight(.heavy))
-                .tracking(1.2)
-                .foregroundStyle(MVMTheme.tertiaryText)
+                .font(MVMTheme.mono(11))
+                .kerning(1.2)
+                .foregroundStyle(MVMTheme.textFaint)
                 .padding(.leading, 4)
 
             if let template = vm.todayFunctionalWOD {
@@ -755,31 +811,32 @@ struct HomeView: View {
                 Button {
                     showFunctionalWODSheet = true
                 } label: {
-                    HStack(spacing: 14) {
-                        Image(systemName: "bolt.heart.fill")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(MVMTheme.heroAmber)
-                            .frame(width: 44, height: 44)
-                            .background(MVMTheme.heroAmber.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    RaisedCard(radius: 16) {
+                        HStack(spacing: 14) {
+                            Image(systemName: "bolt.heart.fill")
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(MVMTheme.amber)
+                                .frame(width: 44, height: 44)
+                                .background(MVMTheme.well)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Generate FunctionFitness Workout")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(MVMTheme.primaryText)
-                            Text("Get a FunctionFitness session")
-                                .font(.caption)
-                                .foregroundStyle(MVMTheme.tertiaryText)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Generate FunctionFitness Workout")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(MVMTheme.text)
+                                Text("Get a FunctionFitness session")
+                                    .font(.caption)
+                                    .foregroundStyle(MVMTheme.textFaint)
+                            }
+
+                            Spacer(minLength: 0)
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(MVMTheme.textFaint)
                         }
-
-                        Spacer(minLength: 0)
-
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(MVMTheme.tertiaryText)
+                        .padding(16)
                     }
-                    .padding(16)
-                    .premiumCard()
                 }
                 .buttonStyle(PressScaleButtonStyle())
             }
@@ -792,64 +849,54 @@ struct HomeView: View {
         return Button {
             showFunctionalWODSheet = true
         } label: {
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "bolt.heart.fill")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 28, height: 28)
-                            .background(.white.opacity(0.15))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+            RaisedCard(radius: 20) {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "bolt.heart.fill")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(MVMTheme.onAmber)
+                                .frame(width: 28, height: 28)
+                                .background(MVMTheme.amber)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                        Text("FUNCTIONFITNESS")
-                            .font(.caption2.weight(.heavy))
-                            .tracking(0.8)
-                            .foregroundStyle(.white.opacity(0.7))
+                            Text("FUNCTIONFITNESS")
+                                .font(.caption2.weight(.heavy))
+                                .tracking(0.8)
+                                .foregroundStyle(MVMTheme.textMuted)
+                        }
+
+                        Text(template.title)
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(MVMTheme.text)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+
+                        HStack(spacing: 8) {
+                            Label("\(template.movements.count) movements", systemImage: "list.bullet")
+                            Label("~\(template.durationMinutes) min", systemImage: "clock")
+                        }
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(MVMTheme.textMuted)
                     }
 
-                    Text(template.title)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
 
-                    HStack(spacing: 8) {
-                        Label("\(template.movements.count) movements", systemImage: "list.bullet")
-                        Label("~\(template.durationMinutes) min", systemImage: "clock")
+                    VStack(spacing: 6) {
+                        Image(systemName: "play.fill")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(MVMTheme.onAmber)
+                            .frame(width: 48, height: 48)
+                            .background(MVMTheme.amberButtonGradient)
+                            .clipShape(Circle())
+
+                        Text("View")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(MVMTheme.textFaint)
                     }
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.6))
                 }
-
-                Spacer(minLength: 0)
-
-                VStack(spacing: 6) {
-                    Image(systemName: "play.fill")
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 48, height: 48)
-                        .background(.white.opacity(0.15))
-                        .clipShape(Circle())
-
-                    Text("View")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.6))
-                }
+                .padding(18)
             }
-            .padding(18)
-            .background {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(
-                        LinearGradient(
-                            colors: [MVMTheme.functionalAmber, MVMTheme.functionalAmberDark.opacity(0.95)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .shadow(color: MVMTheme.functionalAmber.opacity(0.2), radius: 16, y: 10)
         }
         .buttonStyle(PressScaleButtonStyle())
         .accessibilityLabel("Today's FunctionFitness: \(template.title), \(template.movements.count) movements")
@@ -875,16 +922,10 @@ struct HomeView: View {
                     Text("Log Complete")
                         .font(.caption.weight(.bold))
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(MVMTheme.onAmber)
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
-                .background(
-                    LinearGradient(
-                        colors: [MVMTheme.functionalAmber, MVMTheme.functionalAmberDark],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .background(MVMTheme.amberButtonGradient)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .sensoryFeedback(.success, trigger: todayCompleteTrigger)
@@ -899,11 +940,11 @@ struct HomeView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(MVMTheme.secondaryText)
                     .frame(width: 40, height: 40)
-                    .background(MVMTheme.cardSoft)
+                    .background(MVMTheme.well)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay {
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(MVMTheme.border)
+                            .stroke(MVMTheme.hairline)
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
@@ -924,11 +965,11 @@ struct HomeView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(MVMTheme.secondaryText)
                     .frame(width: 40, height: 40)
-                    .background(MVMTheme.cardSoft)
+                    .background(MVMTheme.well)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay {
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(MVMTheme.border)
+                            .stroke(MVMTheme.hairline)
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
@@ -941,11 +982,11 @@ struct HomeView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(MVMTheme.secondaryText)
                     .frame(width: 40, height: 40)
-                    .background(MVMTheme.cardSoft)
+                    .background(MVMTheme.well)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay {
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(MVMTheme.border)
+                            .stroke(MVMTheme.hairline)
                     }
             }
             .buttonStyle(PressScaleButtonStyle())
@@ -957,31 +998,32 @@ struct HomeView: View {
         Button {
             showMyPTPlanSheet = true
         } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "calendar.badge.plus")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(MVMTheme.accent)
-                    .frame(width: 44, height: 44)
-                    .background(MVMTheme.accent.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            RaisedCard(radius: 16) {
+                HStack(spacing: 14) {
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(MVMTheme.amber)
+                        .frame(width: 44, height: 44)
+                        .background(MVMTheme.well)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("No Workout Scheduled")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                    Text("Create a plan to get started")
-                        .font(.caption)
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("No Workout Scheduled")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(MVMTheme.text)
+                        Text("Create a plan to get started")
+                            .font(.caption)
+                            .foregroundStyle(MVMTheme.textFaint)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.textFaint)
                 }
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(MVMTheme.tertiaryText)
+                .padding(16)
             }
-            .padding(16)
-            .premiumCard()
         }
         .buttonStyle(PressScaleButtonStyle())
     }
@@ -993,41 +1035,31 @@ struct HomeView: View {
             toolTapTrigger.toggle()
             showQuickStartSheet = true
         } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "bolt.fill")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(
-                        LinearGradient(
-                            colors: [MVMTheme.emeraldAccent, MVMTheme.emeraldAccentDark],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Quick Start")
+            RaisedCard(radius: 16) {
+                HStack(spacing: 14) {
+                    Image(systemName: "bolt.fill")
                         .font(.subheadline.weight(.bold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                    Text("Run · Bike · Hike · Fitness")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .foregroundStyle(MVMTheme.onAmber)
+                        .frame(width: 36, height: 36)
+                        .background(MVMTheme.amberButtonGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Quick Start")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(MVMTheme.text)
+                        Text("Run \(MVMTheme.dot) Bike \(MVMTheme.dot) Hike \(MVMTheme.dot) Fitness")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(MVMTheme.textFaint)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "play.circle.fill")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(MVMTheme.amber)
                 }
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "play.circle.fill")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(MVMTheme.emeraldAccent)
-            }
-            .padding(14)
-            .background(MVMTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(MVMTheme.emeraldAccent.opacity(0.2))
+                .padding(14)
             }
         }
         .buttonStyle(PressScaleButtonStyle())
@@ -1037,17 +1069,17 @@ struct HomeView: View {
         .offset(y: animateHero ? 0 : 8)
     }
 
-    // MARK: - Planning Section (PRIORITY 3)
+    // MARK: - Planning Section
 
     private var planningSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("PLANNING")
-                .font(.caption.weight(.heavy))
-                .tracking(1.2)
-                .foregroundStyle(MVMTheme.tertiaryText)
+                .font(MVMTheme.mono(11))
+                .kerning(1.2)
+                .foregroundStyle(MVMTheme.textFaint)
                 .padding(.leading, 4)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 planRow(
                     title: "Plan My Individual PT",
                     subtitle: "Build your personal week",
@@ -1062,7 +1094,7 @@ struct HomeView: View {
                     title: "Plan My FunctionFitness",
                     subtitle: "FunctionFitness workouts",
                     icon: "bolt.heart.fill",
-                    color: MVMTheme.heroAmber
+                    color: MVMTheme.amber
                 ) {
                     toolTapTrigger.toggle()
                     showWODPlanSheet = true
@@ -1072,7 +1104,7 @@ struct HomeView: View {
                     title: "Plan My Unit PT",
                     subtitle: "Formation-level sessions",
                     icon: "person.3.fill",
-                    color: MVMTheme.accent
+                    color: MVMTheme.amber
                 ) {
                     toolTapTrigger.toggle()
                     if ProGate.isUnlocked(.unitPTBuilder, isPremium: store.isPremium, savedUnitPTPlanCount: vm.unitPTPlans.count) {
@@ -1102,73 +1134,56 @@ struct HomeView: View {
         Button {
             action()
         } label: {
-            HStack(spacing: 14) {
-                Image(systemName: icon)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(color)
-                    .frame(width: 40, height: 40)
-                    .background(color.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            RaisedCard(radius: 14) {
+                HStack(spacing: 14) {
+                    Image(systemName: icon)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(color)
+                        .frame(width: 40, height: 40)
+                        .background(MVMTheme.well)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MVMTheme.primaryText)
-                    Text(subtitle)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(MVMTheme.text)
+                        Text(subtitle)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(MVMTheme.textFaint)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(MVMTheme.textFaint)
                 }
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(MVMTheme.tertiaryText)
+                .padding(14)
             }
-            .padding(14)
-            .mvmCard(cornerRadius: 14)
         }
         .buttonStyle(PressScaleButtonStyle())
     }
 
-    // MARK: - Daily Activity Section (PRIORITY 4)
+    // MARK: - Daily Activity Section
 
     private var dailyActivitySection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("DAILY ACTIVITY")
-                .font(.caption.weight(.heavy))
-                .tracking(1.2)
-                .foregroundStyle(MVMTheme.tertiaryText)
+                .font(MVMTheme.mono(11))
+                .kerning(1.2)
+                .foregroundStyle(MVMTheme.textFaint)
                 .padding(.leading, 4)
 
-            HStack(spacing: 0) {
-                metricPill(
-                    icon: "figure.walk",
-                    value: formattedSteps,
-                    label: "Steps Today",
-                    color: MVMTheme.accent
-                )
-
-                metricDivider
-
-                metricPill(
-                    icon: "checkmark.circle.fill",
-                    value: "\(vm.weeklyCompletedCount)/\(vm.weeklyTotalDays)",
-                    label: "This Week",
-                    color: MVMTheme.success
-                )
-
-                metricDivider
-
-                metricPill(
-                    icon: "flame.fill",
-                    value: "\(vm.streak)",
-                    label: vm.streak == 1 ? "Day" : "Days",
-                    color: MVMTheme.warning
-                )
+            RaisedCard(radius: 20) {
+                HStack(spacing: 0) {
+                    MetricCell(label: "STEPS TODAY", value: formattedSteps, valueColor: MVMTheme.amber)
+                    metricDivider
+                    MetricCell(label: "THIS WEEK", value: "\(vm.weeklyCompletedCount)/\(vm.weeklyTotalDays)", valueColor: MVMTheme.success)
+                    metricDivider
+                    MetricCell(label: vm.streak == 1 ? "DAY STREAK" : "DAYS STREAK", value: "\(vm.streak)", valueColor: MVMTheme.warning)
+                }
+                .padding(.vertical, 8)
             }
-            .padding(.vertical, 18)
-            .mvmCard(cornerRadius: 20)
         }
         .opacity(animateMetrics ? 1 : 0)
         .offset(y: animateMetrics ? 0 : 12)
@@ -1176,28 +1191,8 @@ struct HomeView: View {
 
     private var metricDivider: some View {
         Rectangle()
-            .fill(MVMTheme.border)
+            .fill(MVMTheme.hairline)
             .frame(width: 1, height: 32)
-    }
-
-    private func metricPill(icon: String, value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 5) {
-                Image(systemName: icon)
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(color)
-                Text(value)
-                    .font(.system(.headline, design: .rounded).weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
-                    .contentTransition(.numericText())
-            }
-            Text(label)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(MVMTheme.tertiaryText)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label): \(value)")
     }
 
     // MARK: - Calendar Export Sheet
@@ -1269,13 +1264,6 @@ struct HomeView: View {
     }
 
     // MARK: - Helpers
-
-    private var greetingText: String {
-        let hour = Calendar.current.component(.hour, from: .now)
-        if hour < 12 { return "Good morning" }
-        if hour < 17 { return "Drive on" }
-        return "Good evening"
-    }
 
     private var formattedSteps: String {
         let steps = vm.pedometer.todaySteps
