@@ -134,7 +134,8 @@ struct PTPlanShareCardSheet: View {
 
 @MainActor
 enum PTPlanCardRenderer {
-    private static let accentGreen = UIColor(red: 0.18, green: 0.49, blue: 0.32, alpha: 1.0)
+    // Golden Hour green sweep — mirrors MVMTheme.amber (#E8A33D).
+    private static let accentGreen = UIColor(red: 0.910, green: 0.639, blue: 0.239, alpha: 1.0)
 
     static func render(plan: WeeklyPlan) -> UIImage? {
         let w: CGFloat = 1080

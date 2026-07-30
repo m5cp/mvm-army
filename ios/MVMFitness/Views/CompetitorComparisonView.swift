@@ -611,7 +611,7 @@ struct CompetitorComparisonView: View {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(
                         LinearGradient(
-                            colors: [Color(hex: "#1B5E3B"), MVMTheme.accent.opacity(0.9)],
+                            colors: [MVMTheme.duotone, MVMTheme.accent.opacity(0.9)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

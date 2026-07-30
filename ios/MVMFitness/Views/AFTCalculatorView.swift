@@ -89,6 +89,25 @@ struct AFTCalculatorView: View {
         allEventsPassed && totalScore >= standard.minimumTotal
     }
 
+    /// Delta vs the last SAVED test — nil means no saved history yet (baseline treatment).
+    /// Reads only vm.latestAFTScore; no scoring math, plain arithmetic on two engine totals.
+    private var deltaVsPrevious: Int? {
+        guard let previous = vm.latestAFTScore else { return nil }
+        return totalScore - previous.totalScore
+    }
+
+    /// Points over the 60-pt minimum per event — arithmetic on engine-produced
+    /// points and the standard's own minimumPerEvent constant. No interpolation.
+    private var marginsOverMinimum: [(AFTEventType, Int)] {
+        [
+            (.mdl, deadliftPoints - standard.minimumPerEvent),
+            (.hrp, pushUpPoints - standard.minimumPerEvent),
+            (.sdc, sdcPoints - standard.minimumPerEvent),
+            (.plk, plankPoints - standard.minimumPerEvent),
+            (.run2mi, runPoints - standard.minimumPerEvent)
+        ]
+    }
+
     private var preview: AFTCalculatorResult {
         let eventScores: [(String, Int)] = [
             ("MDL", deadliftPoints), ("HRP", pushUpPoints), ("SDC", sdcPoints),
@@ -133,6 +152,7 @@ struct AFTCalculatorView: View {
                     plankEventRow
                     runEventRow
                     totalScoreCard
+                    marginOverMinimumCard
                     overallPassFailCard
                     actionButtons
                 }
@@ -513,6 +533,22 @@ struct AFTCalculatorView: View {
                     passed: overallPassed
                 )
 
+                if let delta = deltaVsPrevious {
+                    Text((delta >= 0 ? "+" : "\u{2212}") + "\(abs(delta)) VS LAST")
+                        .font(MVMTheme.mono(11))
+                        .kerning(1)
+                        .foregroundStyle(delta >= 0 ? MVMTheme.amber : MVMTheme.textMuted)
+                        .lineLimit(1)
+                        .fixedSize()
+                } else {
+                    Text("BASELINE \(MVMTheme.dot) EVERYTHING COMPARES BACK TO TODAY")
+                        .font(MVMTheme.mono(10))
+                        .kerning(1)
+                        .foregroundStyle(MVMTheme.textMuted)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+
                 HStack(spacing: 8) {
                     scorePill(.mdl, deadliftPoints)
                     scorePill(.hrp, pushUpPoints)
@@ -522,6 +558,37 @@ struct AFTCalculatorView: View {
                 }
             }
             .padding(18)
+        }
+    }
+
+    // MARK: - Margin Over Minimum (plaque table — 10c/10d)
+
+    private var marginOverMinimumCard: some View {
+        RaisedCard {
+            VStack(spacing: 0) {
+                ForEach(Array(marginsOverMinimum.enumerated()), id: \.offset) { index, pair in
+                    let (event, margin) = pair
+                    HStack(spacing: 12) {
+                        EventTagChip(event: event)
+                        Text("OVER MINIMUM")
+                            .font(MVMTheme.mono(10))
+                            .kerning(1.2)
+                            .foregroundStyle(MVMTheme.textFaint)
+                        Spacer()
+                        Text((margin >= 0 ? "+" : "\u{2212}") + "\(abs(margin))")
+                            .font(MVMTheme.scoreDisplay(22))
+                            .foregroundStyle(margin >= 0 ? MVMTheme.amber : MVMTheme.danger)
+                            .contentTransition(.numericText())
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
+                    .padding(.horizontal, 14)
+                    .frame(height: 58)
+                    if index < marginsOverMinimum.count - 1 {
+                        Divider().overlay(MVMTheme.hairline)
+                    }
+                }
+            }
         }
     }
 

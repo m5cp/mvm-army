@@ -36,6 +36,7 @@ struct ProfileView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 28) {
                     profileHeader
+                    BadgesView()
                     subscriptionSection
                     currentGoalSection
                     fitnessStandardsSection

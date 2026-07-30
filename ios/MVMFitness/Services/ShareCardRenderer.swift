@@ -94,7 +94,9 @@ enum ShareCardRenderer {
 enum ShareCardCGHelpers {
     static let width: CGFloat = 1080
     static let bgColor = UIColor(red: 0.047, green: 0.059, blue: 0.055, alpha: 1.0)
-    static let accentBlue = UIColor(red: 0.18, green: 0.49, blue: 0.32, alpha: 1.0)
+    // Golden Hour green sweep — mirrors MVMTheme.amber (#E8A33D). Name kept to
+    // avoid touching every call site across the share-card renderers.
+    static let accentBlue = UIColor(red: 0.910, green: 0.639, blue: 0.239, alpha: 1.0)
     static let accentPurple = UIColor(red: 0.29, green: 0.49, blue: 0.42, alpha: 1.0)
     static let successGreen = UIColor(red: 0.133, green: 0.773, blue: 0.369, alpha: 1.0)
     static let warningAmber = UIColor(red: 0.769, green: 0.514, blue: 0.231, alpha: 1.0)
@@ -104,8 +106,8 @@ enum ShareCardCGHelpers {
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))
 
         let colors = [
-            UIColor(red: 0.106, green: 0.369, blue: 0.231, alpha: 0.14).cgColor,
-            UIColor(red: 0.18, green: 0.49, blue: 0.32, alpha: 0.06).cgColor,
+            UIColor(red: 0.910, green: 0.639, blue: 0.239, alpha: 0.14).cgColor,
+            UIColor(red: 0.910, green: 0.639, blue: 0.239, alpha: 0.06).cgColor,
             UIColor.clear.cgColor
         ] as CFArray
         let colorSpace = CGColorSpaceCreateDeviceRGB()
