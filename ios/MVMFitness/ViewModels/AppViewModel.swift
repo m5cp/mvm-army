@@ -1297,7 +1297,7 @@ final class AppViewModel {
             text += "\n"
         }
 
-        text += "#MVMFitness"
+        text += "#MVMFitness\n\(AppLinks.appStoreURLString)"
         return text
     }
 

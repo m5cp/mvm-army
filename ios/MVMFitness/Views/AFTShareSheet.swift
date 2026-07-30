@@ -399,13 +399,7 @@ enum AFTCardRenderer {
         let leftStr = NSAttributedString(string: "Me vs Me", attributes: leftAttrs)
         leftStr.draw(at: CGPoint(x: 60, y: y + 20))
 
-        let rightAttrs: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 20, weight: .medium),
-            .foregroundColor: UIColor.white.withAlphaComponent(0.2)
-        ]
-        let rightStr = NSAttributedString(string: "#MVMFitness", attributes: rightAttrs)
-        let rightSize = rightStr.size()
-        rightStr.draw(at: CGPoint(x: width - 60 - rightSize.width, y: y + 20))
+        ShareCardCGHelpers.drawAppQRFooter(context: context, width: width, footerTopY: y)
     }
 
     private static func eventColor(_ points: Int) -> UIColor {

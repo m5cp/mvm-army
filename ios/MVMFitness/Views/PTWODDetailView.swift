@@ -624,7 +624,7 @@ struct PTWODShareSheet: View {
         for exercise in workout.exercises {
             text += "• \(exercise.name) — \(exercise.displayDetail)\n"
         }
-        text += "\n#MVMFitness #ArmyFitness"
+        text += "\n#MVMFitness #ArmyFitness\n\(AppLinks.appStoreURLString)"
         return text
     }
 }

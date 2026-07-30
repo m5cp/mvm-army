@@ -117,6 +117,7 @@ nonisolated struct UnitPTDayPlan: Codable, Identifiable, Hashable, Sendable {
             text += "\nStandard: \(standard)"
         }
 
+        text += "\n\n\(AppLinks.appStoreURLString)"
         return text
     }
 }
@@ -203,7 +204,7 @@ nonisolated struct UnitPTFullPlan: Codable, Identifiable, Hashable, Sendable {
             text += "\n"
         }
 
-        text += "#MVMFitness"
+        text += "#MVMFitness\n\(AppLinks.appStoreURLString)"
         return text
     }
 }
@@ -275,6 +276,8 @@ nonisolated struct UnitPTPlan: Codable, Identifiable, Hashable, Sendable {
 
         Leader Notes:
         \(leaderNotes)
+
+        \(AppLinks.appStoreURLString)
         """
     }
 

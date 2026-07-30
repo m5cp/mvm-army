@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CoreImage.CIFilterBuiltins
 
 enum ShareCardType {
     case workout(title: String, exercises: [WorkoutExercise], tags: [String])
@@ -171,13 +172,51 @@ enum ShareCardCGHelpers {
         let leftStr = NSAttributedString(string: "MVM Fitness", attributes: leftAttrs)
         leftStr.draw(at: CGPoint(x: 60, y: y + 20))
 
-        let rightAttrs: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 20, weight: .bold),
-            .foregroundColor: successGreen.withAlphaComponent(0.85)
+        drawAppQRFooter(context: context, width: width, footerTopY: y)
+    }
+
+    /// Renders a small "GET THE APP" QR code pointing at the App Store listing,
+    /// used on the right side of every share-card footer strip.
+    static func drawAppQRFooter(context: CGContext, width: CGFloat, footerTopY: CGFloat) {
+        let qrSize: CGFloat = 48
+        let qrX = width - 60 - qrSize
+        let qrY = footerTopY + 16
+
+        let labelAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.monospacedSystemFont(ofSize: 11, weight: .bold),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.35),
+            .kern: 1.2
         ]
-        let rightStr = NSAttributedString(string: "Free on the App Store", attributes: rightAttrs)
-        let rightSize = rightStr.size()
-        rightStr.draw(at: CGPoint(x: width - 60 - rightSize.width, y: y + 20))
+        let labelStr = NSAttributedString(string: "GET THE\nAPP", attributes: labelAttrs)
+        let labelBounds = labelStr.boundingRect(with: CGSize(width: 90, height: 40), options: [.usesLineFragmentOrigin], context: nil)
+        labelStr.draw(with: CGRect(x: qrX - labelBounds.width - 14, y: qrY + qrSize / 2 - labelBounds.height / 2, width: labelBounds.width, height: labelBounds.height), options: [.usesLineFragmentOrigin], context: nil)
+
+        drawQRCode(context: context, x: qrX, y: qrY, size: qrSize)
+    }
+
+    /// Draws a scannable QR code (white plate + module image) at the given origin.
+    static func drawQRCode(context: CGContext, x: CGFloat, y: CGFloat, size: CGFloat) {
+        let pad: CGFloat = 6
+        let plateRect = CGRect(x: x - pad, y: y - pad, width: size + pad * 2, height: size + pad * 2)
+        let platePath = UIBezierPath(roundedRect: plateRect, cornerRadius: 8)
+        context.setFillColor(UIColor.white.cgColor)
+        context.addPath(platePath.cgPath)
+        context.fillPath()
+
+        guard let qrImage = qrCodeImage(string: AppLinks.appStoreURLString, pixelSize: size) else { return }
+        qrImage.draw(in: CGRect(x: x, y: y, width: size, height: size))
+    }
+
+    private static func qrCodeImage(string: String, pixelSize: CGFloat) -> UIImage? {
+        let ciContext = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(string.utf8)
+        filter.correctionLevel = "M"
+        guard let output = filter.outputImage else { return nil }
+        let scale = pixelSize / output.extent.width
+        let scaled = output.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+        guard let cgImage = ciContext.createCGImage(scaled, from: scaled.extent) else { return nil }
+        return UIImage(cgImage: cgImage)
     }
 
     static func drawCheckmarkBadge(context: CGContext, centerX: CGFloat, centerY: CGFloat, radius: CGFloat) {
