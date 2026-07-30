@@ -22,6 +22,7 @@ struct AFTCalculatorView: View {
     @State private var didSave = false
     @State private var showExportSheet = false
     @State private var showAFTShareSheet: Bool = false
+    @State private var showScoreHistory: Bool = false
     @FocusState private var focusedField: CalculatorField?
 
     private enum CalculatorField: Hashable {
@@ -148,6 +149,16 @@ struct AFTCalculatorView: View {
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showScoreHistory = true
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+                }
+                .accessibilityLabel("Saved AFT Scores")
+            }
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
@@ -156,6 +167,9 @@ struct AFTCalculatorView: View {
                 }
                 .fontWeight(.semibold)
             }
+        }
+        .sheet(isPresented: $showScoreHistory) {
+            AFTScoreSheet()
         }
         .sheet(isPresented: $showAFTShareSheet) {
             AFTShareSheet(score: AFTScoreRecord(

@@ -2,22 +2,28 @@ import SwiftUI
 
 nonisolated enum AppTab: Int, CaseIterable, Sendable {
     case home = 0
-    case progress = 1
-    case profile = 2
+    case score = 1
+    case train = 2
+    case trend = 3
+    case you = 4
 
     var title: String {
         switch self {
         case .home: return "Home"
-        case .progress: return "Progress"
-        case .profile: return "Profile"
+        case .score: return "Score"
+        case .train: return "Train"
+        case .trend: return "Trend"
+        case .you: return "You"
         }
     }
 
     var icon: String {
         switch self {
         case .home: return "house.fill"
-        case .progress: return "chart.line.uptrend.xyaxis"
-        case .profile: return "person.crop.circle.fill"
+        case .score: return "list.clipboard.fill"
+        case .train: return "figure.strengthtraining.functional"
+        case .trend: return "chart.bar.fill"
+        case .you: return "person.fill"
         }
     }
 }
@@ -26,8 +32,10 @@ struct MainTabView: View {
     @Environment(AppViewModel.self) private var vm
     @State private var selectedTab: AppTab = .home
     @State private var homePath = NavigationPath()
-    @State private var progressPath = NavigationPath()
-    @State private var profilePath = NavigationPath()
+    @State private var scorePath = NavigationPath()
+    @State private var trainPath = NavigationPath()
+    @State private var trendPath = NavigationPath()
+    @State private var youPath = NavigationPath()
 
     var body: some View {
         ZStack {
@@ -37,17 +45,29 @@ struct MainTabView: View {
             .opacity(selectedTab == .home ? 1 : 0)
             .zIndex(selectedTab == .home ? 1 : 0)
 
-            NavigationStack(path: $progressPath) {
+            NavigationStack(path: $scorePath) {
+                AFTCalculatorView()
+            }
+            .opacity(selectedTab == .score ? 1 : 0)
+            .zIndex(selectedTab == .score ? 1 : 0)
+
+            NavigationStack(path: $trainPath) {
+                PlanView()
+            }
+            .opacity(selectedTab == .train ? 1 : 0)
+            .zIndex(selectedTab == .train ? 1 : 0)
+
+            NavigationStack(path: $trendPath) {
                 ProgressViewScreen()
             }
-            .opacity(selectedTab == .progress ? 1 : 0)
-            .zIndex(selectedTab == .progress ? 1 : 0)
+            .opacity(selectedTab == .trend ? 1 : 0)
+            .zIndex(selectedTab == .trend ? 1 : 0)
 
-            NavigationStack(path: $profilePath) {
+            NavigationStack(path: $youPath) {
                 ProfileView()
             }
-            .opacity(selectedTab == .profile ? 1 : 0)
-            .zIndex(selectedTab == .profile ? 1 : 0)
+            .opacity(selectedTab == .you ? 1 : 0)
+            .zIndex(selectedTab == .you ? 1 : 0)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             customTabBar
@@ -67,8 +87,10 @@ struct MainTabView: View {
                     if selectedTab == tab {
                         switch tab {
                         case .home: homePath = NavigationPath()
-                        case .progress: progressPath = NavigationPath()
-                        case .profile: profilePath = NavigationPath()
+                        case .score: scorePath = NavigationPath()
+                        case .train: trainPath = NavigationPath()
+                        case .trend: trendPath = NavigationPath()
+                        case .you: youPath = NavigationPath()
                         }
                     } else {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -83,7 +105,7 @@ struct MainTabView: View {
                         Text(tab.title)
                             .font(.caption2.weight(selectedTab == tab ? .bold : .medium))
                     }
-                    .foregroundStyle(selectedTab == tab ? MVMTheme.accent : MVMTheme.secondaryText)
+                    .foregroundStyle(selectedTab == tab ? MVMTheme.amber : MVMTheme.secondaryText)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .contentShape(Rectangle())
