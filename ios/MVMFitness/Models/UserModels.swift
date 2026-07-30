@@ -22,7 +22,7 @@ nonisolated enum TrainingFocus: String, CaseIterable, Codable, Identifiable, Sen
     case endurance = "Endurance"
     case tacticalConditioning = "Tactical Conditioning"
     case recovery = "Recovery"
-    case generalArmyFitness = "General Army Fitness"
+    case generalArmyFitness = "General Fitness"
 
     var id: String { rawValue }
 

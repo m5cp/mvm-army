@@ -21,7 +21,18 @@ struct OnboardingView: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                MVMTheme.background.ignoresSafeArea()
+                MVMTheme.screen.ignoresSafeArea()
+
+                RadialGradient(
+                    stops: [
+                        .init(color: MVMTheme.amber.opacity(0.16), location: 0),
+                        .init(color: .clear, location: 0.6)
+                    ],
+                    center: .init(x: 0.5, y: -0.05),
+                    startRadius: 0,
+                    endRadius: 460
+                )
+                .ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     HStack {
@@ -31,10 +42,11 @@ struct OnboardingView: View {
                         } label: {
                             Text("Skip")
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(MVMTheme.secondaryText)
+                                .foregroundStyle(MVMTheme.textMuted)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
-                                .background(Color.white.opacity(0.06))
+                                .background(MVMTheme.well)
+                                .overlay(Capsule().stroke(MVMTheme.hairline, lineWidth: 1))
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -53,7 +65,7 @@ struct OnboardingView: View {
                             .padding(.horizontal, 24)
                             .frame(maxWidth: min(geo.size.width - 48, 440))
                             .frame(maxWidth: .infinity)
-                            .padding(.top, step == 0 ? 60 : 32)
+                            .padding(.top, step == 0 ? 40 : 32)
                             .padding(.bottom, 24)
                     }
 
@@ -83,8 +95,9 @@ struct OnboardingView: View {
         HStack(spacing: 6) {
             ForEach(1..<5, id: \.self) { i in
                 Capsule()
-                    .fill(i <= step ? MVMTheme.accent : Color.white.opacity(0.1))
+                    .fill(i <= step ? MVMTheme.amber : MVMTheme.well)
                     .frame(height: 4)
+                    .overlay(Capsule().stroke(MVMTheme.hairline, lineWidth: i <= step ? 0 : 1))
                     .animation(.spring(response: 0.3), value: step)
             }
         }
@@ -109,27 +122,33 @@ struct OnboardingView: View {
     // MARK: - Step 0: Welcome
 
     private var welcomeStep: some View {
-        VStack(spacing: 32) {
-            Image("AppLogo")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 120, height: 120)
-                .clipShape(RoundedRectangle(cornerRadius: 28))
+        VStack(spacing: 30) {
+            ZStack {
+                Circle()
+                    .fill(MVMTheme.cardGradient)
+                    .frame(width: 132, height: 132)
+                    .overlay(Circle().stroke(MVMTheme.hairline, lineWidth: 1))
+                    .shadow(color: .black.opacity(0.6), radius: 16, y: 12)
+                Image("mvm-glyph-summit-m")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 66)
+            }
 
             VStack(spacing: 10) {
-                Text("MVM FITNESS")
+                Text("MVM FIT")
                     .font(.system(size: 30, weight: .heavy))
                     .tracking(2.5)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(MVMTheme.text)
 
                 Text("Me vs Me")
                     .font(.title3.weight(.medium))
-                    .foregroundStyle(MVMTheme.accent)
+                    .foregroundStyle(MVMTheme.amber)
             }
 
             Text("Answer a few quick questions so we\ncan build your PT plan.")
                 .font(.body)
-                .foregroundStyle(MVMTheme.secondaryText)
+                .foregroundStyle(MVMTheme.textMuted)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
         }
@@ -143,9 +162,9 @@ struct OnboardingView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("PT Mode")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(MVMTheme.tertiaryText)
-                    .tracking(0.5)
+                    .font(MVMTheme.mono(11))
+                    .kerning(1.4)
+                    .foregroundStyle(MVMTheme.textFaint)
 
                 VStack(spacing: 8) {
                     selectionRow("Individual PT", icon: "person.fill", subtitle: "Personal sessions", isSelected: ptModeRaw == PTMode.individual.rawValue) {
@@ -162,9 +181,9 @@ struct OnboardingView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Training Focus")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(MVMTheme.tertiaryText)
-                    .tracking(0.5)
+                    .font(MVMTheme.mono(11))
+                    .kerning(1.4)
+                    .foregroundStyle(MVMTheme.textFaint)
 
                 VStack(spacing: 8) {
                     ForEach(TrainingFocus.allCases) { focus in
@@ -177,9 +196,9 @@ struct OnboardingView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Equipment")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(MVMTheme.tertiaryText)
-                    .tracking(0.5)
+                    .font(MVMTheme.mono(11))
+                    .kerning(1.4)
+                    .foregroundStyle(MVMTheme.textFaint)
 
                 VStack(spacing: 8) {
                     ForEach(EquipmentOption.allCases) { equip in
@@ -203,11 +222,11 @@ struct OnboardingView: View {
                     HStack {
                         Text("Days per week")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(MVMTheme.text)
                         Spacer()
                         Text("\(daysPerWeek)")
                             .font(.headline.weight(.bold))
-                            .foregroundStyle(MVMTheme.accent)
+                            .foregroundStyle(MVMTheme.amber)
                             .contentTransition(.numericText())
                     }
 
@@ -218,10 +237,11 @@ struct OnboardingView: View {
                             } label: {
                                 Text("\(d)")
                                     .font(.subheadline.weight(.bold))
-                                    .foregroundStyle(daysPerWeek == d ? .white : MVMTheme.secondaryText)
+                                    .foregroundStyle(daysPerWeek == d ? MVMTheme.onAmber : MVMTheme.textMuted)
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 48)
-                                    .background(daysPerWeek == d ? MVMTheme.accent : Color.white.opacity(0.06))
+                                    .background(daysPerWeek == d ? AnyView(MVMTheme.amberButtonGradient) : AnyView(MVMTheme.well))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.hairline, lineWidth: daysPerWeek == d ? 0 : 1))
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                             .buttonStyle(.plain)
@@ -233,11 +253,11 @@ struct OnboardingView: View {
                     HStack {
                         Text("Session length")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(MVMTheme.text)
                         Spacer()
                         Text("\(minutesPerWorkout) min")
                             .font(.headline.weight(.bold))
-                            .foregroundStyle(MVMTheme.accent)
+                            .foregroundStyle(MVMTheme.amber)
                             .contentTransition(.numericText())
                     }
 
@@ -248,10 +268,11 @@ struct OnboardingView: View {
                             } label: {
                                 Text("\(m)")
                                     .font(.subheadline.weight(.bold))
-                                    .foregroundStyle(minutesPerWorkout == m ? .white : MVMTheme.secondaryText)
+                                    .foregroundStyle(minutesPerWorkout == m ? MVMTheme.onAmber : MVMTheme.textMuted)
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 48)
-                                    .background(minutesPerWorkout == m ? MVMTheme.accent : Color.white.opacity(0.06))
+                                    .background(minutesPerWorkout == m ? AnyView(MVMTheme.amberButtonGradient) : AnyView(MVMTheme.well))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.hairline, lineWidth: minutesPerWorkout == m ? 0 : 1))
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                             .buttonStyle(.plain)
@@ -261,9 +282,9 @@ struct OnboardingView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Fitness Level")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                        .tracking(0.5)
+                        .font(MVMTheme.mono(11))
+                        .kerning(1.4)
+                        .foregroundStyle(MVMTheme.textFaint)
 
                     HStack(spacing: 8) {
                         ForEach(FitnessLevel.allCases) { level in
@@ -272,10 +293,11 @@ struct OnboardingView: View {
                             } label: {
                                 Text(level.rawValue)
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(fitnessLevelRaw == level.rawValue ? .white : MVMTheme.secondaryText)
+                                    .foregroundStyle(fitnessLevelRaw == level.rawValue ? MVMTheme.onAmber : MVMTheme.textMuted)
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 48)
-                                    .background(fitnessLevelRaw == level.rawValue ? MVMTheme.accent : Color.white.opacity(0.06))
+                                    .background(fitnessLevelRaw == level.rawValue ? AnyView(MVMTheme.amberButtonGradient) : AnyView(MVMTheme.well))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.hairline, lineWidth: fitnessLevelRaw == level.rawValue ? 0 : 1))
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                             .buttonStyle(.plain)
@@ -294,31 +316,18 @@ struct OnboardingView: View {
 
             Text("MVM Fitness is a fitness tracking and accountability tool. All workout templates and AFT scoring are based on publicly available fitness standards. This app does not provide medical advice, coaching, or exercise instruction. You choose and perform all exercises at your own risk.")
                 .font(.subheadline)
-                .foregroundStyle(MVMTheme.secondaryText)
+                .foregroundStyle(MVMTheme.textMuted)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
                 .padding(.horizontal, 8)
 
             VStack(spacing: 12) {
-                Button {
+                AmberButton(title: "I Acknowledge — Full Access") {
                     withAnimation(.spring(response: 0.3)) {
                         hasAgreed = true
                     }
                     withAnimation { step += 1 }
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "checkmark.shield.fill")
-                            .font(.body.weight(.semibold))
-                        Text("I Acknowledge — Full Access")
-                            .font(.headline.weight(.bold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(height: 54)
-                    .frame(maxWidth: .infinity)
-                    .background(MVMTheme.heroGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
-                .buttonStyle(PressScaleButtonStyle())
 
                 Button {
                     withAnimation(.spring(response: 0.3)) {
@@ -328,15 +337,15 @@ struct OnboardingView: View {
                 } label: {
                     Text("Skip — AFT Calculator Only")
                         .font(.headline.weight(.bold))
-                    .foregroundStyle(MVMTheme.secondaryText)
-                    .frame(height: 54)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                    )
+                        .foregroundStyle(MVMTheme.textMuted)
+                        .frame(height: 54)
+                        .frame(maxWidth: .infinity)
+                        .background(MVMTheme.well)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(MVMTheme.hairline, lineWidth: 1)
+                        )
                 }
                 .buttonStyle(PressScaleButtonStyle())
             }
@@ -349,15 +358,21 @@ struct OnboardingView: View {
         VStack(spacing: 28) {
             sectionHeader(icon: "checkmark.shield.fill", title: "Ready to Build")
 
-            VStack(spacing: 2) {
-                reviewRow(label: "PT Mode", value: ptModeRaw)
-                reviewRow(label: "Focus", value: trainingFocusRaw)
-                reviewRow(label: "Equipment", value: equipmentRaw)
-                reviewRow(label: "Days / Week", value: "\(daysPerWeek)")
-                reviewRow(label: "Session", value: "\(minutesPerWorkout) min")
-                reviewRow(label: "Level", value: fitnessLevelRaw)
+            RaisedCard {
+                VStack(spacing: 0) {
+                    reviewRow(label: "PT Mode", value: ptModeRaw)
+                    Divider().overlay(MVMTheme.hairline)
+                    reviewRow(label: "Focus", value: trainingFocusRaw)
+                    Divider().overlay(MVMTheme.hairline)
+                    reviewRow(label: "Equipment", value: equipmentRaw)
+                    Divider().overlay(MVMTheme.hairline)
+                    reviewRow(label: "Days / Week", value: "\(daysPerWeek)")
+                    Divider().overlay(MVMTheme.hairline)
+                    reviewRow(label: "Session", value: "\(minutesPerWorkout) min")
+                    Divider().overlay(MVMTheme.hairline)
+                    reviewRow(label: "Level", value: fitnessLevelRaw)
+                }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 16))
 
             if hasAgreed {
                 HStack(spacing: 8) {
@@ -369,19 +384,21 @@ struct OnboardingView: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity)
-                .background(MVMTheme.success.opacity(0.08))
+                .background(MVMTheme.success.opacity(0.1))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.success.opacity(0.3), lineWidth: 1))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             } else {
                 HStack(spacing: 8) {
                     Image(systemName: "info.circle.fill")
-                        .foregroundStyle(MVMTheme.warning)
+                        .foregroundStyle(MVMTheme.amber)
                     Text("Calculator only — go back to accept terms for full access")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(MVMTheme.warning)
+                        .foregroundStyle(MVMTheme.amber)
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity)
-                .background(MVMTheme.warning.opacity(0.08))
+                .background(MVMTheme.amber.opacity(0.1))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.amber.opacity(0.3), lineWidth: 1))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
@@ -391,15 +408,15 @@ struct OnboardingView: View {
         HStack {
             Text(label)
                 .font(.subheadline)
-                .foregroundStyle(MVMTheme.secondaryText)
+                .foregroundStyle(MVMTheme.textMuted)
             Spacer()
             Text(value)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(MVMTheme.text)
+                .lineLimit(1)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(MVMTheme.card)
+        .frame(height: 50)
     }
 
     // MARK: - Buttons
@@ -407,31 +424,15 @@ struct OnboardingView: View {
     private var bottomButtons: some View {
         VStack(spacing: 8) {
             if step != 3 {
-                Button {
+                AmberButton(title: nextButtonTitle) {
                     handleNext()
-                } label: {
-                    HStack(spacing: 8) {
-                        if isGenerating {
-                            ProgressView()
-                                .tint(step == 0 ? Color(hex: "#0A0A0F") : .white)
-                        }
-                        Text(nextButtonTitle)
-                            .font(.headline.weight(.bold))
+                }
+                .overlay {
+                    if isGenerating {
+                        ProgressView().tint(MVMTheme.onAmber)
                     }
-                    .foregroundStyle(step == 0 ? Color(hex: "#0A0A0F") : .white)
-                    .frame(height: 54)
-                    .frame(maxWidth: .infinity)
-                    .background {
-                        if step == 0 {
-                            Color.white
-                        } else {
-                            MVMTheme.heroGradient
-                        }
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .disabled(isGenerating)
-                .buttonStyle(PressScaleButtonStyle())
             }
 
             if step > 0 {
@@ -440,7 +441,7 @@ struct OnboardingView: View {
                 } label: {
                     Text("Back")
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(MVMTheme.secondaryText)
+                        .foregroundStyle(MVMTheme.textMuted)
                         .frame(height: 44)
                         .frame(maxWidth: .infinity)
                 }
@@ -486,11 +487,11 @@ struct OnboardingView: View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title2.weight(.semibold))
-                .foregroundStyle(MVMTheme.accent)
+                .foregroundStyle(MVMTheme.amber)
 
             Text(title)
                 .font(.title3.weight(.bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(MVMTheme.text)
         }
     }
 
@@ -501,19 +502,19 @@ struct OnboardingView: View {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(isSelected ? .white : MVMTheme.accent)
+                    .foregroundStyle(isSelected ? MVMTheme.onAmber : MVMTheme.amber)
                     .frame(width: 34, height: 34)
-                    .background(isSelected ? MVMTheme.accent : MVMTheme.accent.opacity(0.12))
+                    .background(isSelected ? AnyView(MVMTheme.amberButtonGradient) : AnyView(MVMTheme.amber.opacity(0.12)))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(MVMTheme.text)
                     if let subtitle {
                         Text(subtitle)
                             .font(.caption)
-                            .foregroundStyle(MVMTheme.secondaryText)
+                            .foregroundStyle(MVMTheme.textMuted)
                     }
                 }
 
@@ -521,15 +522,15 @@ struct OnboardingView: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(MVMTheme.accent)
+                        .foregroundStyle(MVMTheme.amber)
                 }
             }
             .padding(12)
-            .background(isSelected ? MVMTheme.accent.opacity(0.1) : Color.white.opacity(0.03))
+            .background(isSelected ? MVMTheme.amber.opacity(0.1) : MVMTheme.well)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? MVMTheme.accent.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
+                    .stroke(isSelected ? MVMTheme.amber.opacity(0.4) : MVMTheme.hairline, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
