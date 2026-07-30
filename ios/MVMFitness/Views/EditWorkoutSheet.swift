@@ -8,7 +8,6 @@ struct EditWorkoutSheet: View {
 
     @State private var exercises: [WorkoutExercise] = []
     @State private var expandedID: UUID?
-    @State private var editMode: EditMode = .inactive
     @State private var showAddExercise: Bool = false
 
     var body: some View {
@@ -38,7 +37,7 @@ struct EditWorkoutSheet: View {
                     List {
                         Section {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Drag to reorder \(MVMTheme.dot) Swipe to delete \(MVMTheme.dot) Tap to edit")
+                                Text("Hold \(MVMTheme.dot) drag the handle to reorder \(MVMTheme.dot) swipe to delete \(MVMTheme.dot) tap to edit")
                                     .font(.caption)
                                     .foregroundStyle(MVMTheme.textMuted)
                             }
@@ -59,23 +58,9 @@ struct EditWorkoutSheet: View {
                                 exercises.remove(atOffsets: indexSet)
                             }
                         } header: {
-                            HStack {
-                                Text("BLOCKS")
-                                    .font(MVMTheme.mono(11)).kerning(1.2)
-                                    .foregroundStyle(MVMTheme.textFaint)
-
-                                Spacer()
-
-                                Button {
-                                    withAnimation {
-                                        editMode = editMode == .active ? .inactive : .active
-                                    }
-                                } label: {
-                                    Text(editMode == .active ? "Done" : "Reorder")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(MVMTheme.amber)
-                                }
-                            }
+                            Text("BLOCKS")
+                                .font(MVMTheme.mono(11)).kerning(1.2)
+                                .foregroundStyle(MVMTheme.textFaint)
                         }
 
                         Section {
@@ -87,7 +72,6 @@ struct EditWorkoutSheet: View {
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
-                    .environment(\.editMode, $editMode)
                     .scrollDismissesKeyboard(.interactively)
                 }
             }
@@ -189,6 +173,11 @@ struct EditWorkoutSheet: View {
                         Image(systemName: isExpanded ? "chevron.up" : "pencil")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(MVMTheme.amber)
+
+                        Image(systemName: "line.3.horizontal")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(MVMTheme.textFaint)
+                            .padding(.leading, 2)
                     }
                 }
                 .buttonStyle(.plain)
@@ -519,6 +508,11 @@ struct AddExerciseSheet: View {
     @State private var notes: String = ""
     @State private var exerciseType: Int = 0
     @State private var eventTag: AFTEventType?
+    @State private var librarySearch: String = ""
+
+    private var libraryResults: [String] {
+        librarySearch.isEmpty ? [] : ExerciseLibrary.search(librarySearch)
+    }
 
     var body: some View {
         NavigationStack {
@@ -527,6 +521,8 @@ struct AddExerciseSheet: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 18) {
+                        librarySearchBar
+
                         ExerciseAutocompleteField(
                             title: "Movement Name",
                             text: $name,
@@ -630,6 +626,75 @@ struct AddExerciseSheet: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .presentationBackground(MVMTheme.screen)
+    }
+
+    private var librarySearchBar: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("SEARCH LIBRARY")
+                .font(MVMTheme.mono(10)).kerning(1)
+                .foregroundStyle(MVMTheme.textFaint)
+
+            InsetWell(radius: 13) {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.subheadline)
+                        .foregroundStyle(MVMTheme.textMuted)
+                    TextField("Search exercise library...", text: $librarySearch)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(MVMTheme.text)
+                    if !librarySearch.isEmpty {
+                        Button {
+                            librarySearch = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.subheadline)
+                                .foregroundStyle(MVMTheme.textMuted)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .frame(height: 46)
+            }
+
+            if !libraryResults.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(libraryResults.prefix(8), id: \.self) { result in
+                        Button {
+                            name = result
+                            librarySearch = ""
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "figure.strengthtraining.traditional")
+                                    .font(.caption)
+                                    .foregroundStyle(MVMTheme.amber.opacity(0.7))
+                                Text(result)
+                                    .font(.subheadline)
+                                    .foregroundStyle(MVMTheme.text)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+
+                        if result != libraryResults.prefix(8).last {
+                            Rectangle().fill(MVMTheme.hairline).frame(height: 1)
+                        }
+                    }
+                }
+                .background(MVMTheme.well)
+                .clipShape(RoundedRectangle(cornerRadius: 13))
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            } else if !librarySearch.isEmpty {
+                Text("No exercises match \"\(librarySearch)\"")
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.textFaint)
+                    .padding(.horizontal, 4)
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: libraryResults.count)
     }
 
     private var eventTagRow: some View {
