@@ -1,187 +1,102 @@
 import SwiftUI
+import AVKit
 
+/// Cold-launch splash — never replays on foregrounding (RootView only creates
+/// this once per process lifetime). Muted, looping Golden Hour runner clip
+/// with a radial scrim, summit-M glyph, and wordmark. Auto-dismisses after
+/// ~3.5s or on first tap. Falls back instantly to a static screen if the
+/// bundled video can't load — launch is never blocked.
 struct SplashView: View {
-    @State private var iconScale: Double = 0.3
-    @State private var iconOpacity: Double = 0
-    @State private var iconRotation: Double = -30
-    @State private var ringScale: Double = 0.5
-    @State private var ringOpacity: Double = 0
-    @State private var ring2Scale: Double = 0.4
-    @State private var ring2Opacity: Double = 0
-    @State private var titleOpacity: Double = 0
-    @State private var titleOffset: Double = 20
-    @State private var subtitleOpacity: Double = 0
-    @State private var shimmerPhase: Double = -200
-    @State private var particlesVisible: Bool = false
-    @State private var pulseScale: Double = 1.0
-
     var onFinished: () -> Void
+
+    @State private var player: AVPlayer?
+    @State private var videoFailed = false
+    @State private var didFinish = false
+    @State private var endObserver: NSObjectProtocol?
 
     var body: some View {
         ZStack {
-            MVMTheme.background.ignoresSafeArea()
+            MVMTheme.screen.ignoresSafeArea()
 
-            backgroundParticles
+            if let player, !videoFailed {
+                VideoPlayer(player: player)
+                    .disabled(true)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
 
-            VStack(spacing: 24) {
+            RadialGradient(
+                stops: [
+                    .init(color: MVMTheme.screen.opacity(0.12), location: 0),
+                    .init(color: MVMTheme.screen.opacity(0.78), location: 0.74),
+                    .init(color: MVMTheme.screen.opacity(0.96), location: 1)
+                ],
+                center: .init(x: 0.5, y: 0.4),
+                startRadius: 0,
+                endRadius: 500
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 14) {
                 Spacer()
-
-                ZStack {
-                    Circle()
-                        .stroke(
-                            LinearGradient(
-                                colors: [MVMTheme.accent.opacity(0.3), MVMTheme.accent2.opacity(0.1)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 2
-                        )
-                        .frame(width: 160, height: 160)
-                        .scaleEffect(ring2Scale)
-                        .opacity(ring2Opacity)
-
-                    Circle()
-                        .stroke(
-                            LinearGradient(
-                                colors: [MVMTheme.accent.opacity(0.5), MVMTheme.accent2.opacity(0.3)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 2.5
-                        )
-                        .frame(width: 130, height: 130)
-                        .scaleEffect(ringScale)
-                        .opacity(ringOpacity)
-
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [MVMTheme.accent.opacity(0.15), Color.clear],
-                                center: .center,
-                                startRadius: 20,
-                                endRadius: 60
-                            )
-                        )
-                        .frame(width: 120, height: 120)
-                        .scaleEffect(pulseScale)
-                        .opacity(ringOpacity * 0.6)
-
-                    Image("AppLogo")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 90, height: 90)
-                        .clipShape(RoundedRectangle(cornerRadius: 22))
-                        .shadow(color: MVMTheme.accent.opacity(0.5), radius: 20, y: 5)
-                    .scaleEffect(iconScale)
-                    .opacity(iconOpacity)
-                    .rotationEffect(.degrees(iconRotation))
-                }
-
-                VStack(spacing: 8) {
-                    Text("MVM FITNESS")
-                        .font(.system(size: 28, weight: .black, design: .rounded))
-                        .tracking(4)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.white, .white.opacity(0.8)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .overlay {
-                            LinearGradient(
-                                colors: [.clear, .white.opacity(0.4), .clear],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                            .offset(x: shimmerPhase)
-                            .mask {
-                                Text("MVM FITNESS")
-                                    .font(.system(size: 28, weight: .black, design: .rounded))
-                                    .tracking(4)
-                            }
-                        }
-                        .opacity(titleOpacity)
-                        .offset(y: titleOffset)
-
-                    Text("MILITARY GRADE TRAINING")
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .tracking(3)
-                        .foregroundStyle(MVMTheme.secondaryText)
-                        .opacity(subtitleOpacity)
-                }
-
-                Spacer()
-                Spacer()
+                Image("mvm-glyph-summit-m")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 64)
+                Text("MVM FIT")
+                    .font(.system(size: 15, weight: .bold))
+                    .kerning(1.7)
+                    .foregroundStyle(MVMTheme.text)
+                Text("Me vs Me.")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(MVMTheme.textMuted)
+                Spacer().frame(height: 90)
             }
         }
-        .onAppear {
-            runAnimation()
+        .contentShape(Rectangle())
+        .onTapGesture { finish() }
+        .onAppear { setUpPlayer() }
+        .onDisappear { tearDownPlayer() }
+        .task {
+            try? await Task.sleep(for: .seconds(3.5))
+            finish()
         }
     }
 
-    private var backgroundParticles: some View {
-        Canvas { context, size in
-            guard particlesVisible else { return }
-            let positions: [(x: Double, y: Double, r: Double)] = [
-                (0.15, 0.2, 2), (0.85, 0.15, 1.5), (0.3, 0.7, 2.5),
-                (0.7, 0.8, 1.8), (0.5, 0.35, 1.2), (0.9, 0.5, 2),
-                (0.1, 0.55, 1.8), (0.6, 0.15, 1.5), (0.4, 0.85, 2),
-                (0.8, 0.4, 1.3), (0.2, 0.9, 1.6), (0.95, 0.7, 1.4),
-            ]
-            for p in positions {
-                let point = CGPoint(x: p.x * size.width, y: p.y * size.height)
-                let rect = CGRect(x: point.x - p.r, y: point.y - p.r, width: p.r * 2, height: p.r * 2)
-                context.fill(Circle().path(in: rect), with: .color(MVMTheme.accent.opacity(0.25)))
-            }
+    private func setUpPlayer() {
+        guard player == nil, !videoFailed else { return }
+        guard let url = Bundle.main.url(forResource: "splash-runner-loop", withExtension: "mp4") else {
+            videoFailed = true
+            return
         }
-        .opacity(particlesVisible ? 1 : 0)
-        .animation(.easeIn(duration: 1.0), value: particlesVisible)
+        let item = AVPlayerItem(url: url)
+        let newPlayer = AVPlayer(playerItem: item)
+        newPlayer.isMuted = true
+        newPlayer.actionAtItemEnd = .none
+        endObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { _ in
+            newPlayer.seek(to: .zero)
+            newPlayer.play()
+        }
+        player = newPlayer
+        newPlayer.play()
     }
 
-    private func runAnimation() {
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.2)) {
-            iconScale = 1.0
-            iconOpacity = 1.0
-            iconRotation = 0
+    private func tearDownPlayer() {
+        if let endObserver {
+            NotificationCenter.default.removeObserver(endObserver)
         }
+        endObserver = nil
+        player?.pause()
+    }
 
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.4)) {
-            ringScale = 1.0
-            ringOpacity = 1.0
-        }
-
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.55)) {
-            ring2Scale = 1.0
-            ring2Opacity = 1.0
-        }
-
-        withAnimation(.easeOut(duration: 0.5).delay(0.7)) {
-            titleOpacity = 1.0
-            titleOffset = 0
-        }
-
-        withAnimation(.easeOut(duration: 0.4).delay(0.9)) {
-            subtitleOpacity = 1.0
-        }
-
-        withAnimation(.easeInOut(duration: 0.8).delay(1.0)) {
-            shimmerPhase = 400
-        }
-
-        if !UIAccessibility.isReduceMotionEnabled {
-            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true).delay(0.6)) {
-                pulseScale = 1.15
-            }
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            particlesVisible = true
-        }
-
-        let splashDelay: TimeInterval = UIAccessibility.isReduceMotionEnabled ? 0.1 : 0.8
-        DispatchQueue.main.asyncAfter(deadline: .now() + splashDelay) {
-            onFinished()
-        }
+    private func finish() {
+        guard !didFinish else { return }
+        didFinish = true
+        tearDownPlayer()
+        onFinished()
     }
 }
