@@ -43,7 +43,8 @@ final class AppViewModel {
             "completedRecords", "stepHistory", "unitPTPlans", "aftScores",
             "aftCalculatorResults", "currentPlan", "quickStartRecords",
             "unitPTFullPlan", "scheduledUnitPT", "importedWorkouts", "wodPlan",
-            "whtrRecords", "cftRecords", "dailyLogs"
+            "whtrRecords", "cftRecords", "dailyLogs", "squadData",
+            "shownMilestones", "todayFunctionalWOD"
         ])
         loadLocalData()
     }
@@ -581,9 +582,11 @@ final class AppViewModel {
             "daysPerWeek", "minutesPerWorkout", "ptMode",
             "dutyType", "ptGoal", "planWeeks",
             "onboardingComplete", "disclaimerAccepted",
-            "shownMilestones"
+            "lastFunctionalWODDate"
         ]
         keysToDelete.forEach { UserDefaults.standard.removeObject(forKey: $0) }
+        DataStore.save(Optional<WODTemplate>.none, forKey: "todayFunctionalWOD")
+        DataStore.save([String](), forKey: "shownMilestones")
         syncWidgetData()
     }
 
@@ -1135,8 +1138,7 @@ final class AppViewModel {
 
         let lastDate = UserDefaults.standard.double(forKey: "lastFunctionalWODDate")
         if lastDate > 0, Calendar.current.isDate(Date(timeIntervalSince1970: lastDate), inSameDayAs: today) {
-            if let data = UserDefaults.standard.data(forKey: "todayFunctionalWOD"),
-               let template = try? JSONDecoder().decode(WODTemplate.self, from: data) {
+            if let template = DataStore.load(WODTemplate?.self, forKey: "todayFunctionalWOD", fallback: nil) {
                 todayFunctionalWOD = template
                 return
             }
@@ -1150,9 +1152,7 @@ final class AppViewModel {
             dutyType: currentDutyType
         )
         todayFunctionalWOD = template
-        if let data = try? JSONEncoder().encode(template) {
-            UserDefaults.standard.set(data, forKey: "todayFunctionalWOD")
-        }
+        DataStore.save(template, forKey: "todayFunctionalWOD")
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastFunctionalWODDate")
     }
 

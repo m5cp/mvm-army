@@ -106,14 +106,17 @@ enum MilestoneManager {
         )
     }
 
+    private static func loadShown() -> [String] {
+        DataStore.load([String].self, forKey: shownMilestonesKey, fallback: [])
+    }
+
     private static func hasShown(_ key: String) -> Bool {
-        let shown = UserDefaults.standard.stringArray(forKey: shownMilestonesKey) ?? []
-        return shown.contains(key)
+        loadShown().contains(key)
     }
 
     private static func markShown(_ key: String) {
-        var shown = UserDefaults.standard.stringArray(forKey: shownMilestonesKey) ?? []
+        var shown = loadShown()
         shown.append(key)
-        UserDefaults.standard.set(shown, forKey: shownMilestonesKey)
+        DataStore.save(shown, forKey: shownMilestonesKey)
     }
 }
