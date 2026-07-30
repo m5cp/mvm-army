@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import RevenueCat
 
 struct ProfileView: View {
     @Environment(AppViewModel.self) private var vm
@@ -27,6 +28,8 @@ struct ProfileView: View {
     @State private var showDeleteConfirm: Bool = false
     @State private var showABCP = false
     @State private var showCFT = false
+    @State private var copiedMemberID = false
+    @State private var memberIDCopyTrigger = false
     @FocusState private var nameFieldFocused: Bool
 
     var body: some View {
@@ -509,6 +512,21 @@ struct ProfileView: View {
 
     private var legalSection: some View {
         settingsSection(title: "LEGAL", icon: "doc.text") {
+            Button {
+                UIPasteboard.general.string = Purchases.shared.appUserID
+                memberIDCopyTrigger.toggle()
+                copiedMemberID = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    copiedMemberID = false
+                }
+            } label: {
+                memberIDRow
+            }
+            .sensoryFeedback(.success, trigger: memberIDCopyTrigger)
+            .accessibilityHint("Copies your member ID for support requests")
+
+            sectionDivider
+
             NavigationLink {
                 LegalTextView(title: "Privacy Policy", content: LegalContent.privacyPolicy)
             } label: {
@@ -651,6 +669,37 @@ struct ProfileView: View {
         Divider()
             .overlay(MVMTheme.border)
             .padding(.leading, 36)
+    }
+
+    private var memberIDRow: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "person.text.rectangle")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(MVMTheme.accent)
+                .frame(width: 24)
+            Text("Member ID")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(MVMTheme.primaryText)
+            Spacer()
+            if copiedMemberID {
+                Text("Copied")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(MVMTheme.accent)
+            } else {
+                Text(Purchases.shared.appUserID)
+                    .font(MVMTheme.mono(11))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 140, alignment: .trailing)
+            }
+            Image(systemName: copiedMemberID ? "checkmark" : "doc.on.doc")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(copiedMemberID ? MVMTheme.accent : MVMTheme.tertiaryText)
+        }
+        .frame(minHeight: 48)
+        .contentShape(Rectangle())
+        .animation(.easeOut(duration: 0.2), value: copiedMemberID)
     }
 
     private func settingsRow(icon: String, title: String, color: Color, showChevron: Bool = false) -> some View {
