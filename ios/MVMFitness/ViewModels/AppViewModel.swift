@@ -581,7 +581,7 @@ final class AppViewModel {
             "daysPerWeek", "minutesPerWorkout", "ptMode",
             "dutyType", "ptGoal", "planWeeks",
             "onboardingComplete", "disclaimerAccepted",
-            "shownMilestones", "appearanceMode"
+            "shownMilestones"
         ]
         keysToDelete.forEach { UserDefaults.standard.removeObject(forKey: $0) }
         syncWidgetData()

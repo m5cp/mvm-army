@@ -4,7 +4,7 @@ import AVKit
 /// Cold-launch splash — never replays on foregrounding (RootView only creates
 /// this once per process lifetime). Muted, looping Golden Hour runner clip
 /// with a radial scrim, summit-M glyph, and wordmark. Auto-dismisses after
-/// ~3.5s or on first tap. Falls back instantly to a static screen if the
+/// ~2.0s or on first tap. Falls back instantly to a static screen if the
 /// bundled video can't load — launch is never blocked.
 struct SplashView: View {
     var onFinished: () -> Void
@@ -60,7 +60,7 @@ struct SplashView: View {
         .onAppear { setUpPlayer() }
         .onDisappear { tearDownPlayer() }
         .task {
-            try? await Task.sleep(for: .seconds(3.5))
+            try? await Task.sleep(for: .seconds(2.0))
             finish()
         }
     }
