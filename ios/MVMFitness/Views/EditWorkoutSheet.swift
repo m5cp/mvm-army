@@ -14,92 +14,100 @@ struct EditWorkoutSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                MVMTheme.background.ignoresSafeArea()
+                MVMTheme.screen.ignoresSafeArea()
 
-                List {
-                    Section {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(day.title)
-                                .font(.title3.weight(.bold))
-                                .foregroundStyle(MVMTheme.primaryText)
-
-                            Text("Drag to reorder. Swipe to delete. Tap to edit.")
-                                .font(.subheadline)
-                                .foregroundStyle(MVMTheme.secondaryText)
+                VStack(spacing: 0) {
+                    VStack(spacing: 10) {
+                        InsetWell(radius: 15) {
+                            HStack {
+                                Text(day.title)
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundStyle(MVMTheme.text)
+                                    .lineLimit(1)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .frame(height: 54)
                         }
-                        .listRowBackground(MVMTheme.card)
+                        summaryChips
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 6)
 
-                    Section {
-                        ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
-                            editableExerciseRow(index: index, exercise: exercise)
-                                .listRowBackground(MVMTheme.card)
+                    List {
+                        Section {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Drag to reorder \(MVMTheme.dot) Swipe to delete \(MVMTheme.dot) Tap to edit")
+                                    .font(.caption)
+                                    .foregroundStyle(MVMTheme.textMuted)
+                            }
+                            .listRowBackground(Color.clear)
                         }
-                        .onMove { from, to in
-                            exercises.move(fromOffsets: from, toOffset: to)
-                        }
-                        .onDelete { indexSet in
-                            exercises.remove(atOffsets: indexSet)
-                        }
-                    } header: {
-                        HStack {
-                            Text("EXERCISES")
-                                .font(.caption.weight(.bold))
-                                .tracking(1.0)
-                                .foregroundStyle(MVMTheme.tertiaryText)
+                        .listRowSeparator(.hidden)
 
-                            Spacer()
+                        Section {
+                            ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
+                                editableExerciseRow(index: index, exercise: exercise)
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                            }
+                            .onMove { from, to in
+                                exercises.move(fromOffsets: from, toOffset: to)
+                            }
+                            .onDelete { indexSet in
+                                exercises.remove(atOffsets: indexSet)
+                            }
+                        } header: {
+                            HStack {
+                                Text("BLOCKS")
+                                    .font(MVMTheme.mono(11)).kerning(1.2)
+                                    .foregroundStyle(MVMTheme.textFaint)
 
-                            Button {
-                                withAnimation {
-                                    editMode = editMode == .active ? .inactive : .active
+                                Spacer()
+
+                                Button {
+                                    withAnimation {
+                                        editMode = editMode == .active ? .inactive : .active
+                                    }
+                                } label: {
+                                    Text(editMode == .active ? "Done" : "Reorder")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(MVMTheme.amber)
                                 }
-                            } label: {
-                                Text(editMode == .active ? "Done" : "Reorder")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(MVMTheme.accent)
                             }
                         }
-                    }
 
-                    Section {
-                        Button {
-                            showAddExercise = true
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.title3)
-                                    .foregroundStyle(MVMTheme.accent)
-                                Text("Add Exercise")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(MVMTheme.accent)
-                            }
+                        Section {
+                            addMovement
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                                .onTapGesture { showAddExercise = true }
                         }
-                        .listRowBackground(MVMTheme.card)
                     }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .environment(\.editMode, $editMode)
+                    .scrollDismissesKeyboard(.interactively)
                 }
-                .listStyle(.insetGrouped)
-                .scrollContentBackground(.hidden)
-                .environment(\.editMode, $editMode)
-                .scrollDismissesKeyboard(.interactively)
             }
-            .navigationTitle("Edit Workout")
+            .navigationTitle("New Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(MVMTheme.secondaryText)
+                        .foregroundStyle(MVMTheme.textMuted)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") {
                         vm.updateDayExercises(dayIndex: day.dayIndex, exercises: exercises)
                         dismiss()
                     }
-                    .foregroundStyle(MVMTheme.accent)
+                    .foregroundStyle(MVMTheme.amber)
                     .fontWeight(.semibold)
                 }
             }
-            .toolbarBackground(MVMTheme.background, for: .navigationBar)
+            .toolbarBackground(MVMTheme.screen, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .sheet(isPresented: $showAddExercise) {
                 AddExerciseSheet { newExercise in
@@ -112,145 +120,231 @@ struct EditWorkoutSheet: View {
         }
     }
 
+    // MARK: - Summary chips (TARGETS / EST TIME / BLOCKS)
+
+    private var summaryChips: some View {
+        HStack(spacing: 8) {
+            chip(label: "TARGETS", value: targetsSummary, color: MVMTheme.amber)
+            chip(label: "EST. TIME", value: "~\(max(exercises.count * 4, 15)) MIN", color: MVMTheme.text)
+            chip(label: "BLOCKS", value: "\(exercises.count)", color: MVMTheme.text)
+        }
+    }
+
+    private var targetsSummary: String {
+        var seen: [AFTEventType] = []
+        for e in exercises {
+            if let tag = e.eventTag, !seen.contains(tag) { seen.append(tag) }
+        }
+        if seen.isEmpty { return "—" }
+        return seen.map(\.displayCode).joined(separator: " \(MVMTheme.dot) ")
+    }
+
+    private func chip(label: String, value: String, color: Color) -> some View {
+        RaisedCard(radius: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(label).font(MVMTheme.mono(9.5)).kerning(1)
+                    .foregroundStyle(MVMTheme.textFaint).lineLimit(1).fixedSize()
+                Text(value).font(MVMTheme.mono(13, weight: .bold))
+                    .foregroundStyle(color).lineLimit(1).fixedSize()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12).padding(.vertical, 9)
+        }
+    }
+
     private func editableExerciseRow(index: Int, exercise: WorkoutExercise) -> some View {
         let isExpanded = expandedID == exercise.id
 
-        return VStack(alignment: .leading, spacing: 0) {
-            Button {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                    expandedID = isExpanded ? nil : exercise.id
-                }
-            } label: {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) {
-                            if exercise.isCardio, let ct = exercise.cardioType {
-                                Image(systemName: ct.icon)
-                                    .font(.caption)
-                                    .foregroundStyle(MVMTheme.accent)
-                            }
-                            Text(exercise.name)
-                                .font(.headline)
-                                .foregroundStyle(MVMTheme.primaryText)
-                        }
-                        Text(exercise.displayDetail)
-                            .font(.subheadline)
-                            .foregroundStyle(MVMTheme.secondaryText)
+        return RaisedCard {
+            VStack(alignment: .leading, spacing: 0) {
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        expandedID = isExpanded ? nil : exercise.id
                     }
+                } label: {
+                    HStack(spacing: 12) {
+                        if let tag = exercise.eventTag {
+                            EventTagChip(event: tag)
+                        } else if exercise.isCardio, let ct = exercise.cardioType {
+                            Image(systemName: ct.icon)
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(MVMTheme.amber)
+                                .frame(width: 44, height: 44)
+                                .background(MVMTheme.well)
+                                .clipShape(RoundedRectangle(cornerRadius: 13))
+                        }
 
-                    Spacer()
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(exercise.name)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(MVMTheme.text)
+                            Text(exercise.displayDetail)
+                                .font(MVMTheme.mono(10.5))
+                                .foregroundStyle(MVMTheme.textMuted)
+                                .lineLimit(1).fixedSize()
+                        }
 
-                    Image(systemName: isExpanded ? "chevron.up" : "pencil")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(MVMTheme.accent)
+                        Spacer()
+
+                        Image(systemName: isExpanded ? "chevron.up" : "pencil")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(MVMTheme.amber)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                if isExpanded {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Rectangle().fill(MVMTheme.hairline).frame(height: 1)
+                            .padding(.vertical, 4)
+
+                        ExerciseAutocompleteField(
+                            title: "Name",
+                            text: $exercises[index].name,
+                            accentColor: MVMTheme.amber
+                        )
+                        .zIndex(10)
+
+                        eventTagPicker(index: index)
+
+                        if exercises[index].isCardio {
+                            cardioFields(index: index)
+                        } else if exercises[index].isTimeBased {
+                            timedFields(index: index)
+                        } else {
+                            strengthFields(index: index)
+                        }
+
+                        if !exercises[index].isCardio {
+                            weightField(index: index)
+                        }
+
+                        noteField(index: index)
+
+                        Button(role: .destructive) {
+                            withAnimation {
+                                exercises.remove(at: index)
+                                expandedID = nil
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "trash")
+                                    .font(.caption.weight(.semibold))
+                                Text("Remove Movement")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .foregroundStyle(MVMTheme.danger)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 36)
+                            .background(MVMTheme.danger.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.top, 2)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
-            .buttonStyle(.plain)
+            .padding(14)
+        }
+    }
 
-            if isExpanded {
-                Divider().overlay(MVMTheme.border)
+    /// Optional AFT event tag picker — structured data that powers "targets your
+    /// weakest event" on Home. Untagged movements remain fully valid.
+    private func eventTagPicker(index: Int) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("EVENT TAG")
+                .font(MVMTheme.mono(10)).kerning(1)
+                .foregroundStyle(MVMTheme.textFaint)
 
-                VStack(alignment: .leading, spacing: 14) {
-                    ExerciseAutocompleteField(
-                        title: "Name",
-                        text: $exercises[index].name,
-                        accentColor: MVMTheme.accent
-                    )
-                    .zIndex(10)
-
-                    if exercises[index].isCardio {
-                        cardioFields(index: index)
-                    } else if exercises[index].isTimeBased {
-                        timedFields(index: index)
-                    } else {
-                        strengthFields(index: index)
-                    }
-
-                    if !exercises[index].isCardio {
-                        weightField(index: index)
-                    }
-
-                    noteField(index: index)
-
-                    Button(role: .destructive) {
-                        withAnimation {
-                            exercises.remove(at: index)
-                            expandedID = nil
-                        }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    Button {
+                        exercises[index].eventTag = nil
                     } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "trash")
-                                .font(.caption.weight(.semibold))
-                            Text("Remove Exercise")
-                                .font(.caption.weight(.semibold))
-                        }
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 36)
-                        .background(.red.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        Text("NONE")
+                            .font(MVMTheme.mono(10.5, weight: .bold))
+                            .foregroundStyle(exercises[index].eventTag == nil ? MVMTheme.onAmber : MVMTheme.textMuted)
+                            .padding(.horizontal, 12).frame(height: 36)
+                            .background(exercises[index].eventTag == nil ? AnyShapeStyle(MVMTheme.amberButtonGradient) : AnyShapeStyle(MVMTheme.well))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                     .buttonStyle(.plain)
+
+                    ForEach(AFTEventType.allCases, id: \.self) { tag in
+                        let selected = exercises[index].eventTag == tag
+                        Button {
+                            exercises[index].eventTag = tag
+                        } label: {
+                            Text(tag.displayCode)
+                                .font(MVMTheme.mono(10.5, weight: .bold))
+                                .foregroundStyle(selected ? MVMTheme.onAmber : MVMTheme.textMuted)
+                                .padding(.horizontal, 12).frame(height: 36)
+                                .background(selected ? AnyShapeStyle(MVMTheme.amberButtonGradient) : AnyShapeStyle(MVMTheme.well))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .padding(.vertical, 12)
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
+            .contentMargins(.horizontal, 0)
         }
     }
 
     private func strengthFields(index: Int) -> some View {
-        HStack(spacing: 16) {
-            intStepperField(title: "Sets", value: Binding(
+        HStack(spacing: 8) {
+            InsetWell(radius: 13) {
+                MetricCell(label: "SETS", value: "\(exercises[index].sets)")
+            }
+            .overlay { stepperOverlay(value: Binding(
                 get: { exercises[index].sets },
                 set: { exercises[index].sets = $0 }
-            ), range: 1...20)
+            ), range: 1...20) }
 
-            intStepperField(title: "Reps", value: Binding(
+            InsetWell(radius: 13) {
+                MetricCell(label: "REPS", value: "\(exercises[index].reps)")
+            }
+            .overlay { stepperOverlay(value: Binding(
                 get: { exercises[index].reps },
                 set: { exercises[index].reps = $0 }
-            ), range: 1...100)
+            ), range: 1...100) }
         }
     }
 
     private func timedFields(index: Int) -> some View {
-        HStack(spacing: 16) {
-            intStepperField(title: "Sets", value: Binding(
+        HStack(spacing: 8) {
+            InsetWell(radius: 13) {
+                MetricCell(label: "SETS", value: "\(exercises[index].sets)")
+            }
+            .overlay { stepperOverlay(value: Binding(
                 get: { exercises[index].sets },
                 set: { exercises[index].sets = $0 }
-            ), range: 1...20)
+            ), range: 1...20) }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Duration")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(MVMTheme.secondaryText)
-
-                HStack(spacing: 6) {
-                    compactStepper(value: Binding(
-                        get: { exercises[index].durationSeconds / 60 },
-                        set: {
-                            let secs = exercises[index].durationSeconds % 60
-                            exercises[index].durationSeconds = $0 * 60 + secs
-                        }
-                    ), range: 0...120, label: "min")
-
-                    compactStepper(value: Binding(
-                        get: { exercises[index].durationSeconds % 60 },
-                        set: {
-                            let mins = exercises[index].durationSeconds / 60
-                            exercises[index].durationSeconds = mins * 60 + $0
-                        }
-                    ), range: 0...59, label: "sec")
+            InsetWell(radius: 13) {
+                MetricCell(label: "HOLD", value: durationLabel(exercises[index].durationSeconds))
+            }
+            .overlay {
+                HStack(spacing: 0) {
+                    stepButton(systemName: "minus") {
+                        if exercises[index].durationSeconds > 5 { exercises[index].durationSeconds -= 5 }
+                    }
+                    Spacer()
+                    stepButton(systemName: "plus") {
+                        exercises[index].durationSeconds += 5
+                    }
                 }
+                .padding(.horizontal, 4)
             }
         }
     }
 
     private func cardioFields(index: Int) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Cardio Type")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(MVMTheme.secondaryText)
+                Text("CARDIO TYPE")
+                    .font(MVMTheme.mono(10)).kerning(1)
+                    .foregroundStyle(MVMTheme.textFaint)
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -265,10 +359,10 @@ struct EditWorkoutSheet: View {
                                     Text(type.rawValue)
                                         .font(.caption.weight(.semibold))
                                 }
-                                .foregroundStyle(selected ? .white : MVMTheme.primaryText)
+                                .foregroundStyle(selected ? MVMTheme.onAmber : MVMTheme.text)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 7)
-                                .background(selected ? MVMTheme.accent : MVMTheme.cardSoft)
+                                .background(selected ? AnyShapeStyle(MVMTheme.amberButtonGradient) : AnyShapeStyle(MVMTheme.well))
                                 .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
@@ -278,22 +372,34 @@ struct EditWorkoutSheet: View {
                 .contentMargins(.horizontal, 0)
             }
 
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Duration (min)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(MVMTheme.secondaryText)
-
-                    compactStepper(value: Binding(
-                        get: { exercises[index].durationSeconds / 60 },
-                        set: { exercises[index].durationSeconds = $0 * 60 }
-                    ), range: 1...180, label: "min")
+            HStack(spacing: 8) {
+                InsetWell(radius: 13) {
+                    MetricCell(label: "DURATION", value: "\(exercises[index].durationSeconds / 60) MIN")
+                }
+                .overlay {
+                    HStack(spacing: 0) {
+                        stepButton(systemName: "minus") {
+                            if exercises[index].durationSeconds > 60 { exercises[index].durationSeconds -= 60 }
+                        }
+                        Spacer()
+                        stepButton(systemName: "plus") {
+                            exercises[index].durationSeconds += 60
+                        }
+                    }
+                    .padding(.horizontal, 4)
                 }
 
-                textField(title: "Distance (mi)", text: Binding(
-                    get: { exercises[index].distanceMiles.map { String(format: "%.1f", $0) } ?? "" },
-                    set: { exercises[index].distanceMiles = Double($0) }
-                ), keyboard: .decimalPad)
+                InsetWell(radius: 13) {
+                    TextField("0.0", value: Binding(
+                        get: { exercises[index].distanceMiles },
+                        set: { exercises[index].distanceMiles = $0 }
+                    ), format: .number)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(MVMTheme.text)
+                        .padding(.horizontal, 14)
+                        .frame(height: 46)
+                }
             }
 
             Button {
@@ -304,10 +410,10 @@ struct EditWorkoutSheet: View {
                     Text("Sync Steps (\(vm.pedometer.todaySteps))")
                         .font(.subheadline.weight(.semibold))
                 }
-                .foregroundStyle(MVMTheme.accent)
+                .foregroundStyle(MVMTheme.amber)
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
-                .background(MVMTheme.accent.opacity(0.12))
+                .background(MVMTheme.amber.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
@@ -319,130 +425,84 @@ struct EditWorkoutSheet: View {
             HStack(spacing: 6) {
                 Image(systemName: "scalemass.fill")
                     .font(.caption2)
-                    .foregroundStyle(MVMTheme.accent)
-                Text("Weight / Load")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(MVMTheme.secondaryText)
+                    .foregroundStyle(MVMTheme.amber)
+                Text("LOAD")
+                    .font(MVMTheme.mono(10)).kerning(1)
+                    .foregroundStyle(MVMTheme.textFaint)
             }
 
-            TextField("e.g. 135 lbs, 20 lb vest", text: $exercises[index].weight)
-                .font(.subheadline)
-                .padding(.horizontal, 12)
-                .frame(height: 44)
-                .background(MVMTheme.cardSoft)
-                .foregroundStyle(MVMTheme.primaryText)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
+            InsetWell(radius: 13) {
+                TextField("e.g. 135 LB, 20 LB VEST", text: $exercises[index].weight)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(MVMTheme.text)
+                    .padding(.horizontal, 14)
+                    .frame(height: 46)
+            }
         }
     }
 
     private func noteField(index: Int) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Notes")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(MVMTheme.secondaryText)
+            Text("NOTES")
+                .font(MVMTheme.mono(10)).kerning(1)
+                .foregroundStyle(MVMTheme.textFaint)
 
-            TextField("Add notes...", text: $exercises[index].notes)
-                .font(.subheadline)
-                .padding(.horizontal, 12)
-                .frame(height: 44)
-                .background(MVMTheme.cardSoft)
-                .foregroundStyle(MVMTheme.primaryText)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
-        }
-    }
-
-    private func textField(title: String, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(MVMTheme.secondaryText)
-
-            TextField("0", text: text)
-                .keyboardType(keyboard)
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 12)
-                .frame(height: 44)
-                .background(MVMTheme.cardSoft)
-                .foregroundStyle(MVMTheme.primaryText)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
-        }
-    }
-
-    private func intStepperField(title: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(MVMTheme.secondaryText)
-
-            HStack(spacing: 0) {
-                Button {
-                    if value.wrappedValue > range.lowerBound { value.wrappedValue -= 1 }
-                } label: {
-                    Image(systemName: "minus")
-                        .font(.headline)
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .frame(width: 40, height: 44)
-                }
-
-                Text("\(value.wrappedValue)")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
-                    .frame(maxWidth: .infinity)
-                    .contentTransition(.numericText())
-
-                Button {
-                    if value.wrappedValue < range.upperBound { value.wrappedValue += 1 }
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.headline)
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .frame(width: 40, height: 44)
-                }
+            InsetWell(radius: 13) {
+                TextField("Add notes...", text: $exercises[index].notes)
+                    .font(.system(size: 15))
+                    .foregroundStyle(MVMTheme.text)
+                    .padding(.horizontal, 14)
+                    .frame(height: 46)
             }
-            .background(MVMTheme.cardSoft)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
         }
     }
 
-    private func compactStepper(value: Binding<Int>, range: ClosedRange<Int>, label: String) -> some View {
+    private func durationLabel(_ seconds: Int) -> String {
+        "\(seconds / 60)\(MVMTheme.dot)\(String(format: "%02d", seconds % 60))"
+    }
+
+    private func stepperOverlay(value: Binding<Int>, range: ClosedRange<Int>) -> some View {
         HStack(spacing: 0) {
-            Button {
+            stepButton(systemName: "minus") {
                 if value.wrappedValue > range.lowerBound { value.wrappedValue -= 1 }
-            } label: {
-                Image(systemName: "minus")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
-                    .frame(width: 30, height: 44)
             }
-
-            VStack(spacing: 0) {
-                Text("\(value.wrappedValue)")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
-                    .contentTransition(.numericText())
-                Text(label)
-                    .font(.caption2)
-                    .foregroundStyle(MVMTheme.tertiaryText)
-            }
-            .frame(maxWidth: .infinity)
-
-            Button {
+            Spacer()
+            stepButton(systemName: "plus") {
                 if value.wrappedValue < range.upperBound { value.wrappedValue += 1 }
-            } label: {
-                Image(systemName: "plus")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
-                    .frame(width: 30, height: 44)
             }
         }
-        .frame(height: 44)
-        .background(MVMTheme.cardSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
+        .padding(.horizontal, 4)
+    }
+
+    private func stepButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(MVMTheme.text)
+                .frame(width: 30, height: 46)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var addMovement: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "plus")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(MVMTheme.amber)
+                .frame(width: 36, height: 36)
+                .background(MVMTheme.amber.opacity(0.13))
+                .clipShape(RoundedRectangle(cornerRadius: 11))
+            Text("Add a movement")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(MVMTheme.amber)
+            Spacer()
+        }
+        .padding(.horizontal, 16).frame(minHeight: 56)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(MVMTheme.amber.opacity(0.42), style: .init(lineWidth: 1.5, dash: [6, 5]))
+        )
+        .contentShape(Rectangle())
     }
 }
 
@@ -458,87 +518,81 @@ struct AddExerciseSheet: View {
     @State private var weight: String = ""
     @State private var notes: String = ""
     @State private var exerciseType: Int = 0
+    @State private var eventTag: AFTEventType?
 
     var body: some View {
         NavigationStack {
             ZStack {
-                MVMTheme.background.ignoresSafeArea()
+                MVMTheme.screen.ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 18) {
                         ExerciseAutocompleteField(
-                            title: "Exercise Name",
+                            title: "Movement Name",
                             text: $name,
-                            accentColor: MVMTheme.accent
+                            accentColor: MVMTheme.amber
                         )
                         .zIndex(10)
 
-                        Picker("Type", selection: $exerciseType) {
-                            Text("Strength").tag(0)
-                            Text("Timed").tag(1)
-                            Text("Cardio").tag(2)
+                        InsetWell(radius: 13) {
+                            Picker("Type", selection: $exerciseType) {
+                                Text("Strength").tag(0)
+                                Text("Timed").tag(1)
+                                Text("Cardio").tag(2)
+                            }
+                            .pickerStyle(.segmented)
+                            .padding(4)
                         }
-                        .pickerStyle(.segmented)
+
+                        eventTagRow
 
                         if exerciseType == 0 {
-                            HStack(spacing: 16) {
-                                stepperField(title: "Sets", value: $sets, range: 1...20)
-                                stepperField(title: "Reps", value: $reps, range: 1...100)
+                            HStack(spacing: 8) {
+                                wellStepper(label: "SETS", value: $sets, range: 1...20)
+                                wellStepper(label: "REPS", value: $reps, range: 1...100)
                             }
                         } else if exerciseType == 1 {
-                            HStack(spacing: 16) {
-                                stepperField(title: "Sets", value: $sets, range: 1...20)
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Duration (sec)")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(MVMTheme.secondaryText)
-                                    stepperField(title: "", value: $durationSeconds, range: 5...600)
-                                }
+                            HStack(spacing: 8) {
+                                wellStepper(label: "SETS", value: $sets, range: 1...20)
+                                wellStepper(label: "DURATION (SEC)", value: $durationSeconds, range: 5...600)
                             }
                         } else {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Duration (min)")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(MVMTheme.secondaryText)
-                                let durationMinutes = Binding(
-                                    get: { durationSeconds / 60 },
-                                    set: { durationSeconds = $0 * 60 }
-                                )
-                                stepperField(title: "", value: durationMinutes, range: 1...180)
+                            let durationMinutes = Binding(
+                                get: { durationSeconds / 60 },
+                                set: { durationSeconds = $0 * 60 }
+                            )
+                            wellStepper(label: "DURATION (MIN)", value: durationMinutes, range: 1...180)
+                        }
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("LOAD")
+                                .font(MVMTheme.mono(10)).kerning(1)
+                                .foregroundStyle(MVMTheme.textFaint)
+
+                            InsetWell(radius: 13) {
+                                TextField("e.g. 135 LB", text: $weight)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(MVMTheme.text)
+                                    .padding(.horizontal, 14)
+                                    .frame(height: 46)
                             }
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Weight / Load")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(MVMTheme.secondaryText)
+                            Text("NOTES")
+                                .font(MVMTheme.mono(10)).kerning(1)
+                                .foregroundStyle(MVMTheme.textFaint)
 
-                            TextField("e.g. 135 lbs", text: $weight)
-                                .font(.subheadline)
-                                .padding(.horizontal, 12)
-                                .frame(height: 44)
-                                .background(MVMTheme.cardSoft)
-                                .foregroundStyle(MVMTheme.primaryText)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
+                            InsetWell(radius: 13) {
+                                TextField("Optional notes...", text: $notes)
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(MVMTheme.text)
+                                    .padding(.horizontal, 14)
+                                    .frame(height: 46)
+                            }
                         }
 
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Notes")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(MVMTheme.secondaryText)
-
-                            TextField("Optional notes...", text: $notes)
-                                .font(.subheadline)
-                                .padding(.horizontal, 12)
-                                .frame(height: 44)
-                                .background(MVMTheme.cardSoft)
-                                .foregroundStyle(MVMTheme.primaryText)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
-                        }
-
-                        Button {
+                        AmberButton(title: "Add Movement") {
                             let category: ExerciseCategory = exerciseType == 0 ? .strength : exerciseType == 1 ? .timed : .cardio
                             let exercise = WorkoutExercise(
                                 name: name.isEmpty ? "New Exercise" : name,
@@ -548,24 +602,12 @@ struct AddExerciseSheet: View {
                                 weight: weight,
                                 notes: notes,
                                 category: category,
-                                cardioType: exerciseType == 2 ? .run : nil
+                                cardioType: exerciseType == 2 ? .run : nil,
+                                eventTag: eventTag
                             )
                             onAdd(exercise)
                             dismiss()
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.subheadline.weight(.bold))
-                                Text("Add Exercise")
-                                    .font(.headline.weight(.bold))
-                            }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 52)
-                            .background(MVMTheme.heroGradient)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
-                        .buttonStyle(PressScaleButtonStyle())
                         .disabled(name.isEmpty)
                         .opacity(name.isEmpty ? 0.5 : 1)
                     }
@@ -574,58 +616,89 @@ struct AddExerciseSheet: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
-            .navigationTitle("Add Exercise")
+            .navigationTitle("Add Movement")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(MVMTheme.secondaryText)
+                        .foregroundStyle(MVMTheme.textMuted)
                 }
             }
-            .toolbarBackground(MVMTheme.background, for: .navigationBar)
+            .toolbarBackground(MVMTheme.screen, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-        .presentationBackground(MVMTheme.background)
+        .presentationBackground(MVMTheme.screen)
     }
 
-    private func stepperField(title: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+    private var eventTagRow: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if !title.isEmpty {
-                Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(MVMTheme.secondaryText)
-            }
+            Text("EVENT TAG")
+                .font(MVMTheme.mono(10)).kerning(1)
+                .foregroundStyle(MVMTheme.textFaint)
 
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    Button {
+                        eventTag = nil
+                    } label: {
+                        Text("NONE")
+                            .font(MVMTheme.mono(10.5, weight: .bold))
+                            .foregroundStyle(eventTag == nil ? MVMTheme.onAmber : MVMTheme.textMuted)
+                            .padding(.horizontal, 12).frame(height: 36)
+                            .background(eventTag == nil ? AnyShapeStyle(MVMTheme.amberButtonGradient) : AnyShapeStyle(MVMTheme.well))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
+
+                    ForEach(AFTEventType.allCases, id: \.self) { tag in
+                        let selected = eventTag == tag
+                        Button {
+                            eventTag = tag
+                        } label: {
+                            Text(tag.displayCode)
+                                .font(MVMTheme.mono(10.5, weight: .bold))
+                                .foregroundStyle(selected ? MVMTheme.onAmber : MVMTheme.textMuted)
+                                .padding(.horizontal, 12).frame(height: 36)
+                                .background(selected ? AnyShapeStyle(MVMTheme.amberButtonGradient) : AnyShapeStyle(MVMTheme.well))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .contentMargins(.horizontal, 0)
+        }
+    }
+
+    private func wellStepper(label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        InsetWell(radius: 13) {
+            MetricCell(label: label, value: "\(value.wrappedValue)")
+        }
+        .overlay {
             HStack(spacing: 0) {
                 Button {
                     if value.wrappedValue > range.lowerBound { value.wrappedValue -= 1 }
                 } label: {
                     Image(systemName: "minus")
-                        .font(.headline)
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .frame(width: 40, height: 44)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.text)
+                        .frame(width: 30, height: 46)
                 }
-
-                Text("\(value.wrappedValue)")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
-                    .frame(maxWidth: .infinity)
-                    .contentTransition(.numericText())
-
+                .buttonStyle(.plain)
+                Spacer()
                 Button {
                     if value.wrappedValue < range.upperBound { value.wrappedValue += 1 }
                 } label: {
                     Image(systemName: "plus")
-                        .font(.headline)
-                        .foregroundStyle(MVMTheme.primaryText)
-                        .frame(width: 40, height: 44)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.text)
+                        .frame(width: 30, height: 46)
                 }
+                .buttonStyle(.plain)
             }
-            .background(MVMTheme.cardSoft)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay { RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border) }
+            .padding(.horizontal, 4)
         }
     }
 }

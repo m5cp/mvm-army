@@ -58,6 +58,10 @@ nonisolated struct WorkoutExercise: Codable, Identifiable, Hashable, Sendable {
     var distanceMiles: Double?
     var caloriesBurned: Int?
     var stepsLogged: Int?
+    /// Optional structured AFT event tag (Golden Hour redesign). Additive and
+    /// backward compatible — previously saved exercises simply decode `nil`.
+    /// Powers "targets your weakest event" on Home and future badge rules.
+    var eventTag: AFTEventType?
 
     var isTimeBased: Bool { reps == 0 && durationSeconds > 0 }
 
@@ -109,7 +113,8 @@ nonisolated struct WorkoutExercise: Codable, Identifiable, Hashable, Sendable {
         speedMph: Double? = nil,
         distanceMiles: Double? = nil,
         caloriesBurned: Int? = nil,
-        stepsLogged: Int? = nil
+        stepsLogged: Int? = nil,
+        eventTag: AFTEventType? = nil
     ) {
         self.id = UUID()
         self.name = name
@@ -125,6 +130,7 @@ nonisolated struct WorkoutExercise: Codable, Identifiable, Hashable, Sendable {
         self.distanceMiles = distanceMiles
         self.caloriesBurned = caloriesBurned
         self.stepsLogged = stepsLogged
+        self.eventTag = eventTag
     }
 
     init(from decoder: Decoder) throws {
@@ -143,6 +149,7 @@ nonisolated struct WorkoutExercise: Codable, Identifiable, Hashable, Sendable {
         distanceMiles = try container.decodeIfPresent(Double.self, forKey: .distanceMiles)
         caloriesBurned = try container.decodeIfPresent(Int.self, forKey: .caloriesBurned)
         stepsLogged = try container.decodeIfPresent(Int.self, forKey: .stepsLogged)
+        eventTag = try container.decodeIfPresent(AFTEventType.self, forKey: .eventTag)
     }
 }
 

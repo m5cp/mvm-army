@@ -22,14 +22,14 @@ struct PlanView: View {
 
     var body: some View {
         ZStack {
-            MVMTheme.background.ignoresSafeArea()
+            MVMTheme.screen.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 weekCalendarStrip
                     .padding(.bottom, 6)
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 14) {
                         weekProgressBar
                             .padding(.horizontal, 20)
 
@@ -41,7 +41,7 @@ struct PlanView: View {
                                 .padding(.horizontal, 20)
                         }
                     }
-                    .padding(.top, 8)
+                    .padding(.top, 12)
                     .padding(.bottom, 48)
                     .adaptiveContainer()
                 }
@@ -50,10 +50,10 @@ struct PlanView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("MVM FITNESS")
-                    .font(.caption.weight(.heavy))
-                    .tracking(2.4)
-                    .foregroundStyle(MVMTheme.secondaryText)
+                Text("TRAIN")
+                    .font(MVMTheme.mono(12))
+                    .kerning(2.2)
+                    .foregroundStyle(MVMTheme.textMuted)
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -73,11 +73,11 @@ struct PlanView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(MVMTheme.secondaryText)
+                        .foregroundStyle(MVMTheme.textMuted)
                 }
             }
         }
-        .toolbarBackground(MVMTheme.background, for: .navigationBar)
+        .toolbarBackground(MVMTheme.screen, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationDestination(isPresented: $navigateToDetail) {
             if vm.currentPlan?.days.contains(where: { $0.dayIndex == detailDayIndex }) == true {
@@ -110,10 +110,10 @@ struct PlanView: View {
                     .toolbar {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button("Done") { showEditSheet = false }
-                                .foregroundStyle(MVMTheme.primaryText)
+                                .foregroundStyle(MVMTheme.text)
                         }
                     }
-                    .toolbarBackground(MVMTheme.background, for: .navigationBar)
+                    .toolbarBackground(MVMTheme.screen, for: .navigationBar)
                     .toolbarColorScheme(.dark, for: .navigationBar)
                 }
             }
@@ -142,13 +142,15 @@ struct PlanView: View {
             HStack {
                 Text(monthYearString)
                     .font(.headline.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
+                    .foregroundStyle(MVMTheme.text)
 
                 Spacer()
 
                 Text(weekRangeString)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .font(MVMTheme.mono(11))
+                    .foregroundStyle(MVMTheme.textFaint)
+                    .lineLimit(1)
+                    .fixedSize()
             }
             .padding(.horizontal, 20)
 
@@ -170,31 +172,31 @@ struct PlanView: View {
                             Text(shortDayName(date))
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundStyle(
-                                    isSelected ? .white :
-                                    isToday ? MVMTheme.accent :
-                                    MVMTheme.tertiaryText
+                                    isSelected ? MVMTheme.onAmber :
+                                    isToday ? MVMTheme.amber :
+                                    MVMTheme.textFaint
                                 )
 
                             Text(dayNumber(date))
                                 .font(.system(size: 17, weight: .bold, design: .rounded))
                                 .foregroundStyle(
-                                    isSelected ? .white :
+                                    isSelected ? MVMTheme.onAmber :
                                     isCompleted ? MVMTheme.success :
-                                    isToday ? MVMTheme.accent :
-                                    MVMTheme.primaryText
+                                    isToday ? MVMTheme.amber :
+                                    MVMTheme.text
                                 )
 
                             HStack(spacing: 3) {
                                 Circle()
                                     .fill(
                                         isCompleted ? MVMTheme.success :
-                                        hasWorkout ? MVMTheme.accent.opacity(0.6) :
+                                        hasWorkout ? (isSelected ? MVMTheme.onAmber.opacity(0.6) : MVMTheme.amber.opacity(0.6)) :
                                         Color.clear
                                     )
                                     .frame(width: 5, height: 5)
                                 if hasUnit {
                                     Circle()
-                                        .fill(Color(hex: "#2563EB").opacity(0.8))
+                                        .fill(MVMTheme.slateAccent.opacity(0.85))
                                         .frame(width: 5, height: 5)
                                 }
                             }
@@ -204,17 +206,11 @@ struct PlanView: View {
                         .background {
                             if isSelected {
                                 RoundedRectangle(cornerRadius: 14)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [MVMTheme.accent, MVMTheme.accent2],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                                    .shadow(color: MVMTheme.accent.opacity(0.3), radius: 8, y: 4)
+                                    .fill(MVMTheme.amberButtonGradient)
+                                    .shadow(color: MVMTheme.amberBtnBot.opacity(0.4), radius: 8, y: 4)
                             } else if isToday {
                                 RoundedRectangle(cornerRadius: 14)
-                                    .stroke(MVMTheme.accent.opacity(0.3), lineWidth: 1)
+                                    .stroke(MVMTheme.amber.opacity(0.35), lineWidth: 1)
                             }
                         }
                     }
@@ -223,10 +219,10 @@ struct PlanView: View {
             .padding(.horizontal, 12)
         }
         .padding(.vertical, 12)
-        .background(MVMTheme.card)
+        .background(MVMTheme.cardGradient)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(MVMTheme.border)
+                .fill(MVMTheme.hairline)
                 .frame(height: 1)
         }
     }
@@ -240,41 +236,38 @@ struct PlanView: View {
             let completed = plan.completedCount
             let progress: Double = total > 0 ? Double(completed) / Double(total) : 0
 
-            HStack(spacing: 14) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("\(completed) of \(total) complete")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(MVMTheme.secondaryText)
+            RaisedCard(radius: 16) {
+                HStack(spacing: 14) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("\(completed) OF \(total) COMPLETE")
+                            .font(MVMTheme.mono(10.5)).kerning(1)
+                            .foregroundStyle(MVMTheme.textMuted)
+                            .lineLimit(1).fixedSize()
 
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(MVMTheme.cardSoft)
-                                .frame(height: 5)
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(MVMTheme.well)
+                                    .frame(height: 5)
 
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [MVMTheme.accent, MVMTheme.accent2],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .frame(width: max(geo.size.width * progress, progress > 0 ? 5 : 0), height: 5)
-                                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: completed)
+                                Capsule()
+                                    .fill(MVMTheme.amberButtonGradient)
+                                    .frame(width: max(geo.size.width * progress, progress > 0 ? 5 : 0), height: 5)
+                                    .animation(.spring(response: 0.6, dampingFraction: 0.8), value: completed)
+                            }
                         }
+                        .frame(height: 5)
                     }
-                    .frame(height: 5)
-                }
 
-                Text("\(Int(progress * 100))%")
-                    .font(.system(.title3, design: .rounded).weight(.bold))
-                    .foregroundStyle(MVMTheme.accent)
-                    .contentTransition(.numericText())
-                    .frame(width: 50, alignment: .trailing)
+                    Text("\(Int(progress * 100))%")
+                        .font(MVMTheme.scoreDisplay(22))
+                        .foregroundStyle(MVMTheme.amber)
+                        .contentTransition(.numericText())
+                        .frame(width: 54, alignment: .trailing)
+                        .lineLimit(1).fixedSize()
+                }
+                .padding(16)
             }
-            .padding(16)
-            .mvmCard(cornerRadius: 16)
         }
     }
 
@@ -290,9 +283,8 @@ struct PlanView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("THIS WEEK")
-                    .font(.caption.weight(.bold))
-                    .tracking(1.0)
-                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .font(MVMTheme.mono(11)).kerning(1.4)
+                    .foregroundStyle(MVMTheme.textFaint)
                     .padding(.leading, 4)
                     .padding(.top, 8)
 
@@ -323,225 +315,215 @@ struct PlanView: View {
         }
     }
 
+    /// First structured AFT event tag found among a day's exercises, if any.
+    private func primaryEventTag(_ day: WorkoutDay) -> AFTEventType? {
+        day.exercises.compactMap(\.eventTag).first
+    }
+
     private func selectedWorkoutCard(_ day: WorkoutDay) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 8) {
-                Text(dayLabel(day).uppercased())
-                    .font(.caption2.weight(.heavy))
-                    .tracking(0.8)
-                    .foregroundStyle(
-                        calendar.isDateInToday(day.date) ? .white.opacity(0.9) : .white.opacity(0.7)
-                    )
+        RaisedCard(radius: 22) {
+            ZStack(alignment: .topLeading) {
+                GradedPhoto(name: day.isCompleted ? "photo-founders-trail-run" : "photo-ruck-wide-landscape", grade: .lowKeyGym)
 
-                Spacer()
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 8) {
+                        Text(dayLabel(day).uppercased())
+                            .font(MVMTheme.mono(10.5)).kerning(1.2)
+                            .foregroundStyle(MVMTheme.amber)
+                            .lineLimit(1).fixedSize()
 
-                if day.isCompleted {
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.caption2.weight(.bold))
-                        Text("DONE")
-                            .font(.caption2.weight(.heavy))
-                            .tracking(0.5)
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(.white.opacity(0.2))
-                    .clipShape(Capsule())
-                } else if let tag = day.tags.first {
-                    Text(tag)
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white.opacity(0.9))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(.white.opacity(0.15))
-                        .clipShape(Capsule())
-                }
-            }
+                        Spacer()
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(day.title)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-
-                HStack(spacing: 12) {
-                    Label("\(day.exercises.count) exercises", systemImage: "list.bullet")
-                    Label(estimatedDuration(day), systemImage: "clock")
-                }
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.white.opacity(0.7))
-            }
-
-            HStack(spacing: 10) {
-                if day.isCompleted {
-                    Button {
-                        detailDayIndex = day.dayIndex
-                        navigateToDetail = true
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "eye")
-                                .font(.subheadline.weight(.semibold))
-                            Text("Review")
-                                .font(.subheadline.weight(.bold))
-                        }
-                        .foregroundStyle(MVMTheme.lifetimeNavy1)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                    .buttonStyle(PressScaleButtonStyle())
-                } else {
-                    Button {
-                        startTrigger.toggle()
-                        sessionDayIndex = day.dayIndex
-                        navigateToSession = true
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "play.fill")
-                                .font(.caption.weight(.bold))
-                            Text("Start Workout")
-                                .font(.subheadline.weight(.bold))
-                        }
-                        .foregroundStyle(MVMTheme.lifetimeNavy1)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                    .sensoryFeedback(.impact(weight: .medium), trigger: startTrigger)
-                    .buttonStyle(PressScaleButtonStyle())
-
-                    Button {
-                        detailDayIndex = day.dayIndex
-                        navigateToDetail = true
-                    } label: {
-                        Image(systemName: "pencil")
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                            .background(.white.opacity(0.18))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                    .buttonStyle(PressScaleButtonStyle())
-
-                    Button {
-                        completeTrigger.toggle()
-                        vm.markDayCompleted(dayIndex: day.dayIndex)
-                    } label: {
-                        Image(systemName: "checkmark")
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                            .background(.white.opacity(0.18))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                    .sensoryFeedback(.success, trigger: completeTrigger)
-
-                    Menu {
-                        Button {
-                            selectedDayIndex = day.dayIndex
-                            showEditSheet = true
-                        } label: {
-                            Label("Edit", systemImage: "pencil")
-                        }
-                        Button {
-                            Task {
-                                let result = await calendarService.exportWorkout(day)
-                                handleExportResult(result)
+                        if day.isCompleted {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.caption2.weight(.bold))
+                                Text("DONE")
+                                    .font(.caption2.weight(.heavy))
+                                    .tracking(0.5)
                             }
-                        } label: {
-                            Label("Add to Calendar", systemImage: "calendar.badge.plus")
+                            .foregroundStyle(MVMTheme.text)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(MVMTheme.success.opacity(0.22))
+                            .clipShape(Capsule())
+                        } else if let tag = primaryEventTag(day) {
+                            EventTagChip(event: tag)
+                                .scaleEffect(0.72)
+                                .frame(width: 32, height: 32)
+                        } else if let tag = day.tags.first {
+                            Text(tag)
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(MVMTheme.text)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Color.white.opacity(0.12))
+                                .clipShape(Capsule())
                         }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                            .background(.white.opacity(0.18))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(day.title)
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(MVMTheme.text)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+
+                        HStack(spacing: 12) {
+                            Label("\(day.exercises.count) exercises", systemImage: "list.bullet")
+                            Label(estimatedDuration(day), systemImage: "clock")
+                        }
+                        .font(MVMTheme.mono(11.5))
+                        .foregroundStyle(MVMTheme.textMuted)
+                    }
+
+                    HStack(spacing: 10) {
+                        if day.isCompleted {
+                            Button {
+                                detailDayIndex = day.dayIndex
+                                navigateToDetail = true
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "eye")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("Review")
+                                        .font(.subheadline.weight(.bold))
+                                }
+                                .foregroundStyle(MVMTheme.onAmber)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
+                                .background(MVMTheme.amberButtonGradient)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(PressScaleButtonStyle())
+                        } else {
+                            Button {
+                                startTrigger.toggle()
+                                sessionDayIndex = day.dayIndex
+                                navigateToSession = true
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "play.fill")
+                                        .font(.caption.weight(.bold))
+                                    Text("Start Workout")
+                                        .font(.subheadline.weight(.bold))
+                                }
+                                .foregroundStyle(MVMTheme.onAmber)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
+                                .background(MVMTheme.amberButtonGradient)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .sensoryFeedback(.impact(weight: .medium), trigger: startTrigger)
+                            .buttonStyle(PressScaleButtonStyle())
+
+                            Button {
+                                detailDayIndex = day.dayIndex
+                                navigateToDetail = true
+                            } label: {
+                                Image(systemName: "pencil")
+                                    .font(.subheadline.weight(.bold))
+                                    .foregroundStyle(MVMTheme.text)
+                                    .frame(width: 44, height: 44)
+                                    .background(Color.white.opacity(0.14))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(PressScaleButtonStyle())
+
+                            Button {
+                                completeTrigger.toggle()
+                                vm.markDayCompleted(dayIndex: day.dayIndex)
+                            } label: {
+                                Image(systemName: "checkmark")
+                                    .font(.subheadline.weight(.bold))
+                                    .foregroundStyle(MVMTheme.text)
+                                    .frame(width: 44, height: 44)
+                                    .background(Color.white.opacity(0.14))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .sensoryFeedback(.success, trigger: completeTrigger)
+
+                            Menu {
+                                Button {
+                                    selectedDayIndex = day.dayIndex
+                                    showEditSheet = true
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                Button {
+                                    Task {
+                                        let result = await calendarService.exportWorkout(day)
+                                        handleExportResult(result)
+                                    }
+                                } label: {
+                                    Label("Add to Calendar", systemImage: "calendar.badge.plus")
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis")
+                                    .font(.subheadline.weight(.bold))
+                                    .foregroundStyle(MVMTheme.text)
+                                    .frame(width: 44, height: 44)
+                                    .background(Color.white.opacity(0.14))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                        }
                     }
                 }
+                .padding(20)
             }
         }
-        .padding(20)
-        .background {
-            ZStack {
-                RoundedRectangle(cornerRadius: 22)
-                    .fill(
-                        day.isCompleted ?
-                        LinearGradient(
-                            colors: [MVMTheme.emeraldAccent, Color(hex: "#10B981").opacity(0.9)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ) :
-                        LinearGradient(
-                            colors: [Color(hex: "#3B6DE0"), Color(hex: "#5B4DC7").opacity(0.95), Color(hex: "#4A3DAF").opacity(0.9)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                RoundedRectangle(cornerRadius: 22)
-                    .fill(MVMTheme.subtleGradient)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 22))
-        .shadow(color: (day.isCompleted ? MVMTheme.emeraldAccent : MVMTheme.accent).opacity(0.2), radius: 20, y: 12)
+        .overlay(RoundedRectangle(cornerRadius: 22).stroke(MVMTheme.amber.opacity(0.28), lineWidth: 1))
+        .shadow(color: (day.isCompleted ? MVMTheme.success : MVMTheme.amber).opacity(0.16), radius: 20, y: 12)
     }
 
     private func selectedRecoveryCard(_ day: WorkoutDay) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Image(systemName: "leaf.fill")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.8))
+        RaisedCard(radius: 22) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 8) {
+                    Image(systemName: "leaf.fill")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.textMuted)
 
-                Text(dayLabel(day).uppercased())
-                    .font(.caption2.weight(.heavy))
-                    .tracking(0.8)
-                    .foregroundStyle(.white.opacity(0.7))
+                    Text(dayLabel(day).uppercased())
+                        .font(MVMTheme.mono(10.5)).kerning(1.2)
+                        .foregroundStyle(MVMTheme.textFaint)
 
-                Spacer()
+                    Spacer()
 
-                Text("Active Rest")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.8))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(.white.opacity(0.15))
-                    .clipShape(Capsule())
+                    Text("ACTIVE REST")
+                        .font(MVMTheme.mono(10))
+                        .foregroundStyle(MVMTheme.textMuted)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(MVMTheme.well)
+                        .clipShape(Capsule())
+                        .lineLimit(1).fixedSize()
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Recovery & Mobility")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(MVMTheme.text)
+
+                    Text("Light movement keeps the plan moving forward.")
+                        .font(.caption)
+                        .foregroundStyle(MVMTheme.textMuted)
+                }
             }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Recovery & Mobility")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.white)
-
-                Text("Light movement keeps the plan moving forward.")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.6))
-            }
+            .padding(20)
         }
-        .padding(20)
-        .background {
-            RoundedRectangle(cornerRadius: 22)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(hex: "#1E3A5F").opacity(0.9), Color(hex: "#2D4A6F").opacity(0.85)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 22))
     }
 
     // MARK: - Workout Row
 
     private func workoutRow(_ day: WorkoutDay, offset: Int) -> some View {
         let isSelected = calendar.isDate(day.date, inSameDayAs: selectedDate)
+        let rowFill: AnyShapeStyle = isSelected
+            ? AnyShapeStyle(MVMTheme.amber.opacity(0.09))
+            : AnyShapeStyle(MVMTheme.cardGradient.opacity(day.isCompleted ? 0.5 : 1))
+        let rowStroke: Color = isSelected
+            ? MVMTheme.amber.opacity(0.3)
+            : (day.isCompleted ? MVMTheme.success.opacity(0.14) : MVMTheme.hairline)
 
         return Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -549,36 +531,44 @@ struct PlanView: View {
             }
         } label: {
             HStack(spacing: 14) {
-                VStack(spacing: 2) {
-                    Text(shortDayName(day.date))
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                InsetWell(radius: 11) {
+                    VStack(spacing: 2) {
+                        Text(shortDayName(day.date))
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(MVMTheme.textFaint)
 
-                    Text(dayNumber(day.date))
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(
-                            day.isCompleted ? MVMTheme.success :
-                            calendar.isDateInToday(day.date) ? MVMTheme.accent :
-                            MVMTheme.secondaryText
-                        )
+                        Text(dayNumber(day.date))
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(
+                                day.isCompleted ? MVMTheme.success :
+                                calendar.isDateInToday(day.date) ? MVMTheme.amber :
+                                MVMTheme.textMuted
+                            )
+                    }
+                    .frame(width: 36, height: 36)
                 }
-                .frame(width: 36)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(day.title)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(day.isCompleted ? MVMTheme.secondaryText : MVMTheme.primaryText)
+                        .foregroundStyle(day.isCompleted ? MVMTheme.textMuted : MVMTheme.text)
                         .lineLimit(1)
 
                     HStack(spacing: 8) {
-                        if let tag = day.tags.first {
+                        if let tag = primaryEventTag(day) {
+                            Text(tag.displayCode)
+                                .font(MVMTheme.mono(9.5, weight: .bold))
+                                .foregroundStyle(MVMTheme.amber)
+                                .lineLimit(1).fixedSize()
+                        } else if let tag = day.tags.first {
                             Text(tag)
                                 .font(.caption2.weight(.semibold))
-                                .foregroundStyle(MVMTheme.accent)
+                                .foregroundStyle(MVMTheme.amber)
                         }
                         Text(estimatedDuration(day))
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(MVMTheme.tertiaryText)
+                            .font(MVMTheme.mono(10.5))
+                            .foregroundStyle(MVMTheme.textFaint)
+                            .lineLimit(1).fixedSize()
                     }
                 }
 
@@ -591,22 +581,15 @@ struct PlanView: View {
                 } else {
                     Image(systemName: "chevron.right")
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .foregroundStyle(MVMTheme.textFaint)
                 }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(
-                isSelected ? MVMTheme.accent.opacity(0.08) :
-                MVMTheme.card.opacity(day.isCompleted ? 0.5 : 1)
-            )
+            .background(rowFill)
             .overlay {
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(
-                        isSelected ? MVMTheme.accent.opacity(0.2) :
-                        day.isCompleted ? MVMTheme.success.opacity(0.1) :
-                        MVMTheme.border
-                    )
+                    .stroke(rowStroke)
             }
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
@@ -678,39 +661,39 @@ struct PlanView: View {
                 VStack(spacing: 2) {
                     Text(shortDayName(day.date))
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .foregroundStyle(MVMTheme.textFaint)
 
                     Text(dayNumber(day.date))
                         .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .foregroundStyle(MVMTheme.textFaint)
                 }
                 .frame(width: 36)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Recovery & Mobility")
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(MVMTheme.secondaryText)
+                        .foregroundStyle(MVMTheme.textMuted)
 
-                    Text("Active rest · Light movement")
+                    Text("Active rest \(MVMTheme.dot) Light movement")
                         .font(.caption2.weight(.medium))
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .foregroundStyle(MVMTheme.textFaint)
                 }
 
                 Spacer(minLength: 0)
 
                 Image(systemName: "leaf.fill")
                     .font(.caption)
-                    .foregroundStyle(Color(hex: "#1E3A5F").opacity(0.5))
+                    .foregroundStyle(MVMTheme.textFaint)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .background(
-                isSelected ? MVMTheme.accent.opacity(0.05) : MVMTheme.card.opacity(0.4)
+                isSelected ? MVMTheme.amber.opacity(0.06) : MVMTheme.well.opacity(0.4)
             )
             .overlay {
                 RoundedRectangle(cornerRadius: 14)
                     .stroke(
-                        isSelected ? MVMTheme.accent.opacity(0.15) : MVMTheme.border.opacity(0.5)
+                        isSelected ? MVMTheme.amber.opacity(0.16) : MVMTheme.hairline
                     )
             }
             .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -731,41 +714,21 @@ struct PlanView: View {
             VStack(spacing: 12) {
                 Image(systemName: "calendar.badge.plus")
                     .font(.system(size: 44))
-                    .foregroundStyle(MVMTheme.accent.opacity(0.5))
+                    .foregroundStyle(MVMTheme.amber.opacity(0.6))
 
                 Text("No Plan Yet")
                     .font(.title3.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
+                    .foregroundStyle(MVMTheme.text)
 
                 Text("Build your weekly plan to stay on track.")
                     .font(.subheadline)
-                    .foregroundStyle(MVMTheme.secondaryText)
+                    .foregroundStyle(MVMTheme.textMuted)
             }
 
             VStack(spacing: 10) {
-                Button {
+                AmberButton(title: "Build Weekly Plan") {
                     vm.generateWeeklyPlan()
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.subheadline.weight(.bold))
-                        Text("Build Weekly Plan")
-                            .font(.headline.weight(.bold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(
-                        LinearGradient(
-                            colors: [MVMTheme.accent, MVMTheme.accent2],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: MVMTheme.accent.opacity(0.3), radius: 12, y: 6)
                 }
-                .buttonStyle(PressScaleButtonStyle())
 
                 Button {
                     vm.generateWeeklyPlan()
@@ -776,14 +739,12 @@ struct PlanView: View {
                         Text("Quick Start")
                             .font(.headline.weight(.semibold))
                     }
-                    .foregroundStyle(MVMTheme.secondaryText)
+                    .foregroundStyle(MVMTheme.textMuted)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(MVMTheme.cardSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
                     .overlay {
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(MVMTheme.border)
+                            .strokeBorder(MVMTheme.amber.opacity(0.35), style: .init(lineWidth: 1.5, dash: [6, 5]))
                     }
                 }
                 .buttonStyle(PressScaleButtonStyle())
@@ -800,16 +761,16 @@ struct PlanView: View {
             VStack(spacing: 8) {
                 Image(systemName: "calendar.badge.plus")
                     .font(.system(size: 40))
-                    .foregroundStyle(MVMTheme.accent)
+                    .foregroundStyle(MVMTheme.amber)
                     .padding(.top, 8)
 
                 Text("Export to Calendar")
                     .font(.title3.weight(.bold))
-                    .foregroundStyle(MVMTheme.primaryText)
+                    .foregroundStyle(MVMTheme.text)
 
                 Text("Add your PT plan to your iOS Calendar so workouts appear alongside your schedule.")
                     .font(.subheadline)
-                    .foregroundStyle(MVMTheme.secondaryText)
+                    .foregroundStyle(MVMTheme.textMuted)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
@@ -826,7 +787,7 @@ struct PlanView: View {
                         HStack(spacing: 10) {
                             if calendarService.isExporting {
                                 ProgressView()
-                                    .tint(.white)
+                                    .tint(MVMTheme.onAmber)
                             } else {
                                 Image(systemName: "calendar.badge.plus")
                                     .font(.subheadline.weight(.bold))
@@ -834,16 +795,10 @@ struct PlanView: View {
                             Text("Export Full Week")
                                 .font(.headline.weight(.bold))
                         }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(MVMTheme.onAmber)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(
-                            LinearGradient(
-                                colors: [MVMTheme.accent, MVMTheme.accent2],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+                        .background(MVMTheme.amberButtonGradient)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                     .disabled(calendarService.isExporting)
@@ -863,14 +818,14 @@ struct PlanView: View {
                                 Text("Export Selected Day Only")
                                     .font(.headline.weight(.semibold))
                             }
-                            .foregroundStyle(MVMTheme.secondaryText)
+                            .foregroundStyle(MVMTheme.textMuted)
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
-                            .background(MVMTheme.cardSoft)
+                            .background(MVMTheme.well)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .overlay {
                                 RoundedRectangle(cornerRadius: 16)
-                                    .stroke(MVMTheme.border)
+                                    .stroke(MVMTheme.hairline)
                             }
                         }
                         .disabled(calendarService.isExporting)
@@ -883,7 +838,7 @@ struct PlanView: View {
                 } label: {
                     Text("Cancel")
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .foregroundStyle(MVMTheme.textFaint)
                 }
                 .padding(.top, 4)
             }
@@ -892,7 +847,7 @@ struct PlanView: View {
         .padding(.vertical, 20)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
-        .presentationBackground(MVMTheme.background)
+        .presentationBackground(MVMTheme.screen)
     }
 
     // MARK: - Unit PT Helpers
@@ -905,26 +860,26 @@ struct PlanView: View {
         HStack(spacing: 14) {
             Image(systemName: "person.3.fill")
                 .font(.caption.weight(.bold))
-                .foregroundStyle(Color(hex: "#2563EB"))
+                .foregroundStyle(MVMTheme.slateAccent)
                 .frame(width: 36, height: 36)
-                .background(Color(hex: "#2563EB").opacity(0.12))
+                .background(MVMTheme.slateAccent.opacity(0.14))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(day.title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(day.isCompleted ? MVMTheme.secondaryText : MVMTheme.primaryText)
+                    .foregroundStyle(day.isCompleted ? MVMTheme.textMuted : MVMTheme.text)
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
                     Text("Unit PT")
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color(hex: "#2563EB"))
+                        .foregroundStyle(MVMTheme.slateAccent)
 
                     if let start = day.startTime {
                         Text(start.formatted(date: .omitted, time: .shortened))
                             .font(.caption2.weight(.medium))
-                            .foregroundStyle(MVMTheme.tertiaryText)
+                            .foregroundStyle(MVMTheme.textFaint)
                     }
                 }
             }
@@ -950,17 +905,17 @@ struct PlanView: View {
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .foregroundStyle(MVMTheme.textFaint)
                         .frame(width: 32, height: 32)
                 }
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(Color(hex: "#2563EB").opacity(0.04))
+        .background(MVMTheme.slateAccent.opacity(0.06))
         .overlay {
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color(hex: "#2563EB").opacity(0.15))
+                .stroke(MVMTheme.slateAccent.opacity(0.2))
         }
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
@@ -990,7 +945,7 @@ struct PlanView: View {
         guard let first = dates.first, let last = dates.last else { return "This Week" }
         let f = DateFormatter()
         f.dateFormat = "MMM d"
-        return "\(f.string(from: first)) – \(f.string(from: last))"
+        return "\(f.string(from: first)) \(MVMTheme.dot) \(f.string(from: last))"
     }
 
     private func shortDayName(_ date: Date) -> String {
