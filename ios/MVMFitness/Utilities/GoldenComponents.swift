@@ -183,6 +183,13 @@ struct BadgeCoin: View {
     let name: String
     let status: String // "JUL 12" / "ACTIVE" / "LOCKED"
     let earned: Bool
+    /// True only for the brief window right after a badge flips locked -> earned.
+    /// Drives a one-time celebratory scale-up; never affects layout or earn logic.
+    var isNewlyEarned: Bool = false
+
+    @State private var coinScale: CGFloat = 1
+    @State private var ringOpacity: Double = 0
+
     var body: some View {
         VStack(spacing: 7) {
             Image(asset).resizable().scaledToFill()
@@ -192,7 +199,9 @@ struct BadgeCoin: View {
                 .frame(width: 62, height: 62)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(earned ? MVMTheme.amber : Color.white.opacity(0.13), lineWidth: 2))
+                .overlay(Circle().stroke(MVMTheme.amber, lineWidth: 2.5).scaleEffect(1.3).opacity(ringOpacity))
                 .shadow(color: earned ? MVMTheme.amberBtnBot.opacity(0.55) : .clear, radius: 9, y: 8)
+                .scaleEffect(coinScale)
             Text(name)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(earned ? MVMTheme.text : MVMTheme.textMuted)
@@ -207,5 +216,22 @@ struct BadgeCoin: View {
         .background(MVMTheme.cardGradient)
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .overlay(RoundedRectangle(cornerRadius: 18).stroke(MVMTheme.hairline, lineWidth: 1))
+        .onAppear { if isNewlyEarned { playEarnAnimation() } }
+        .onChange(of: isNewlyEarned) { _, newValue in if newValue { playEarnAnimation() } }
+    }
+
+    private func playEarnAnimation() {
+        coinScale = 1
+        ringOpacity = 0
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.45)) {
+            coinScale = 1.28
+            ringOpacity = 0.9
+        }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.6).delay(0.22)) {
+            coinScale = 1
+        }
+        withAnimation(.easeOut(duration: 0.5).delay(0.3)) {
+            ringOpacity = 0
+        }
     }
 }

@@ -11,6 +11,10 @@ import SwiftUI
 struct BadgesView: View {
     @Environment(AppViewModel.self) private var vm
     @AppStorage("planWeeks") private var planWeeks = 4
+    /// Comma-separated asset names of badges the user has already seen earned,
+    /// so the scale-up celebration only plays once, the first time a badge flips.
+    @AppStorage("seenEarnedBadgeAssets") private var seenEarnedBadgesRaw = ""
+    @State private var newlyEarnedAssets: Set<String> = []
 
     private struct Coin: Identifiable {
         let id = UUID()
@@ -38,9 +42,25 @@ struct BadgesView: View {
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 11), count: 3), spacing: 11) {
                 ForEach(coins) { coin in
-                    BadgeCoin(asset: coin.asset, name: coin.name, status: coin.status, earned: coin.earned)
+                    BadgeCoin(asset: coin.asset, name: coin.name, status: coin.status, earned: coin.earned,
+                              isNewlyEarned: newlyEarnedAssets.contains(coin.asset))
                 }
             }
+        }
+        .onAppear { markNewlyEarned() }
+        .onChange(of: earnedCount) { _, _ in markNewlyEarned() }
+    }
+
+    /// Diffs the current earned set against what's already been seen, flags any
+    /// freshly-flipped badges for the one-time scale-up, then persists the union
+    /// so the celebration never replays for the same badge.
+    private func markNewlyEarned() {
+        let seen = Set(seenEarnedBadgesRaw.split(separator: ",").map(String.init))
+        let currentlyEarned = Set(coins.filter(\.earned).map(\.asset))
+        let fresh = currentlyEarned.subtracting(seen)
+        if !fresh.isEmpty {
+            newlyEarnedAssets = fresh
+            seenEarnedBadgesRaw = seen.union(currentlyEarned).sorted().joined(separator: ",")
         }
     }
 
