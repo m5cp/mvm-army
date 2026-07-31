@@ -3,10 +3,10 @@ import Observation
 
 @Observable
 final class AppViewModel {
+    private let stepService = StepTrackingService()
+
     var currentPlan: WeeklyPlan?
     var completedRecords: [CompletedWorkoutRecord] = []
-    var stepHistory: [StepDay] = []
-    var pedometer = PedometerManager()
     var lastWorkoutTag: String = ""
     var unitPTPlans: [UnitPTPlan] = []
     var unitPTFullPlan: UnitPTFullPlan?
@@ -28,6 +28,17 @@ final class AppViewModel {
     /// tabs, then clears it back to nil.
     var requestedTab: AppTab?
 
+    /// Backed by `StepTrackingService`, extracted in Phase 16.
+    var stepHistory: [StepDay] {
+        get { stepService.stepHistory }
+        set { stepService.stepHistory = newValue }
+    }
+
+    /// Backed by `StepTrackingService`, extracted in Phase 16.
+    var pedometer: PedometerManager {
+        stepService.pedometer
+    }
+
     var performanceHighlights: [PerformanceHighlight] {
         PerformanceHighlightsService.generateHighlights(
             aftScores: aftScores,
@@ -43,47 +54,44 @@ final class AppViewModel {
     }
 
     init() {
-        DataStore.migrateFromUserDefaultsIfNeeded(keys: [
-            "completedRecords", "stepHistory", "unitPTPlans", "aftScores",
-            "aftCalculatorResults", "currentPlan", "quickStartRecords",
-            "unitPTFullPlan", "scheduledUnitPT", "importedWorkouts", "wodPlan",
-            "whtrRecords", "cftRecords", "dailyLogs", "squadData",
-            "shownMilestones", "todayFunctionalWOD"
-        ])
+        PersistenceCoordinator.migrateIfNeeded()
         loadLocalData()
     }
 
     func loadLocalData() {
-        currentPlan = DataStore.load(WeeklyPlan?.self, forKey: "currentPlan", fallback: nil)
-        completedRecords = DataStore.load([CompletedWorkoutRecord].self, forKey: "completedRecords", fallback: [])
-        stepHistory = DataStore.load([StepDay].self, forKey: "stepHistory", fallback: [])
-        lastWorkoutTag = UserDefaults.standard.string(forKey: "lastWorkoutTag") ?? ""
-        unitPTPlans = DataStore.load([UnitPTPlan].self, forKey: "unitPTPlans", fallback: [])
-        unitPTFullPlan = DataStore.load(UnitPTFullPlan?.self, forKey: "unitPTFullPlan", fallback: nil)
-        scheduledUnitPT = DataStore.load([WorkoutDay].self, forKey: "scheduledUnitPT", fallback: [])
-        importedWorkouts = DataStore.load([WorkoutDay].self, forKey: "importedWorkouts", fallback: [])
-        aftScores = DataStore.load([AFTScoreRecord].self, forKey: "aftScores", fallback: [])
-        aftCalculatorResults = DataStore.load([AFTCalculatorResult].self, forKey: "aftCalculatorResults", fallback: [])
-        wodPlan = DataStore.load(WODPlan?.self, forKey: "wodPlan", fallback: nil)
-        quickStartRecords = DataStore.load([QuickStartRecord].self, forKey: "quickStartRecords", fallback: [])
-        dailyLogs = DataStore.load([DailyFitnessLog].self, forKey: "dailyLogs", fallback: [])
+        let data = PersistenceCoordinator.load()
+        currentPlan = data.currentPlan
+        completedRecords = data.completedRecords
+        stepService.load()
+        lastWorkoutTag = data.lastWorkoutTag
+        unitPTPlans = data.unitPTPlans
+        unitPTFullPlan = data.unitPTFullPlan
+        scheduledUnitPT = data.scheduledUnitPT
+        importedWorkouts = data.importedWorkouts
+        aftScores = data.aftScores
+        aftCalculatorResults = data.aftCalculatorResults
+        wodPlan = data.wodPlan
+        quickStartRecords = data.quickStartRecords
+        dailyLogs = data.dailyLogs
         loadTodayFunctionalWOD()
     }
 
     func persistAll() {
-        DataStore.save(currentPlan, forKey: "currentPlan")
-        DataStore.save(completedRecords, forKey: "completedRecords")
-        DataStore.save(stepHistory, forKey: "stepHistory")
-        UserDefaults.standard.set(lastWorkoutTag, forKey: "lastWorkoutTag")
-        DataStore.save(unitPTPlans, forKey: "unitPTPlans")
-        DataStore.save(unitPTFullPlan, forKey: "unitPTFullPlan")
-        DataStore.save(scheduledUnitPT, forKey: "scheduledUnitPT")
-        DataStore.save(importedWorkouts, forKey: "importedWorkouts")
-        DataStore.save(aftScores, forKey: "aftScores")
-        DataStore.save(aftCalculatorResults, forKey: "aftCalculatorResults")
-        DataStore.save(wodPlan, forKey: "wodPlan")
-        DataStore.save(quickStartRecords, forKey: "quickStartRecords")
-        DataStore.save(dailyLogs, forKey: "dailyLogs")
+        PersistenceCoordinator.save(PersistenceCoordinator.PersistableData(
+            currentPlan: currentPlan,
+            completedRecords: completedRecords,
+            lastWorkoutTag: lastWorkoutTag,
+            unitPTPlans: unitPTPlans,
+            unitPTFullPlan: unitPTFullPlan,
+            scheduledUnitPT: scheduledUnitPT,
+            importedWorkouts: importedWorkouts,
+            aftScores: aftScores,
+            aftCalculatorResults: aftCalculatorResults,
+            wodPlan: wodPlan,
+            quickStartRecords: quickStartRecords,
+            dailyLogs: dailyLogs
+        ))
+        stepService.persist()
         syncWidgetData()
     }
 
@@ -106,13 +114,7 @@ final class AppViewModel {
     }
 
     func syncTodaySteps() {
-        let today = Calendar.current.startOfDay(for: .now)
-        if let index = stepHistory.firstIndex(where: { Calendar.current.isDate($0.date, inSameDayAs: today) }) {
-            stepHistory[index].steps = pedometer.todaySteps
-        } else {
-            stepHistory.append(StepDay(date: today, steps: pedometer.todaySteps))
-        }
-        stepHistory.sort { $0.date < $1.date }
+        stepService.updateTodayBucket()
         recordDailyLog()
         persistAll()
     }
@@ -563,7 +565,7 @@ final class AppViewModel {
     func deleteAllData() {
         currentPlan = nil
         completedRecords = []
-        stepHistory = []
+        stepService.clear()
         unitPTPlans = []
         unitPTFullPlan = nil
         scheduledUnitPT = []
@@ -1009,8 +1011,7 @@ final class AppViewModel {
     }
 
     var averageSteps: Int {
-        guard !stepHistory.isEmpty else { return 0 }
-        return stepHistory.map(\.steps).reduce(0, +) / stepHistory.count
+        stepService.averageSteps
     }
 
     var unitPTSessionsCompleted: Int {
@@ -1115,11 +1116,7 @@ final class AppViewModel {
     }
 
     var weeklyStepAverage: Int {
-        let calendar = Calendar.current
-        let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: .now) ?? .now
-        let recentSteps = stepHistory.filter { $0.date >= sevenDaysAgo }
-        guard !recentSteps.isEmpty else { return 0 }
-        return recentSteps.map(\.steps).reduce(0, +) / recentSteps.count
+        stepService.weeklyStepAverage
     }
 
     // MARK: - WOD Plan
@@ -1697,7 +1694,7 @@ final class AppViewModel {
     func resetAllData() {
         currentPlan = nil
         completedRecords = []
-        stepHistory = []
+        stepService.clear()
         lastWorkoutTag = ""
         unitPTPlans = []
         unitPTFullPlan = nil
