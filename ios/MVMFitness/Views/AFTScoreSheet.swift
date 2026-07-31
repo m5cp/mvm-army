@@ -384,8 +384,14 @@ struct AFTScoreSheet: View {
             if let alt = alternateEvent {
                 timeInput(minutes: $altMinutes, seconds: $altSeconds)
 
+                Text("MAX TIME \(maxTimeLabel(for: alt))")
+                    .font(MVMTheme.mono(10, weight: .bold))
+                    .kerning(0.6)
+                    .foregroundStyle(MVMTheme.accent)
+                    .lineLimit(1)
+
                 HStack {
-                    Text("\(altService.distance(for: alt)) \(MVMTheme.dot) MAX \(maxTimeLabel(for: alt))")
+                    Text(altService.distance(for: alt))
                         .font(MVMTheme.mono(9))
                         .foregroundStyle(MVMTheme.tertiaryText)
                         .lineLimit(1)
