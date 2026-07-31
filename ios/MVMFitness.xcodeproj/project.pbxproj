@@ -588,6 +588,7 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MVM Fitness uses your location to track your route and distance during outdoor runs, bike rides, and hikes. Location data stays on-device.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "MVM Fitness reads your steps and heart rate to show accurate daily activity.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MVM Fitness saves your completed workouts to Apple Health.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "MVM Fitness uses Face ID to unlock the app when App Lock is turned on in Settings.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -630,6 +631,7 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MVM Fitness uses your location to track your route and distance during outdoor runs, bike rides, and hikes. Location data stays on-device.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "MVM Fitness reads your steps and heart rate to show accurate daily activity.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "MVM Fitness saves your completed workouts to Apple Health.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "MVM Fitness uses Face ID to unlock the app when App Lock is turned on in Settings.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

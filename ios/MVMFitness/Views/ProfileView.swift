@@ -14,6 +14,7 @@ struct ProfileView: View {
     @AppStorage("reminderMinute") private var reminderMinute = 0
     @AppStorage("profileDisplayName") private var profileDisplayName = ""
     @AppStorage("timeFormatPreference") private var timeFormatRaw = TimeFormatPreference.system.rawValue
+    @AppStorage("appLockEnabled") private var appLockEnabled = false
 
     @State private var reminderTime = Calendar.current.date(from: DateComponents(hour: 6, minute: 0)) ?? .now
     @State private var showResetAlert = false
@@ -31,6 +32,8 @@ struct ProfileView: View {
     @State private var showCFT = false
     @State private var copiedMemberID = false
     @State private var memberIDCopyTrigger = false
+    @State private var appLockService = AppLockService()
+    @State private var appLockErrorMessage: String?
     @FocusState private var nameFieldFocused: Bool
 
     var body: some View {
@@ -484,8 +487,67 @@ struct ProfileView: View {
         TimeFormatPreference(rawValue: timeFormatRaw) ?? .system
     }
 
+    private var appLockToggleBinding: Binding<Bool> {
+        Binding(
+            get: { appLockEnabled },
+            set: { newValue in
+                guard hasAppearedOnce else {
+                    appLockEnabled = newValue
+                    return
+                }
+                if newValue {
+                    Task {
+                        let success = await appLockService.authenticate()
+                        if success {
+                            appLockEnabled = true
+                            appLockErrorMessage = nil
+                        } else {
+                            appLockErrorMessage = appLockService.lastError
+                        }
+                    }
+                } else {
+                    appLockEnabled = false
+                    appLockErrorMessage = nil
+                }
+            }
+        )
+    }
+
     private var appControlsSection: some View {
         settingsSection(title: "APP", icon: "gearshape") {
+            HStack {
+                Image(systemName: "faceid")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("App Lock")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text("Require \(appLockService.biometryLabel) to open the app")
+                        .font(.caption2)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                Spacer()
+                Toggle("", isOn: appLockToggleBinding)
+                    .labelsHidden()
+                    .tint(MVMTheme.accent)
+            }
+            .frame(minHeight: 48)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("App Lock, requires \(appLockService.biometryLabel) to open the app")
+
+            if let appLockErrorMessage {
+                sectionDivider
+                Text(appLockErrorMessage)
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.danger)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 4)
+            }
+
+            sectionDivider
+
             Menu {
                 ForEach(TimeFormatPreference.allCases) { option in
                     Button {

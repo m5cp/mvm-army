@@ -46,6 +46,10 @@ struct MainTabView: View {
     @State private var trainPath = NavigationPath()
     @State private var trendPath = NavigationPath()
     @State private var youPath = NavigationPath()
+    /// True on-screen size of the floating tab bar (including its own
+    /// padding and its gap from the bottom edge), measured live so every
+    /// tab reserves exactly enough space — never a guessed constant.
+    @State private var tabBarReservedHeight: CGFloat = 96
 
     var body: some View {
         ZStack {
@@ -80,7 +84,15 @@ struct MainTabView: View {
             .zIndex(selectedTab == .you ? 1 : 0)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
+            Color.clear.frame(height: tabBarReservedHeight)
+        }
+        .overlay(alignment: .bottom) {
             customTabBar
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    proxy.size.height
+                } action: { newHeight in
+                    tabBarReservedHeight = newHeight
+                }
         }
         .background(MVMTheme.background.ignoresSafeArea())
         .instantRecapOverlay(recap: Binding(
