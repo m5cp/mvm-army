@@ -62,6 +62,7 @@ struct ProgressViewScreen: View {
                 .padding(.bottom, 48)
                 .adaptiveContainer()
             }
+            .hidesTabBarOnScroll()
         }
         .navigationTitle("Progress")
         .navigationBarTitleDisplayMode(.large)

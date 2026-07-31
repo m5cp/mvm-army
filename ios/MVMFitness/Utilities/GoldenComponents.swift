@@ -53,7 +53,28 @@ struct RaisedCard<Content: View>: View {
                     .frame(height: 1).padding(.horizontal, radius / 2)
             }
             .clipShape(RoundedRectangle(cornerRadius: radius))
+            // Whole-card hit target: without this, taps on padding/spacer areas
+            // inside a Button label fall through and only the text is tappable.
+            .contentShape(RoundedRectangle(cornerRadius: radius))
             .shadow(color: .black.opacity(0.9), radius: 12, y: 12)
+    }
+}
+
+// MARK: - Card photo thumbnail
+
+/// Small graded photo thumbnail for list/category cards. Every card carries
+/// an image per the design direction; photos are neutral at the source and
+/// graded here (thumbnailNeutral) so the amber stays in the UI layer.
+struct CardPhotoThumb: View {
+    let name: String
+    var size: CGFloat = 48
+    var radius: CGFloat = 12
+    var grade: PhotoGrade = .thumbnailNeutral
+    var body: some View {
+        GradedPhoto(name: name, grade: grade)
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: radius))
+            .overlay(RoundedRectangle(cornerRadius: radius).stroke(MVMTheme.hairline, lineWidth: 1))
     }
 }
 
@@ -100,6 +121,46 @@ struct MetricCell: View {
         .padding(.horizontal, 12).frame(height: 46)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label), \(value)")
+    }
+}
+
+// MARK: - Event photo asset
+
+extension AFTEventType {
+    /// Bundled exercise photo for each event (graded neutral in the UI layer).
+    var photoAsset: String {
+        switch self {
+        case .mdl: return "ex-hex-deadlift"
+        case .hrp: return "ex-hand-release-pushup"
+        case .sdc: return "ex-farmer-carry"
+        case .plk: return "ex-plank-weighted"
+        case .run2mi: return "golden-runner-portrait"
+        }
+    }
+}
+
+/// Event chip with the exercise photo behind the display code — used on the
+/// calculator event rows so every card carries an image. The code sits on a
+/// dark scrim so the photo never fights the text.
+struct EventPhotoChip: View {
+    let event: AFTEventType
+    var body: some View {
+        ZStack {
+            GradedPhoto(name: event.photoAsset, grade: .thumbnailNeutral)
+            LinearGradient(
+                colors: [Color.black.opacity(0.15), Color.black.opacity(0.62)],
+                startPoint: .top, endPoint: .bottom
+            )
+            Text(event.displayCode)
+                .font(MVMTheme.mono(10.5, weight: .bold))
+                .foregroundStyle(MVMTheme.amber)
+                .lineLimit(1).fixedSize()
+        }
+        .frame(width: 44, height: 44)
+        .clipShape(RoundedRectangle(cornerRadius: 13))
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(MVMTheme.hairline, lineWidth: 1))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(event.fullName)
     }
 }
 

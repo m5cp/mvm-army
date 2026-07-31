@@ -60,6 +60,7 @@ struct ProfileView: View {
                 .adaptiveContainer()
             }
             .scrollDismissesKeyboard(.interactively)
+            .hidesTabBarOnScroll()
         }
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)

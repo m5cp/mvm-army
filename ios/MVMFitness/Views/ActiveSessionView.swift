@@ -261,7 +261,7 @@ struct ActiveSessionView: View {
                         Text(exercise.isCompleted ? "Undo" : "Mark Done")
                             .font(.headline.weight(.bold))
                     }
-                    .foregroundStyle(exercise.isCompleted ? .white : MVMTheme.lifetimeNavy1)
+                    .foregroundStyle(exercise.isCompleted ? .white : MVMTheme.onAmber)
                     .frame(height: 54)
                     .frame(maxWidth: .infinity)
                     .background(exercise.isCompleted ? .white.opacity(0.18) : .white)
@@ -274,11 +274,14 @@ struct ActiveSessionView: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 28)
                         .fill(
+                            // Golden Hour theme — the current-exercise block was
+                            // a leftover blue/purple gradient that clashed with
+                            // the rest of the app.
                             LinearGradient(
                                 colors: [
-                                    Color(hex: "#3B6DE0"),
-                                    Color(hex: "#5B4DC7").opacity(0.95),
-                                    Color(hex: "#4A3DAF").opacity(0.9)
+                                    Color(hex: "#B87718"),
+                                    Color(hex: "#8A5A12").opacity(0.97),
+                                    Color(hex: "#5E3C0B").opacity(0.95)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing

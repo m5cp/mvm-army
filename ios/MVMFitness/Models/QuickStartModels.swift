@@ -29,14 +29,17 @@ nonisolated enum QuickStartActivity: String, CaseIterable, Identifiable, Codable
         }
     }
 
+    /// Golden Hour family — every activity stays inside the app's amber theme
+    /// (light → deep amber variants keep the activities distinguishable
+    /// without introducing off-palette blues/greens/purples).
     var gradientHex: (String, String) {
         switch self {
-        case .outdoorRun: return ("#2563EB", "#1D4ED8")
-        case .indoorRun: return ("#7C3AED", "#6D28D9")
+        case .outdoorRun: return ("#F2B358", "#DD9027")
+        case .indoorRun: return ("#E8A33D", "#B87718")
         case .functionalFitness: return ("#D97706", "#B45309")
-        case .outdoorBike: return ("#059669", "#047857")
-        case .indoorBike: return ("#0891B2", "#0E7490")
-        case .outdoorHike: return ("#16A34A", "#15803D")
+        case .outdoorBike: return ("#D99A33", "#A06A1B")
+        case .indoorBike: return ("#C98F3A", "#8B5E34")
+        case .outdoorHike: return ("#B87718", "#8A5A12")
         }
     }
 }

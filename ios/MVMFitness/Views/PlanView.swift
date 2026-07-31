@@ -45,6 +45,7 @@ struct PlanView: View {
                     .padding(.bottom, 48)
                     .adaptiveContainer()
                 }
+                .hidesTabBarOnScroll()
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -480,9 +481,7 @@ struct PlanView: View {
         RaisedCard(radius: 22) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 8) {
-                    Image(systemName: "leaf.fill")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(MVMTheme.textMuted)
+                    CardPhotoThumb(name: "ex-dead-bug", size: 28, radius: 8)
 
                     Text(dayLabel(day).uppercased())
                         .font(MVMTheme.mono(10.5)).kerning(1.2)

@@ -270,16 +270,10 @@ struct AFTGoalModeView: View {
                     Text("Share Goal Card")
                 }
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(MVMTheme.onAmber)
                 .frame(height: 50)
                 .frame(maxWidth: .infinity)
-                .background(
-                    LinearGradient(
-                        colors: [Color(hex: "#4F8CFF"), Color(hex: "#7C5CFF")],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ).opacity(0.85)
-                )
+                .background(MVMTheme.amberButtonGradient.opacity(0.9))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             }
             .buttonStyle(PressScaleButtonStyle())

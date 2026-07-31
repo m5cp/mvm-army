@@ -90,6 +90,10 @@ struct BadgesView: View {
                  status: bigImprovement ? "+\(scoreDelta ?? 0)" : "LOCKED", earned: bigImprovement),
             Coin(asset: "icon3d-pack", name: "12-week plan",
                  status: twelveWeekPlan ? "ACTIVE" : "LOCKED", earned: twelveWeekPlan),
+            Coin(asset: "icon3d-kettlebell", name: "FunctionFitness",
+                 status: functionalLogged ? "LOGGED" : "LOCKED", earned: functionalLogged),
+            Coin(asset: "icon3d-run", name: "Quick starter",
+                 status: quickStartLogged ? "LOGGED" : "LOCKED", earned: quickStartLogged),
         ]
     }
 
@@ -133,5 +137,13 @@ struct BadgesView: View {
 
     private var twelveWeekPlan: Bool {
         vm.currentPlan != nil && planWeeks >= 12
+    }
+
+    private var functionalLogged: Bool {
+        vm.completedRecords.contains { $0.source == .wod }
+    }
+
+    private var quickStartLogged: Bool {
+        !vm.quickStartRecords.isEmpty
     }
 }

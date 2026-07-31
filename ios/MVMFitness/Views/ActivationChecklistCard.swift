@@ -72,6 +72,7 @@ struct ActivationChecklistCard: View {
                         .foregroundStyle(MVMTheme.tertiaryText)
                 }
             }
+            .contentShape(Rectangle()) // whole row tappable, not just the text
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)

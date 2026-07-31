@@ -1,5 +1,50 @@
 import SwiftUI
 
+/// Shared visibility state for the floating tab bar. Root scroll views report
+/// scroll direction via `hidesTabBarOnScroll()`; the bar slides away when the
+/// user scrolls down (reading/working) and returns the moment they scroll up,
+/// so the bar never covers content at the bottom of a screen.
+@Observable
+@MainActor
+final class TabBarState {
+    var isHidden: Bool = false
+
+    func setHidden(_ hidden: Bool) {
+        guard isHidden != hidden else { return }
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+            isHidden = hidden
+        }
+    }
+}
+
+/// Attach to a tab-root ScrollView: hides the tab bar while scrolling down,
+/// shows it again on any upward scroll or when near the top.
+struct HidesTabBarOnScroll: ViewModifier {
+    @Environment(TabBarState.self) private var tabBarState: TabBarState?
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: CGFloat.self) { geo in
+                geo.contentOffset.y + geo.contentInsets.top
+            } action: { oldY, newY in
+                guard let tabBarState else { return }
+                if newY <= 24 {
+                    tabBarState.setHidden(false)
+                } else if newY > oldY + 3 {
+                    tabBarState.setHidden(true)
+                } else if newY < oldY - 3 {
+                    tabBarState.setHidden(false)
+                }
+            }
+    }
+}
+
+extension View {
+    func hidesTabBarOnScroll() -> some View {
+        modifier(HidesTabBarOnScroll())
+    }
+}
+
 nonisolated enum AppTab: Int, CaseIterable, Sendable {
     case home = 0
     case score = 1
@@ -50,6 +95,12 @@ struct MainTabView: View {
     /// padding and its gap from the bottom edge), measured live so every
     /// tab reserves exactly enough space — never a guessed constant.
     @State private var tabBarReservedHeight: CGFloat = 96
+    @State private var tabBarState = TabBarState()
+
+    /// Extra clearance above the measured bar height so the last row of
+    /// content always sits fully above the floating capsule (its shadow and
+    /// glass blur extend past the measured frame).
+    private let tabBarClearance: CGFloat = 12
 
     var body: some View {
         ZStack {
@@ -84,7 +135,7 @@ struct MainTabView: View {
             .zIndex(selectedTab == .you ? 1 : 0)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            Color.clear.frame(height: tabBarReservedHeight)
+            Color.clear.frame(height: tabBarReservedHeight + tabBarClearance)
         }
         .overlay(alignment: .bottom) {
             customTabBar
@@ -93,7 +144,12 @@ struct MainTabView: View {
                 } action: { newHeight in
                     tabBarReservedHeight = newHeight
                 }
+                .offset(y: tabBarState.isHidden ? tabBarReservedHeight + 60 : 0)
+                .opacity(tabBarState.isHidden ? 0 : 1)
+                .allowsHitTesting(!tabBarState.isHidden)
+                .accessibilityHidden(tabBarState.isHidden)
         }
+        .environment(tabBarState)
         .background(MVMTheme.background.ignoresSafeArea())
         .instantRecapOverlay(recap: Binding(
             get: { vm.activeRecap },

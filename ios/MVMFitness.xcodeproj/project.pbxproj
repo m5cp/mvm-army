@@ -581,7 +581,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "MVM Fitness uses the camera to scan QR codes for importing shared PT plans and workouts from other users.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "MVM Fitness uses the camera to scan QR codes for shared PT plans and to let you take a photo or selfie as the background of your AFT score card.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "MVM Fitness uses your device motion sensor to count your daily steps and display step totals on the home screen and progress charts.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "MVM Fitness adds your scheduled PT workouts to your iOS Calendar so they appear alongside your other events. Calendar sync is optional and controlled from the Training Calendar screen.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "MVM Fitness saves workout share cards and AFT score images to your photo library so you can share your achievements.";
@@ -624,7 +624,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "MVM Fitness uses the camera to scan QR codes for importing shared PT plans and workouts from other users.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "MVM Fitness uses the camera to scan QR codes for shared PT plans and to let you take a photo or selfie as the background of your AFT score card.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "MVM Fitness uses your device motion sensor to count your daily steps and display step totals on the home screen and progress charts.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "MVM Fitness adds your scheduled PT workouts to your iOS Calendar so they appear alongside your other events. Calendar sync is optional and controlled from the Training Calendar screen.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "MVM Fitness saves workout share cards and AFT score images to your photo library so you can share your achievements.";

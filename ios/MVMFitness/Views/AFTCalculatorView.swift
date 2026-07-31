@@ -1,9 +1,26 @@
 import SwiftUI
 
+/// Which test the Calculator tab is working with. AFT is the scored
+/// five-event test; CFT is the pass/fail seven-event Combat Field Test.
+/// (Always "AFT" — never the retired "ACFT" name.)
+nonisolated enum FitnessTestKind: String, CaseIterable, Identifiable, Sendable {
+    case aft = "AFT"
+    case cft = "CFT"
+    var id: String { rawValue }
+
+    var subtitle: String {
+        switch self {
+        case .aft: return "5 EVENTS \(MVMTheme.dot) SCORED"
+        case .cft: return "7 EVENTS \(MVMTheme.dot) GO/NO-GO"
+        }
+    }
+}
+
 struct AFTCalculatorView: View {
     @Environment(AppViewModel.self) private var vm
     @Environment(StoreViewModel.self) private var store
 
+    @State private var selectedTest: FitnessTestKind = .aft
     @State private var showUpgradeFromGate = false
     @State private var soldierName: String = ""
     @State private var ageText: String = "25"
@@ -145,42 +162,51 @@ struct AFTCalculatorView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 14) {
-                    if let error = engine.loadError {
-                        scoringUnavailableBanner(error)
+                    testPicker
+
+                    if selectedTest == .aft {
+                        if let error = engine.loadError {
+                            scoringUnavailableBanner(error)
+                        }
+                        soldierInfoCard
+                        deadliftEventRow
+                        pushUpEventRow
+                        sdcEventRow
+                        plankEventRow
+                        runEventRow
+                        totalScoreCard
+                        marginOverMinimumCard
+                        overallPassFailCard
+                        actionButtons
+                    } else {
+                        CFTContent()
                     }
-                    soldierInfoCard
-                    deadliftEventRow
-                    pushUpEventRow
-                    sdcEventRow
-                    plankEventRow
-                    runEventRow
-                    totalScoreCard
-                    marginOverMinimumCard
-                    overallPassFailCard
-                    actionButtons
                 }
                 .padding(20)
                 .padding(.bottom, 36)
                 .adaptiveContainer()
             }
             .scrollDismissesKeyboard(.interactively)
+            .hidesTabBarOnScroll()
         }
         .sensoryFeedback(.success, trigger: didSave)
         .onAppear { prefillFromLastScore() }
-        .navigationTitle("AFT Calculator")
+        .navigationTitle(selectedTest == .aft ? "AFT Calculator" : "Combat Field Test")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.screen, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showScoreHistory = true
-                } label: {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(MVMTheme.secondaryText)
+            if selectedTest == .aft {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showScoreHistory = true
+                    } label: {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
+                    .accessibilityLabel("Saved AFT Scores")
                 }
-                .accessibilityLabel("Saved AFT Scores")
             }
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -221,6 +247,46 @@ struct AFTCalculatorView: View {
         .sheet(isPresented: $showUpgradeFromGate) {
             UpgradeView()
         }
+    }
+
+    // MARK: - Test Picker (AFT / CFT)
+
+    /// Lets the user choose which test they're taking. Mirrors the styling of
+    /// the STANDARD toggle so it reads as part of the same spec sheet.
+    private var testPicker: some View {
+        InsetWell {
+            HStack(spacing: 3) {
+                ForEach(FitnessTestKind.allCases) { kind in
+                    let selected = selectedTest == kind
+                    VStack(spacing: 2) {
+                        Text(kind.rawValue)
+                            .font(.system(size: 15, weight: .bold))
+                        Text(kind.subtitle)
+                            .font(.system(size: 9, weight: .semibold))
+                            .opacity(0.75)
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
+                    .foregroundStyle(selected ? MVMTheme.onAmber : MVMTheme.textMuted)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(selected ? AnyShapeStyle(MVMTheme.amberButtonGradient) : AnyShapeStyle(.clear))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            selectedTest = kind
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(kind == .aft ? "Army Fitness Test, five scored events" : "Combat Field Test, seven events, go or no go")
+                    .accessibilityAddTraits(selected ? [.isButton, .isSelected] : [.isButton])
+                }
+            }
+            .padding(3)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Choose test")
     }
 
     // MARK: - Scoring Unavailable Banner
@@ -424,7 +490,7 @@ struct AFTCalculatorView: View {
         RaisedCard {
             VStack(spacing: 12) {
                 HStack(spacing: 12) {
-                    EventTagChip(event: event)
+                    EventPhotoChip(event: event)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(title)

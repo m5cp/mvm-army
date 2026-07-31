@@ -1,7 +1,38 @@
 import SwiftUI
 
+/// Standalone CFT screen (presented as a sheet from the Profile tab).
+/// The actual content lives in `CFTContent` so the Calculator tab can embed
+/// the exact same experience when the user chooses CFT instead of AFT.
 struct CFTView: View {
     @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                MVMTheme.background.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    CFTContent()
+                        .padding(20)
+                        .adaptiveContainer()
+                }
+            }
+            .navigationTitle("Combat Field Test")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(MVMTheme.background, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Done") { dismiss() }.foregroundStyle(MVMTheme.accent)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
+/// Embeddable CFT stopwatch + checklist + history. Owns its own sheets so it
+/// works identically inside the Calculator tab and the Profile sheet.
+struct CFTContent: View {
     @State private var store = CFTStore()
     @State private var showInfo = false
 
@@ -15,43 +46,57 @@ struct CFTView: View {
     @State private var showResultEntry = false
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                MVMTheme.background.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 18) {
-                        stopwatchCard
-                        eventChecklist
-                        if !store.records.isEmpty { historyCard }
-                        Text(LegalText.full)
-                            .font(.caption2)
-                            .foregroundStyle(MVMTheme.tertiaryText)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(20)
-                }
-            }
-            .navigationTitle("Combat Field Test")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(MVMTheme.background, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Done") { dismiss() }.foregroundStyle(MVMTheme.accent)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showInfo = true } label: { Image(systemName: "info.circle").foregroundStyle(MVMTheme.accent) }
-                }
-            }
-            .sheet(isPresented: $showInfo) { CFTInfoSheet() }
-            .sheet(isPresented: $showResultEntry) {
-                CFTResultSheet(totalSeconds: elapsed, splits: splits) { record in
-                    store.add(record)
-                    resetStopwatch()
-                }
+        VStack(spacing: 18) {
+            infoBanner
+            stopwatchCard
+            eventChecklist
+            if !store.records.isEmpty { historyCard }
+            Text(LegalText.full)
+                .font(.caption2)
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .multilineTextAlignment(.center)
+        }
+        .sheet(isPresented: $showInfo) { CFTInfoSheet() }
+        .sheet(isPresented: $showResultEntry) {
+            CFTResultSheet(totalSeconds: elapsed, splits: splits) { record in
+                store.add(record)
+                resetStopwatch()
             }
         }
-        .preferredColorScheme(.dark)
+    }
+
+    /// Photo-backed intro card — doubles as the "About the CFT" entry point
+    /// now that the embedded variant has no toolbar info button.
+    private var infoBanner: some View {
+        Button {
+            showInfo = true
+        } label: {
+            RaisedCard(radius: 16) {
+                HStack(spacing: 14) {
+                    CardPhotoThumb(name: "photo-ruck-man-scree", size: 44, radius: 12)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Combat Field Test")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(MVMTheme.text)
+                        Text("7 events \(MVMTheme.dot) one cumulative time \(MVMTheme.dot) GO/NO-GO")
+                            .font(.caption)
+                            .foregroundStyle(MVMTheme.textMuted)
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "info.circle")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(MVMTheme.amber)
+                }
+                .padding(14)
+            }
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .accessibilityLabel("About the Combat Field Test")
     }
 
     private var formattedElapsed: String {

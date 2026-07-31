@@ -102,6 +102,7 @@ struct HomeView: View {
                 .adaptiveContainer()
             }
         }
+        .hidesTabBarOnScroll()
         .background {
             ZStack {
                 MVMTheme.screen.ignoresSafeArea()
@@ -157,16 +158,34 @@ struct HomeView: View {
                     .accessibilityLabel("Scan QR Code")
 
                     Menu {
+                        // Never an empty menu — before a plan exists this button
+                        // used to render zero items and felt broken.
+                        Button {
+                            toolTapTrigger.toggle()
+                            vm.pedometer.refreshTodaySteps()
+                            vm.syncTodaySteps()
+                            vm.ensureTodayHasWorkout()
+                            heroNow = .now
+                        } label: {
+                            Label("Refresh Today", systemImage: "arrow.clockwise")
+                        }
+
                         if vm.currentPlan != nil {
                             Button {
                                 vm.generateWeeklyPlan()
                             } label: {
-                                Label("Regenerate Week", systemImage: "arrow.clockwise")
+                                Label("Regenerate Week", systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
                             }
                             Button {
                                 showCalendarSheet = true
                             } label: {
                                 Label("Export to Calendar", systemImage: "calendar.badge.plus")
+                            }
+                        } else {
+                            Button {
+                                vm.generateWeeklyPlan()
+                            } label: {
+                                Label("Build Weekly Plan", systemImage: "calendar.badge.plus")
                             }
                         }
                     } label: {
@@ -495,9 +514,17 @@ struct HomeView: View {
 
     // MARK: - Readiness Plaque (latest AFT record — engine-derived only)
 
+    @ViewBuilder
     private var readinessPlaque: some View {
+        if let latest = vm.aftScores.first {
+            readinessScoreCard(latest)
+        } else {
+            noScoreCard
+        }
+    }
+
+    private func readinessScoreCard(_ latest: AFTScoreRecord) -> some View {
         RaisedCard(radius: 24) {
-            if let latest = vm.aftScores.first {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack(alignment: .top, spacing: 10) {
                         VStack(alignment: .leading, spacing: 4) {
@@ -546,41 +573,44 @@ struct HomeView: View {
                 .padding(20)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Readiness, \(latest.totalScore) out of 500, \(passedOverall(latest) ? "go" : "no go"), \(marginLabel(for: latest))")
-            } else {
-                Button {
-                    toolTapTrigger.toggle()
-                    showAFTCalculator = true
-                } label: {
-                    HStack(spacing: 14) {
-                        Image(systemName: "shield.checkered")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundStyle(MVMTheme.amber)
-                            .frame(width: 52, height: 52)
-                            .background(MVMTheme.well)
-                            .clipShape(Circle())
+        }
+        .opacity(animateHero ? 1 : 0)
+        .offset(y: animateHero ? 0 : 8)
+    }
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("No AFT Score Yet")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(MVMTheme.text)
-                            Text("Log a baseline test to start tracking readiness")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(MVMTheme.textMuted)
-                                .lineLimit(2)
-                        }
+    /// Whole card is one tap target — the Button wraps the RaisedCard so
+    /// every point inside the plaque (photo, padding, spacer) opens the
+    /// calculator, not just the wording.
+    private var noScoreCard: some View {
+        Button {
+            toolTapTrigger.toggle()
+            showAFTCalculator = true
+        } label: {
+            RaisedCard(radius: 24) {
+                HStack(spacing: 14) {
+                    CardPhotoThumb(name: "golden-runner-portrait", size: 52, radius: 26, grade: .goldenSilhouette)
 
-                        Spacer(minLength: 0)
-
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(MVMTheme.textFaint)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("No AFT Score Yet")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(MVMTheme.text)
+                        Text("Log a baseline test to start tracking readiness")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(MVMTheme.textMuted)
+                            .lineLimit(2)
                     }
-                    .padding(20)
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.textFaint)
                 }
-                .buttonStyle(PressScaleButtonStyle())
-                .accessibilityLabel("Log your first AFT score")
+                .padding(20)
             }
         }
+        .buttonStyle(PressScaleButtonStyle())
+        .accessibilityLabel("Log your first AFT score")
         .opacity(animateHero ? 1 : 0)
         .offset(y: animateHero ? 0 : 8)
     }
@@ -829,12 +859,7 @@ struct HomeView: View {
                 } label: {
                     RaisedCard(radius: 16) {
                         HStack(spacing: 14) {
-                            Image(systemName: "bolt.heart.fill")
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(MVMTheme.amber)
-                                .frame(width: 44, height: 44)
-                                .background(MVMTheme.well)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            CardPhotoThumb(name: "corner-boxer", size: 44, radius: 12)
 
                             VStack(alignment: .leading, spacing: 3) {
                                 Text("Generate FunctionFitness Workout")
@@ -867,6 +892,8 @@ struct HomeView: View {
         } label: {
             RaisedCard(radius: 20) {
                 HStack(spacing: 16) {
+                    CardPhotoThumb(name: "kettlebell-swing", size: 56, radius: 14)
+
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 8) {
                             Image(systemName: "bolt.heart.fill")
@@ -1016,12 +1043,7 @@ struct HomeView: View {
         } label: {
             RaisedCard(radius: 16) {
                 HStack(spacing: 14) {
-                    Image(systemName: "calendar.badge.plus")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(MVMTheme.amber)
-                        .frame(width: 44, height: 44)
-                        .background(MVMTheme.well)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    CardPhotoThumb(name: "golden-runner-wide", size: 44, radius: 12, grade: .goldenSilhouette)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text("No Workout Scheduled")
@@ -1053,12 +1075,7 @@ struct HomeView: View {
         } label: {
             RaisedCard(radius: 16) {
                 HStack(spacing: 14) {
-                    Image(systemName: "bolt.fill")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(MVMTheme.onAmber)
-                        .frame(width: 36, height: 36)
-                        .background(MVMTheme.amberButtonGradient)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    CardPhotoThumb(name: "photo-run-silhouette-sunrise", size: 44, radius: 10, grade: .goldenSilhouette)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Quick Start")
@@ -1099,8 +1116,7 @@ struct HomeView: View {
                 planRow(
                     title: "Plan My Individual PT",
                     subtitle: "Build your personal week",
-                    icon: "figure.strengthtraining.traditional",
-                    color: MVMTheme.slateAccent
+                    photo: "ex-hex-deadlift"
                 ) {
                     toolTapTrigger.toggle()
                     showMyPTPlanSheet = true
@@ -1109,8 +1125,7 @@ struct HomeView: View {
                 planRow(
                     title: "Plan My FunctionFitness",
                     subtitle: "FunctionFitness workouts",
-                    icon: "bolt.heart.fill",
-                    color: MVMTheme.amber
+                    photo: "ex-ab-rollout"
                 ) {
                     toolTapTrigger.toggle()
                     showWODPlanSheet = true
@@ -1119,8 +1134,7 @@ struct HomeView: View {
                 planRow(
                     title: "Plan My Unit PT",
                     subtitle: "Formation-level sessions",
-                    icon: "person.3.fill",
-                    color: MVMTheme.amber
+                    photo: "photo-ruck-man-coldbreath"
                 ) {
                     toolTapTrigger.toggle()
                     if ProGate.isUnlocked(.unitPTBuilder, isPremium: store.isPremium, savedUnitPTPlanCount: vm.unitPTPlans.count) {
@@ -1133,8 +1147,7 @@ struct HomeView: View {
                 planRow(
                     title: "My Squad",
                     subtitle: "Roster, test days & readiness",
-                    icon: "shield.lefthalf.filled",
-                    color: MVMTheme.emeraldAccent
+                    photo: "photo-ruck-woman-rimlight"
                 ) {
                     toolTapTrigger.toggle()
                     showSquadSheet = true
@@ -1146,18 +1159,13 @@ struct HomeView: View {
         .opacity(animateHero ? 1 : 0)
     }
 
-    private func planRow(title: String, subtitle: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
+    private func planRow(title: String, subtitle: String, photo: String, action: @escaping () -> Void) -> some View {
         Button {
             action()
         } label: {
             RaisedCard(radius: 14) {
                 HStack(spacing: 14) {
-                    Image(systemName: icon)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(color)
-                        .frame(width: 40, height: 40)
-                        .background(MVMTheme.well)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    CardPhotoThumb(name: photo, size: 40, radius: 10)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(title)
