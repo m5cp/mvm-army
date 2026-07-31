@@ -3,6 +3,10 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppViewModel.self) private var vm
     @Environment(StoreViewModel.self) private var store
+    @Environment(\.scenePhase) private var scenePhase
+
+    @AppStorage("timeFormatPreference") private var timeFormatRaw: String = TimeFormatPreference.system.rawValue
+    @State private var heroNow: Date = .now
 
     @State private var showUpgrade: Bool = false
     @State private var showUpgradeFromGate: Bool = false
@@ -383,6 +387,11 @@ struct HomeView: View {
                 animateMetrics = true
             }
         }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                heroNow = .now
+            }
+        }
     }
 
     // MARK: - Background Ambience
@@ -470,10 +479,12 @@ struct HomeView: View {
         .opacity(animateHero ? 1 : 0)
     }
 
+    private var timeFormatPreference: TimeFormatPreference {
+        TimeFormatPreference(rawValue: timeFormatRaw) ?? .system
+    }
+
     private var dateLine: String {
-        let f = DateFormatter()
-        f.dateFormat = "EEE d MMM " + MVMTheme.dot + " HHmm"
-        return f.string(from: .now).uppercased()
+        HeroTimeFormat.dateLine(from: heroNow, preference: timeFormatPreference, separator: MVMTheme.dot)
     }
 
     private var todaySubtitle: String {

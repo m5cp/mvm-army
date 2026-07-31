@@ -13,6 +13,7 @@ struct ProfileView: View {
     @AppStorage("reminderHour") private var reminderHour = 6
     @AppStorage("reminderMinute") private var reminderMinute = 0
     @AppStorage("profileDisplayName") private var profileDisplayName = ""
+    @AppStorage("timeFormatPreference") private var timeFormatRaw = TimeFormatPreference.system.rawValue
 
     @State private var reminderTime = Calendar.current.date(from: DateComponents(hour: 6, minute: 0)) ?? .now
     @State private var showResetAlert = false
@@ -479,8 +480,32 @@ struct ProfileView: View {
 
     // MARK: - App Controls
 
+    private var timeFormatPreference: TimeFormatPreference {
+        TimeFormatPreference(rawValue: timeFormatRaw) ?? .system
+    }
+
     private var appControlsSection: some View {
         settingsSection(title: "APP", icon: "gearshape") {
+            Menu {
+                ForEach(TimeFormatPreference.allCases) { option in
+                    Button {
+                        timeFormatRaw = option.rawValue
+                    } label: {
+                        if option == timeFormatPreference {
+                            Label(option.label, systemImage: "checkmark")
+                        } else {
+                            Text(option.label)
+                        }
+                    }
+                }
+            } label: {
+                settingsRowWithSubtitle(icon: "clock", title: "Time Format", subtitle: timeFormatPreference.label)
+            }
+            .accessibilityLabel("Time Format")
+            .accessibilityValue(timeFormatPreference.label)
+
+            sectionDivider
+
             Button {
                 showResetPlanAlert = true
             } label: {
