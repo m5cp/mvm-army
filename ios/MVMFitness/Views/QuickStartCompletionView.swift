@@ -16,6 +16,7 @@ struct QuickStartCompletionView: View {
     @State private var showShareCardEditor: Bool = false
     @State private var shareCardImage: UIImage?
     @State private var logged: Bool = false
+    @State private var showFullRouteMap: Bool = false
 
     private var hex: (String, String) {
         record.activity.gradientHex
@@ -28,7 +29,29 @@ struct QuickStartCompletionView: View {
                     completionHeader
 
                     if !record.routeCoordinates.isEmpty {
-                        routeMap
+                        // Tap anywhere on the map for the Apple Fitness-style
+                        // full-screen route with map/satellite views.
+                        Button {
+                            showFullRouteMap = true
+                        } label: {
+                            routeMap
+                                .allowsHitTesting(false) // thumbnail: the tap opens full-screen instead of panning
+                                .overlay(alignment: .topTrailing) {
+                                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(.white)
+                                        .padding(8)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
+                                        .padding(10)
+                                }
+                                .contentShape(RoundedRectangle(cornerRadius: 18))
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
+                        .accessibilityLabel("Show full-screen route map")
+                        .fullScreenCover(isPresented: $showFullRouteMap) {
+                            RouteMapView(record: record)
+                        }
                     }
 
                     statsCard

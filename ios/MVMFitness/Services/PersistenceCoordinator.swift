@@ -41,6 +41,7 @@ enum PersistenceCoordinator {
         var wodPlan: WODPlan?
         var quickStartRecords: [QuickStartRecord]
         var dailyLogs: [DailyFitnessLog]
+        var serviceTestRecords: [ServiceTestRecord] = []
     }
 
     /// Snapshot of everything `AppViewModel` writes to disk on every
@@ -59,6 +60,7 @@ enum PersistenceCoordinator {
         var wodPlan: WODPlan?
         var quickStartRecords: [QuickStartRecord]
         var dailyLogs: [DailyFitnessLog]
+        var serviceTestRecords: [ServiceTestRecord] = []
     }
 
     static func load() -> LoadedData {
@@ -74,7 +76,8 @@ enum PersistenceCoordinator {
             aftCalculatorResults: DataStore.load([AFTCalculatorResult].self, forKey: "aftCalculatorResults", fallback: []),
             wodPlan: DataStore.load(WODPlan?.self, forKey: "wodPlan", fallback: nil),
             quickStartRecords: DataStore.load([QuickStartRecord].self, forKey: "quickStartRecords", fallback: []),
-            dailyLogs: DataStore.load([DailyFitnessLog].self, forKey: "dailyLogs", fallback: [])
+            dailyLogs: DataStore.load([DailyFitnessLog].self, forKey: "dailyLogs", fallback: []),
+            serviceTestRecords: DataStore.load([ServiceTestRecord].self, forKey: "serviceTestRecords", fallback: [])
         )
     }
 
@@ -91,5 +94,6 @@ enum PersistenceCoordinator {
         DataStore.save(data.wodPlan, forKey: "wodPlan")
         DataStore.save(data.quickStartRecords, forKey: "quickStartRecords")
         DataStore.save(data.dailyLogs, forKey: "dailyLogs")
+        DataStore.save(data.serviceTestRecords, forKey: "serviceTestRecords")
     }
 }
