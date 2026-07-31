@@ -30,6 +30,52 @@ struct RouteMapView: View {
         record.routeCoordinates.map(\.clCoordinate)
     }
 
+    private struct MileMarker: Identifiable {
+        let id: Int          // mile number
+        let coordinate: CLLocationCoordinate2D
+        let splitLabel: String?  // "8:42" split for that mile, when timing exists
+    }
+
+    /// Apple Fitness-style mile pins: positioned every 1609.34 m along the
+    /// route; per-mile split times when the record carries time offsets
+    /// (older records show the pin without a time).
+    private var mileMarkers: [MileMarker] {
+        let coordList = coords
+        guard coordList.count > 1 else { return [] }
+        let offsets = record.routeTimeOffsets
+        let hasTimes = offsets?.count == coordList.count
+
+        var markers: [MileMarker] = []
+        var cumulative: Double = 0
+        var nextMile: Double = 1609.34
+        var mileIndex = 1
+        var lastMileTime: Double = 0
+
+        for i in 1..<coordList.count {
+            let a = CLLocation(latitude: coordList[i - 1].latitude, longitude: coordList[i - 1].longitude)
+            let b = CLLocation(latitude: coordList[i].latitude, longitude: coordList[i].longitude)
+            let delta = a.distance(from: b)
+            guard delta > 0, delta < 200 else { continue }
+            cumulative += delta
+
+            while cumulative >= nextMile {
+                var split: String?
+                if hasTimes, let offsets {
+                    let t = offsets[i]
+                    let mileSeconds = t - lastMileTime
+                    if mileSeconds > 0 {
+                        split = String(format: "%d:%02d", Int(mileSeconds) / 60, Int(mileSeconds) % 60)
+                    }
+                    lastMileTime = t
+                }
+                markers.append(MileMarker(id: mileIndex, coordinate: coordList[i], splitLabel: split))
+                mileIndex += 1
+                nextMile += 1609.34
+            }
+        }
+        return markers
+    }
+
     /// Region fitted around the whole route with a comfortable margin.
     private var fittedRegion: MKCoordinateRegion? {
         guard let first = coords.first else { return nil }
@@ -72,6 +118,25 @@ struct RouteMapView: View {
                                 .fill(MVMTheme.danger)
                                 .frame(width: 14, height: 14)
                                 .overlay { Circle().stroke(.white, lineWidth: 2.5) }
+                        }
+                    }
+
+                    ForEach(mileMarkers) { marker in
+                        Annotation("", coordinate: marker.coordinate) {
+                            VStack(spacing: 1) {
+                                Text("MI \(marker.id)")
+                                    .font(.system(size: 9, weight: .heavy))
+                                if let split = marker.splitLabel {
+                                    Text(split)
+                                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                                }
+                            }
+                            .foregroundStyle(MVMTheme.onAmber)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(MVMTheme.amber)
+                            .clipShape(Capsule())
+                            .overlay { Capsule().stroke(.white.opacity(0.8), lineWidth: 1) }
                         }
                     }
                 }

@@ -2,7 +2,16 @@ import SwiftUI
 
 struct QuickStartSelectionView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppViewModel.self) private var vm
     @Bindable var quickStart: QuickStartViewModel
+
+    /// Most recent GPS session of the selected activity worth racing against.
+    private var ghostCandidate: QuickStartRecord? {
+        guard let activity = quickStart.selectedActivity, activity.usesGPS else { return nil }
+        return vm.quickStartRecords.first {
+            $0.activity == activity && $0.distanceMeters > 200 && $0.elapsedSeconds > 60
+        }
+    }
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -23,6 +32,10 @@ struct QuickStartSelectionView: View {
 
                     if let selected = quickStart.selectedActivity {
                         gpsInfoBanner(selected)
+                    }
+
+                    if let ghost = ghostCandidate {
+                        ghostRaceToggle(ghost)
                     }
 
                     startButton
@@ -189,6 +202,52 @@ struct QuickStartSelectionView: View {
             .mvmCard(cornerRadius: 14)
             .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
+    }
+
+    /// "Me vs Me" made literal — race the pace of your last session.
+    private func ghostRaceToggle(_ ghost: QuickStartRecord) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                quickStart.ghostEnabled.toggle()
+                quickStart.ghostRecord = quickStart.ghostEnabled ? ghost : nil
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "figure.run.motion")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(quickStart.ghostEnabled ? MVMTheme.onAmber : MVMTheme.amber)
+                    .frame(width: 40, height: 40)
+                    .background(quickStart.ghostEnabled ? AnyShapeStyle(MVMTheme.amberButtonGradient) : AnyShapeStyle(MVMTheme.cardSoft))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Ghost Race")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text("Race your last \(ghost.activity.rawValue.lowercased()): \(ghost.formattedDistance) in \(ghost.formattedDuration)")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: quickStart.ghostEnabled ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(quickStart.ghostEnabled ? MVMTheme.amber : MVMTheme.tertiaryText)
+            }
+            .padding(14)
+            .background(MVMTheme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(quickStart.ghostEnabled ? MVMTheme.amber.opacity(0.5) : MVMTheme.border, lineWidth: 1)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .sensoryFeedback(.selection, trigger: quickStart.ghostEnabled)
+        .accessibilityLabel("Ghost race, \(quickStart.ghostEnabled ? "on" : "off"). Race your previous \(ghost.activity.rawValue)")
     }
 
     private var startButton: some View {

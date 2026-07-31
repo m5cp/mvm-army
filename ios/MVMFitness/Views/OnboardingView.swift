@@ -9,6 +9,8 @@ struct OnboardingView: View {
     @AppStorage("daysPerWeek") private var daysPerWeek: Int = 3
     @AppStorage("minutesPerWorkout") private var minutesPerWorkout: Int = 30
     @AppStorage("disclaimerAccepted") private var disclaimerAccepted: Bool = false
+    @AppStorage("serviceBranch") private var serviceBranchRaw: String = UserServiceBranch.army.rawValue
+    @AppStorage("defaultCalculatorTest") private var defaultCalculatorTest: String = "AFT"
 
     @Environment(AppViewModel.self) private var vm
 
@@ -159,6 +161,26 @@ struct OnboardingView: View {
     private var trainingSetupStep: some View {
         VStack(spacing: 28) {
             sectionHeader(icon: "figure.strengthtraining.traditional", title: "Training Setup")
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Service Branch")
+                    .font(MVMTheme.mono(11))
+                    .kerning(1.4)
+                    .foregroundStyle(MVMTheme.textFaint)
+
+                VStack(spacing: 8) {
+                    ForEach(UserServiceBranch.allCases) { branch in
+                        selectionRow(branch.rawValue, icon: branch.icon, subtitle: branch.subtitle, isSelected: serviceBranchRaw == branch.rawValue) {
+                            serviceBranchRaw = branch.rawValue
+                            defaultCalculatorTest = branch.defaultTestRawValue
+                        }
+                    }
+                }
+
+                Text("Sets which calculator opens first — every test stays available to everyone, and you can change this any time in Profile.")
+                    .font(.caption2)
+                    .foregroundStyle(MVMTheme.textFaint)
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("PT Mode")

@@ -32,8 +32,22 @@ final class LocationTrackingService: NSObject, CLLocationManagerDelegate {
         manager.requestWhenInUseAuthorization()
     }
 
+    /// Pause bookkeeping so time offsets reflect MOVING time, matching the
+    /// session's elapsedSeconds (which also excludes pauses).
+    private var pausedTotal: TimeInterval = 0
+    private var pauseBegan: Date?
+    /// Pause-adjusted seconds-from-start, appended in lockstep with
+    /// `routeCoordinates`. Powers mile splits and ghost racing.
+    private(set) var recordedOffsets: [Double] = []
+    private var firstFixDate: Date?
+
     func startTracking() {
         routeCoordinates = []
+        locationTimestamps = []
+        recordedOffsets = []
+        firstFixDate = nil
+        pausedTotal = 0
+        pauseBegan = nil
         totalDistanceMeters = 0
         lastLocation = nil
         currentSpeed = 0
@@ -41,7 +55,21 @@ final class LocationTrackingService: NSObject, CLLocationManagerDelegate {
         manager.startUpdatingLocation()
     }
 
+    /// Continues an existing session after a pause WITHOUT wiping the route
+    /// already recorded (startTracking resets everything).
+    func resumeTracking() {
+        if let began = pauseBegan {
+            pausedTotal += Date.now.timeIntervalSince(began)
+            pauseBegan = nil
+        }
+        isTracking = true
+        manager.startUpdatingLocation()
+    }
+
     func stopTracking() {
+        if isTracking, pauseBegan == nil {
+            pauseBegan = .now
+        }
         isTracking = false
         manager.stopUpdatingLocation()
     }
@@ -49,10 +77,21 @@ final class LocationTrackingService: NSObject, CLLocationManagerDelegate {
     func reset() {
         stopTracking()
         routeCoordinates = []
+        locationTimestamps = []
+        recordedOffsets = []
+        firstFixDate = nil
+        pausedTotal = 0
+        pauseBegan = nil
         totalDistanceMeters = 0
         lastLocation = nil
         currentLocation = nil
         currentSpeed = 0
+    }
+
+    /// Seconds-from-start (moving time) for each recorded coordinate, aligned
+    /// with `routeCoordinates`.
+    var routeTimeOffsets: [Double] {
+        recordedOffsets
     }
 
     var averagePaceSecondsPerKm: Double? {
@@ -81,6 +120,10 @@ final class LocationTrackingService: NSObject, CLLocationManagerDelegate {
                 if isTracking {
                     routeCoordinates.append(location.coordinate)
                     locationTimestamps.append(location.timestamp)
+                    if firstFixDate == nil { firstFixDate = location.timestamp }
+                    if let first = firstFixDate {
+                        recordedOffsets.append(max(0, location.timestamp.timeIntervalSince(first) - pausedTotal))
+                    }
 
                     if let last = lastLocation {
                         let delta = location.distance(from: last)

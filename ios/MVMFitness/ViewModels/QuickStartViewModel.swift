@@ -10,6 +10,14 @@ final class QuickStartViewModel {
     var showCompletion: Bool = false
     var completedRecord: QuickStartRecord?
 
+    // MARK: Ghost race — race the pace curve of a previous session
+    var ghostEnabled: Bool = false
+    var ghostRecord: QuickStartRecord?
+    /// Cumulative (secondsFromStart, metersCovered) curve built from the ghost
+    /// record at session start. Empty when racing on average pace only.
+    private var ghostCurve: [(t: Double, d: Double)] = []
+    private var ghostAveragePaceSecondsPerMeter: Double?
+
     let locationService = LocationTrackingService()
 
     private var timer: Timer?
@@ -79,7 +87,99 @@ final class QuickStartViewModel {
             }
         }
 
+        buildGhostCurve()
         startTimer()
+    }
+
+    // MARK: - Ghost race
+
+    private func buildGhostCurve() {
+        ghostCurve = []
+        ghostAveragePaceSecondsPerMeter = nil
+        guard ghostEnabled, let ghost = ghostRecord else { return }
+
+        // Preferred: the real distance-over-time curve from the previous run.
+        if let offsets = ghost.routeTimeOffsets,
+           offsets.count == ghost.routeCoordinates.count,
+           ghost.routeCoordinates.count > 1 {
+            var cumulative: Double = 0
+            var curve: [(Double, Double)] = [(0, 0)]
+            for i in 1..<ghost.routeCoordinates.count {
+                let a = ghost.routeCoordinates[i - 1].clCoordinate
+                let b = ghost.routeCoordinates[i].clCoordinate
+                let delta = CLLocation(latitude: a.latitude, longitude: a.longitude)
+                    .distance(from: CLLocation(latitude: b.latitude, longitude: b.longitude))
+                if delta > 0, delta < 200 { cumulative += delta }
+                curve.append((offsets[i], cumulative))
+            }
+            if cumulative > 100 {
+                ghostCurve = curve
+                return
+            }
+        }
+
+        // Fallback: constant average pace from the previous session.
+        if ghost.distanceMeters > 100, ghost.elapsedSeconds > 0 {
+            ghostAveragePaceSecondsPerMeter = Double(ghost.elapsedSeconds) / ghost.distanceMeters
+        }
+    }
+
+    /// Where the ghost is right now, in meters from the start.
+    var ghostDistanceMeters: Double {
+        let t = Double(elapsedSeconds)
+        if !ghostCurve.isEmpty {
+            // Interpolate on the recorded curve; past the end, the ghost is finished.
+            guard let last = ghostCurve.last else { return 0 }
+            if t >= last.t { return last.d }
+            var previous = ghostCurve[0]
+            for point in ghostCurve {
+                if point.t >= t {
+                    let span = point.t - previous.t
+                    guard span > 0 else { return point.d }
+                    let fraction = (t - previous.t) / span
+                    return previous.d + fraction * (point.d - previous.d)
+                }
+                previous = point
+            }
+            return last.d
+        }
+        if let pace = ghostAveragePaceSecondsPerMeter, pace > 0 {
+            return t / pace
+        }
+        return 0
+    }
+
+    var ghostActive: Bool {
+        ghostEnabled && ghostRecord != nil && usesGPS
+    }
+
+    /// Positive = you're ahead of the ghost (meters).
+    var ghostDeltaMeters: Double {
+        locationService.totalDistanceMeters - ghostDistanceMeters
+    }
+
+    /// The gap expressed in seconds at the ghost's pace. Positive = ahead.
+    var ghostDeltaSeconds: Double {
+        let pace: Double
+        if let avg = ghostAveragePaceSecondsPerMeter {
+            pace = avg
+        } else if let ghost = ghostRecord, ghost.distanceMeters > 0 {
+            pace = Double(ghost.elapsedSeconds) / ghost.distanceMeters
+        } else {
+            return 0
+        }
+        return ghostDeltaMeters * pace
+    }
+
+    /// 0…1 progress of you and the ghost along the ghost's total distance,
+    /// for the visual pacer track.
+    var ghostProgress: (you: Double, ghost: Double) {
+        guard let ghost = ghostRecord, ghost.distanceMeters > 0 else { return (0, 0) }
+        let total = ghost.distanceMeters
+        return (
+            min(locationService.totalDistanceMeters / total, 1),
+            min(ghostDistanceMeters / total, 1)
+        )
     }
 
     func togglePause() {
@@ -89,7 +189,9 @@ final class QuickStartViewModel {
             }
             pauseStart = nil
             isPaused = false
-            if usesGPS { locationService.startTracking() }
+            // resumeTracking, NOT startTracking — start would wipe the route
+            // recorded before the pause.
+            if usesGPS { locationService.resumeTracking() }
             startTimer()
         } else {
             isPaused = true
@@ -116,7 +218,8 @@ final class QuickStartViewModel {
             elapsedSeconds: elapsedSeconds,
             distanceMeters: locationService.totalDistanceMeters,
             routeCoordinates: coords,
-            averagePaceSecondsPerKm: locationService.averagePaceSecondsPerKm
+            averagePaceSecondsPerKm: locationService.averagePaceSecondsPerKm,
+            routeTimeOffsets: coords.isEmpty ? nil : locationService.routeTimeOffsets
         )
 
         isActive = false
@@ -131,6 +234,10 @@ final class QuickStartViewModel {
         selectedActivity = nil
         locationService.reset()
         elapsedSeconds = 0
+        ghostEnabled = false
+        ghostRecord = nil
+        ghostCurve = []
+        ghostAveragePaceSecondsPerMeter = nil
     }
 
     private func startTimer() {

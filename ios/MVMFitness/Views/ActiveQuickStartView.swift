@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import UIKit
 
 struct ActiveQuickStartView: View {
     @Environment(AppViewModel.self) private var vm
@@ -10,6 +11,11 @@ struct ActiveQuickStartView: View {
     @State private var showEndConfirm: Bool = false
     @State private var mapPosition: MapCameraPosition = .userLocation(fallback: .automatic)
     @State private var animateTimer: Bool = false
+    /// true = ahead of the ghost, false = behind; nil until the race settles.
+    @State private var ghostAheadState: Bool?
+    /// Fires the "ghost is closing" warning pulse once per close-approach.
+    @State private var ghostClosingWarned: Bool = false
+    @State private var ghostClosingPulse: Int = 0
 
     private var activity: QuickStartActivity {
         quickStart.selectedActivity ?? .outdoorRun
@@ -35,6 +41,10 @@ struct ActiveQuickStartView: View {
                         }
 
                         activityBadge
+
+                        if quickStart.ghostActive {
+                            ghostPacerSection
+                        }
 
                         timerDisplay
 
@@ -77,11 +87,140 @@ struct ActiveQuickStartView: View {
         }
         .sensoryFeedback(.impact(weight: .heavy), trigger: endTrigger)
         .sensoryFeedback(.selection, trigger: pauseTrigger)
+        // Overtake = success tap; overtaken = warning buzz.
+        .sensoryFeedback(trigger: ghostAheadState) { old, new in
+            guard old != nil, let new else { return nil }
+            return new ? .success : .warning
+        }
+        // "Ghost is closing" pulse when your lead shrinks under 5 seconds.
+        .sensoryFeedback(.impact(weight: .medium, intensity: 0.9), trigger: ghostClosingPulse)
+        .onChange(of: quickStart.elapsedSeconds) { _, _ in
+            updateGhostState()
+        }
         .onAppear {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                 animateTimer = true
             }
+            // Keep the screen awake for the whole session — pacing and maps
+            // are useless behind a locked screen.
+            UIApplication.shared.isIdleTimerDisabled = true
         }
+        .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
+    }
+
+    // MARK: - Ghost race
+
+    private func updateGhostState() {
+        guard quickStart.ghostActive, quickStart.elapsedSeconds > 10,
+              quickStart.locationService.totalDistanceMeters > 30 else { return }
+        let delta = quickStart.ghostDeltaSeconds
+        let ahead = delta >= 0
+        if ghostAheadState != ahead {
+            ghostAheadState = ahead
+            ghostClosingWarned = false
+        }
+        // Warn once each time a comfortable lead (>10 s) shrinks below 5 s.
+        if ahead {
+            if delta > 10 { ghostClosingWarned = false }
+            if delta < 5, !ghostClosingWarned {
+                ghostClosingWarned = true
+                ghostClosingPulse += 1
+            }
+        }
+    }
+
+    private var ghostPacerSection: some View {
+        let delta = quickStart.ghostDeltaSeconds
+        let ahead = delta >= 0
+        let progress = quickStart.ghostProgress
+
+        return VStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "figure.run.motion")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.amber)
+                Text("GHOST RACE")
+                    .font(MVMTheme.mono(10))
+                    .kerning(1.6)
+                    .foregroundStyle(MVMTheme.textFaint)
+
+                Spacer()
+
+                // The big ahead/behind readout.
+                HStack(spacing: 5) {
+                    Image(systemName: ahead ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill")
+                        .font(.caption.weight(.heavy))
+                    Text(ghostDeltaLabel(delta))
+                        .font(.system(size: 17, weight: .heavy, design: .monospaced))
+                        .contentTransition(.numericText())
+                }
+                .foregroundStyle(ahead ? MVMTheme.success : MVMTheme.danger)
+                .lineLimit(1)
+                .fixedSize()
+            }
+
+            // Pacer track: you (amber) vs ghost (gray) along the ghost's distance.
+            GeometryReader { geo in
+                let width = geo.size.width
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(MVMTheme.well)
+                        .frame(height: 6)
+
+                    // Ghost marker
+                    Circle()
+                        .fill(Color.white.opacity(0.45))
+                        .frame(width: 14, height: 14)
+                        .overlay { Circle().stroke(.white.opacity(0.7), lineWidth: 1.5) }
+                        .offset(x: max(0, width * progress.ghost - 7))
+                        .animation(.linear(duration: 1), value: progress.ghost)
+
+                    // You
+                    Circle()
+                        .fill(MVMTheme.amberButtonGradient)
+                        .frame(width: 18, height: 18)
+                        .overlay { Circle().stroke(.white, lineWidth: 2) }
+                        .shadow(color: MVMTheme.amber.opacity(0.6), radius: 6)
+                        .offset(x: max(0, width * progress.you - 9))
+                        .animation(.linear(duration: 1), value: progress.you)
+                }
+                .frame(height: 18)
+            }
+            .frame(height: 18)
+
+            HStack {
+                Text("YOU")
+                    .font(MVMTheme.mono(9, weight: .bold))
+                    .foregroundStyle(MVMTheme.amber)
+                Text("\(quickStart.formattedDistance)")
+                    .font(MVMTheme.mono(9))
+                    .foregroundStyle(MVMTheme.textMuted)
+                Spacer()
+                Text("GHOST")
+                    .font(MVMTheme.mono(9, weight: .bold))
+                    .foregroundStyle(MVMTheme.textFaint)
+                Text(String(format: "%.2f mi", quickStart.ghostDistanceMeters / 1609.34))
+                    .font(MVMTheme.mono(9))
+                    .foregroundStyle(MVMTheme.textFaint)
+            }
+        }
+        .padding(16)
+        .background(MVMTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(ahead ? MVMTheme.success.opacity(0.35) : MVMTheme.danger.opacity(0.35), lineWidth: 1)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Ghost race: \(ahead ? "ahead" : "behind") by \(ghostDeltaLabel(delta))")
+    }
+
+    private func ghostDeltaLabel(_ delta: Double) -> String {
+        let seconds = Int(abs(delta).rounded())
+        let label = String(format: "%d:%02d", seconds / 60, seconds % 60)
+        return delta >= 0 ? "\(label) AHEAD" : "\(label) BEHIND"
     }
 
     private var mapSection: some View {

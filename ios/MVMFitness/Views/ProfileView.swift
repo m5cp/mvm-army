@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import PhotosUI
 import RevenueCat
 
@@ -514,8 +515,57 @@ struct ProfileView: View {
         )
     }
 
+    @AppStorage("serviceBranch") private var serviceBranchRaw: String = UserServiceBranch.army.rawValue
+    @AppStorage("defaultCalculatorTest") private var defaultCalculatorTest: String = "AFT"
+
+    private var currentBranch: UserServiceBranch {
+        UserServiceBranch(rawValue: serviceBranchRaw) ?? .army
+    }
+
     private var appControlsSection: some View {
         settingsSection(title: "APP", icon: "gearshape") {
+            // Service branch — only changes which calculator opens first.
+            // No stored records or syncing depend on it.
+            Menu {
+                ForEach(UserServiceBranch.allCases) { branch in
+                    Button {
+                        serviceBranchRaw = branch.rawValue
+                        defaultCalculatorTest = branch.defaultTestRawValue
+                    } label: {
+                        Label(branch.rawValue, systemImage: branch.icon)
+                    }
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: currentBranch.icon)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.accent)
+                        .frame(width: 24)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Service Branch")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(MVMTheme.primaryText)
+                        Text("\(currentBranch.rawValue) \(MVMTheme.dot) \(currentBranch.subtitle)")
+                            .font(.caption2)
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                .frame(minHeight: 48)
+                .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Service branch, currently \(currentBranch.rawValue)")
+
+            sectionDivider
+
+            appIconRow
+
+            sectionDivider
+
             HStack {
                 Image(systemName: "faceid")
                     .font(.subheadline.weight(.semibold))
@@ -788,6 +838,69 @@ struct ProfileView: View {
         .frame(minHeight: 48)
         .contentShape(Rectangle())
         .animation(.easeOut(duration: 0.2), value: copiedMemberID)
+    }
+
+    // MARK: - App Icon
+
+    @State private var currentIconName: String? = nil
+    @State private var iconRowLoaded = false
+
+    private var appIconRow: some View {
+        Menu {
+            iconChoice(name: nil, label: "Classic")
+            iconChoice(name: "AppIconDark", label: "Blackout")
+            iconChoice(name: "AppIconGold", label: "Golden Hour")
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "app.badge")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("App Icon")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text(currentIconLabel)
+                        .font(.caption2)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+                Spacer()
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+            .frame(minHeight: 48)
+            .contentShape(Rectangle())
+        }
+        .onAppear {
+            if !iconRowLoaded {
+                iconRowLoaded = true
+                currentIconName = UIApplication.shared.alternateIconName
+            }
+        }
+        .accessibilityLabel("App icon, currently \(currentIconLabel)")
+    }
+
+    private var currentIconLabel: String {
+        switch currentIconName {
+        case "AppIconDark": return "Blackout"
+        case "AppIconGold": return "Golden Hour"
+        default: return "Classic"
+        }
+    }
+
+    private func iconChoice(name: String?, label: String) -> some View {
+        Button {
+            guard UIApplication.shared.supportsAlternateIcons else { return }
+            UIApplication.shared.setAlternateIconName(name)
+            currentIconName = name
+        } label: {
+            if currentIconName == name {
+                Label(label, systemImage: "checkmark")
+            } else {
+                Text(label)
+            }
+        }
     }
 
     private func settingsRow(icon: String, title: String, color: Color, showChevron: Bool = false) -> some View {

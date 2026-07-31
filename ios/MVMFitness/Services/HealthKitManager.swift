@@ -14,6 +14,7 @@ final class HealthKitManager {
         if let steps = HKObjectType.quantityType(forIdentifier: .stepCount) { set.insert(steps) }
         if let energy = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) { set.insert(energy) }
         if let hr = HKObjectType.quantityType(forIdentifier: .heartRate) { set.insert(hr) }
+        set.insert(HKObjectType.workoutType()) // read runs for calculator auto-fill
         return set
     }
 
@@ -63,6 +64,45 @@ final class HealthKitManager {
         } catch {
             print("HealthKit workout save failed: \(error.localizedDescription)")
         }
+    }
+
+    /// Estimated 2-mile time (seconds) from the user's best recent running
+    /// workout in Apple Health (last 90 days, ≥ 1 mile): fastest average pace
+    /// × 2 miles. Returns nil when Health is unavailable, unauthorized, or has
+    /// no qualifying runs — callers fall back to in-app Quick Start data.
+    func estimatedTwoMileSeconds() async -> Int? {
+        guard isAvailable else { return nil }
+        _ = await requestAuthorization()
+
+        let runPredicate = HKQuery.predicateForWorkouts(with: .running)
+        let datePredicate = HKQuery.predicateForSamples(
+            withStart: Calendar.current.date(byAdding: .day, value: -90, to: .now),
+            end: .now
+        )
+        let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [runPredicate, datePredicate])
+        let sort = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+
+        let workouts: [HKWorkout] = await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(sampleType: .workoutType(), predicate: predicate, limit: 25, sortDescriptors: [sort]) { _, samples, _ in
+                continuation.resume(returning: (samples as? [HKWorkout]) ?? [])
+            }
+            store.execute(query)
+        }
+
+        var bestPaceSecondsPerMile: Double?
+        for workout in workouts {
+            guard let distanceType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
+                  let meters = workout.statistics(for: distanceType)?.sumQuantity()?.doubleValue(for: .meter()),
+                  meters >= 1609 else { continue }
+            let miles = meters / 1609.34
+            let pace = workout.duration / miles
+            guard pace > 240, pace < 1200 else { continue } // sanity: 4–20 min/mi
+            if bestPaceSecondsPerMile == nil || pace < bestPaceSecondsPerMile! {
+                bestPaceSecondsPerMile = pace
+            }
+        }
+
+        return bestPaceSecondsPerMile.map { Int(($0 * 2).rounded()) }
     }
 
     /// Today's step count from Health (preferred over CMPedometer when authorized).

@@ -59,6 +59,7 @@ struct HomeView: View {
 
     private let calendar = Calendar.current
     private let engine = AFTScoringEngine.shared
+    @Namespace private var heroTransition
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -102,6 +103,7 @@ struct HomeView: View {
                 .adaptiveContainer()
             }
         }
+        .coordinateSpace(name: "homeScroll")
         .hidesTabBarOnScroll()
         .background {
             ZStack {
@@ -276,6 +278,7 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showPTWorkoutSheet) {
             PTWODDetailView()
+                .navigationTransition(.zoom(sourceID: "todayPT", in: heroTransition))
         }
         .sheet(isPresented: $showWODPlanSheet) {
             WODPlanSheet()
@@ -468,9 +471,16 @@ struct HomeView: View {
 
     private var heroSection: some View {
         ZStack(alignment: .bottomLeading) {
-            GradedPhoto(name: heroImageName, grade: .heroDuotone)
-                .frame(height: hasAFTRecord ? 232 : 280)
-                .clipped()
+            // Stretchy header: pulling down grows the photo instead of showing
+            // dead space — the same feel as Apple's own headers.
+            GeometryReader { geo in
+                let minY = geo.frame(in: .named("homeScroll")).minY
+                let stretch = max(0, minY)
+                GradedPhoto(name: heroImageName, grade: .heroDuotone)
+                    .frame(width: geo.size.width, height: geo.size.height + stretch)
+                    .offset(y: -stretch)
+            }
+            .frame(height: hasAFTRecord ? 232 : 280)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(dateLine)
@@ -534,8 +544,7 @@ struct HomeView: View {
                                 .foregroundStyle(MVMTheme.textMuted)
 
                             HStack(alignment: .firstTextBaseline, spacing: 7) {
-                                Text("\(latest.totalScore)")
-                                    .font(MVMTheme.scoreDisplay(64))
+                                CountUpScoreText(value: latest.totalScore, font: MVMTheme.scoreDisplay(64))
                                     .foregroundStyle(MVMTheme.text)
                                     .lineLimit(1)
                                     .fixedSize()
@@ -735,6 +744,7 @@ struct HomeView: View {
             }
         }
         .buttonStyle(PressScaleButtonStyle())
+        .matchedTransitionSource(id: "todayPT", in: heroTransition)
         .accessibilityLabel("Today's Individual PT: \(workout.title), \(workout.exercises.count) exercises")
         .accessibilityHint("Tap to view workout details")
     }
@@ -1312,5 +1322,31 @@ struct HomeView: View {
             exportAlertMessage = "Export failed: \(message)"
         }
         showExportAlert = true
+    }
+}
+
+// MARK: - Count-up score text
+
+/// Animates a score counting up from 0 the first time it appears (and rolls
+/// smoothly whenever the value changes) using the numeric-text transition.
+struct CountUpScoreText: View {
+    let value: Int
+    let font: Font
+    @State private var shown: Int = 0
+
+    var body: some View {
+        Text("\(shown)")
+            .font(font)
+            .contentTransition(.numericText(value: Double(shown)))
+            .onAppear {
+                withAnimation(.spring(response: 1.0, dampingFraction: 0.9)) {
+                    shown = value
+                }
+            }
+            .onChange(of: value) { _, newValue in
+                withAnimation(.spring(response: 0.7, dampingFraction: 0.9)) {
+                    shown = newValue
+                }
+            }
     }
 }

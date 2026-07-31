@@ -1168,6 +1168,8 @@ struct ProgressViewScreen: View {
                     .foregroundStyle(MVMTheme.tertiaryText)
             }
 
+            serviceTestTrendChart
+
             ForEach(vm.serviceTestRecords.prefix(6)) { record in
                 serviceTestRow(record)
             }
@@ -1183,6 +1185,77 @@ struct ProgressViewScreen: View {
         .premiumCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
+    }
+
+    @State private var trendBranch: ServiceTestBranch?
+
+    /// Branch shown in the trend chart — defaults to the branch with the most
+    /// saved results so the chart is meaningful immediately.
+    private var effectiveTrendBranch: ServiceTestBranch? {
+        if let trendBranch { return trendBranch }
+        let counts = Dictionary(grouping: vm.serviceTestRecords, by: \.branch)
+        return counts.max { $0.value.count < $1.value.count }?.key
+    }
+
+    @ViewBuilder
+    private var serviceTestTrendChart: some View {
+        if let branch = effectiveTrendBranch {
+            let records = vm.serviceTestRecords
+                .filter { $0.branch == branch }
+                .sorted { $0.date < $1.date }
+
+            if records.count >= 2 {
+                VStack(alignment: .leading, spacing: 8) {
+                    Menu {
+                        ForEach(ServiceTestBranch.allCases) { option in
+                            Button {
+                                trendBranch = option
+                            } label: {
+                                Label(option.rawValue, systemImage: option.icon)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text(branch.rawValue.uppercased())
+                                .font(MVMTheme.mono(9.5, weight: .bold))
+                                .kerning(1)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 8, weight: .bold))
+                        }
+                        .foregroundStyle(MVMTheme.amber)
+                    }
+
+                    Chart(records) { record in
+                        LineMark(
+                            x: .value("Date", record.date),
+                            y: .value("Score", record.scoreValue)
+                        )
+                        .foregroundStyle(MVMTheme.amber)
+                        .interpolationMethod(.catmullRom)
+
+                        PointMark(
+                            x: .value("Date", record.date),
+                            y: .value("Score", record.scoreValue)
+                        )
+                        .foregroundStyle(record.passed ? MVMTheme.success : MVMTheme.danger)
+                    }
+                    .chartYAxis {
+                        AxisMarks(position: .leading) {
+                            AxisGridLine().foregroundStyle(MVMTheme.border)
+                            AxisValueLabel().foregroundStyle(MVMTheme.tertiaryText)
+                        }
+                    }
+                    .chartXAxis {
+                        AxisMarks {
+                            AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                        }
+                    }
+                    .frame(height: 120)
+                }
+                .padding(.bottom, 4)
+            }
+        }
     }
 
     private func serviceTestRow(_ record: ServiceTestRecord) -> some View {

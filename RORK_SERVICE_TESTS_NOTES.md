@@ -58,3 +58,49 @@ Hybrid / Satellite switcher, start/finish pins, distance-duration-pace
 plate. Entry points: tapping the route thumbnail on the Quick Start
 completion screen, and tapping any GPS session row in Progress → Quick
 Start history (rows with routes show a map glyph).
+
+---
+
+# Batch 3 — Personalization, Badges, Ghost Race, Test Day Mode (2026-07-31)
+
+Branch `feature/polish-badges-ghostrace`. Preserve all of this on future edits.
+
+- **Branch selection**: onboarding Training Setup now asks for Service Branch
+  (Army default, plus Navy / Air Force / Marines / Fitness Athlete). It ONLY
+  sets which calculator opens first (AppStorage `serviceBranch` +
+  `defaultCalculatorTest`) — every test stays available to everyone, nothing
+  about storage/sync depends on it, changeable in Profile → App → Service
+  Branch. Fitness Athlete defaults to the AFT calculator.
+- **Badges**: 25 total. Original 11 PNG coins unchanged; 14 new SF-Symbol
+  coins: starters (Spread the word, Early bird, First mile), distance
+  (25/100/500-mile clubs, 30-mile month), streaks (14/30-day), holiday awards
+  earned by training on the day (Veterans Day Nov 11, Memorial Day = last
+  Monday of May, Independence Day Jul 4, Army Birthday Jun 14), and Joint
+  Force (log Navy + Air Force + Marine results). Tapping an EARNED badge
+  opens a golden share card; earn haptics fire once per badge.
+- **Ghost Race**: on the Quick Start selection screen, GPS activities with a
+  previous session offer "Ghost Race". During the session: pacer track (amber
+  you vs gray ghost), big ▲AHEAD/▼BEHIND readout, haptics on overtake
+  (success), overtaken (warning), and ghost-closing-within-5s (pulse).
+  Screen stays awake for all active sessions. Ghost uses the previous run's
+  real distance-time curve (`routeTimeOffsets`, pause-adjusted moving time,
+  now persisted on QuickStartRecord) with average-pace fallback for old
+  records. Also fixed: resuming from pause no longer wipes the recorded route.
+- **Test Day Mode**: button at the top of the AFT calculator actions. Guided
+  full-screen proctor flow: briefing → 5 events in order with photos,
+  instructions, a big stopwatch for SDC/PLK/2MR (times drop straight into the
+  score, manual ± adjust), rep/weight entry for MDL/HRP, live points from
+  AFTScoringEngine only, voice announcements (AVSpeechSynthesizer, toggleable),
+  keep-awake, final GO/NO-GO summary with Save (standard AFT record flow) and
+  the photo share card. AFT scoring untouched.
+- **2MR auto-fill**: button under the 2-mile run input pulls the user's best
+  recent running pace from Apple Health (workout read permission added) or
+  falls back to in-app Quick Start runs; estimate = best pace × 2 mi.
+- **Mile splits**: RouteMapView now pins MI 1 / MI 2… along the route with
+  per-mile split times when timing data exists (older records: pin only).
+- **Motion**: home hero photo stretches on pull-down; readiness score counts
+  up on appear; today's-workout card zoom-transitions into its detail sheet.
+- **Trend chart**: Progress → Service Tests card charts score-over-time per
+  branch (menu to switch branch).
+- **App icons**: Profile → App → App Icon offers Classic / Blackout / Golden
+  Hour (alternate icon assets AppIconDark / AppIconGold, app target only).
