@@ -17,6 +17,38 @@ struct AFTScoreSheet: View {
     @State private var runSeconds: String = "00"
     @State private var didSave = false
 
+    @State private var aeroSelection: AeroSelection = .run2mi
+    @State private var altMinutes: String = "0"
+    @State private var altSeconds: String = "00"
+
+    private let altService = AFTAlternateEventService.shared
+
+    /// Aerobic event picker options: the standard 2-mile run plus the four
+    /// HQDA alternate events (permanent-profile Go/No-Go).
+    private enum AeroSelection: String, CaseIterable, Identifiable {
+        case run2mi = "2MR"
+        case walk = "WALK"
+        case bike = "BIKE"
+        case swim = "SWIM"
+        case row = "ROW"
+        var id: String { rawValue }
+    }
+
+    private func alternateEvent(for option: AeroSelection) -> AFTAlternateEvent? {
+        switch option {
+        case .run2mi: return nil
+        case .walk: return .walk
+        case .bike: return .bike
+        case .swim: return .swim
+        case .row: return .row
+        }
+    }
+
+    /// nil = standard 2-mile run (default); otherwise the selected alternate event.
+    private var alternateEvent: AFTAlternateEvent? {
+        alternateEvent(for: aeroSelection)
+    }
+
     private var scoringAge: Int {
         Int(ageText) ?? 25
     }
@@ -33,29 +65,58 @@ struct AFTScoreSheet: View {
         (Int(runMinutes) ?? 0) * 60 + (Int(runSeconds) ?? 0)
     }
 
+    private var altTotalSeconds: Int {
+        (Int(altMinutes) ?? 0) * 60 + (Int(altSeconds) ?? 0)
+    }
+
     private var dlPts: Int { AFTScoringTables.scoreDeadlift(lbs: Int(deadliftLbs) ?? 0, age: scoringAge, sex: sex, standard: standard) }
     private var puPts: Int { AFTScoringTables.scorePushUp(reps: Int(pushUpReps) ?? 0, age: scoringAge, sex: sex, standard: standard) }
     private var sdcPts: Int { AFTScoringTables.scoreSDC(seconds: sdcTotalSeconds, age: scoringAge, sex: sex, standard: standard) }
     private var plkPts: Int { AFTScoringTables.scorePlank(seconds: plankTotalSeconds, age: scoringAge, sex: sex, standard: standard) }
     private var runPts: Int { AFTScoringTables.scoreRun(seconds: runTotalSeconds, age: scoringAge, sex: sex, standard: standard) }
-    private var totalScore: Int { dlPts + puPts + sdcPts + plkPts + runPts }
+
+    /// GO/NO-GO for the currently selected alternate event, false when 2MR is selected
+    /// or when the alternate-event data failed to load (fail-safe).
+    private var altIsGo: Bool {
+        guard let alt = alternateEvent else { return false }
+        return altService.isGo(event: alt, age: scoringAge, sex: sex, standard: standard, timeSeconds: altTotalSeconds)
+    }
+
+    /// The aerobic-event slot's points: normal engine-derived run points for 2MR,
+    /// or a flat 60/0 for alternate-event Go/No-Go. Composed here in the view
+    /// layer only — AFTScoringEngine/AFTScoringTables/AFTCalculatorService are untouched.
+    private var aerobicPoints: Int {
+        guard alternateEvent != nil else { return runPts }
+        return altIsGo ? 60 : 0
+    }
+
+    /// Overall test total = the four AFTScoringEngine-scored events plus the
+    /// aerobic slot (2MR points, or 60 when the alternate event is GO).
+    private var totalScore: Int { dlPts + puPts + sdcPts + plkPts + aerobicPoints }
+
+    private func maxTimeLabel(for event: AFTAlternateEvent) -> String {
+        guard let max = altService.maxTime(event: event, age: scoringAge, sex: sex, standard: standard) else { return "N/A" }
+        return "\(max / 60):" + String(format: "%02d", max % 60)
+    }
 
     private var preview: AFTScoreRecord {
-        let pairs: [(String, Int)] = [("MDL", dlPts), ("HRP", puPts), ("SDC", sdcPts), ("PLK", plkPts), ("2MR", runPts)]
+        let aeroCode = aeroSelection.rawValue
+        let pairs: [(String, Int)] = [("MDL", dlPts), ("HRP", puPts), ("SDC", sdcPts), ("PLK", plkPts), (aeroCode, aerobicPoints)]
         let weakest = pairs.sorted { $0.1 < $1.1 }.prefix(2).map(\.0)
         return AFTScoreRecord(
             deadliftLbs: Int(deadliftLbs) ?? 0,
             pushUpReps: Int(pushUpReps) ?? 0,
             sdcSeconds: sdcTotalSeconds,
             plankSeconds: plankTotalSeconds,
-            runSeconds: runTotalSeconds,
+            runSeconds: alternateEvent != nil ? altTotalSeconds : runTotalSeconds,
             deadliftPoints: dlPts,
             pushUpPoints: puPts,
             sdcPoints: sdcPts,
             plankPoints: plkPts,
-            runPoints: runPts,
+            runPoints: aerobicPoints,
             totalScore: totalScore,
-            weakestEvents: weakest
+            weakestEvents: weakest,
+            aerobicEvent: alternateEvent
         )
     }
 
@@ -261,16 +322,88 @@ struct AFTScoreSheet: View {
                 timeInput(minutes: $plankMinutes, seconds: $plankSeconds)
             }
 
-            eventField(
-                icon: "figure.outdoor.cycle",
-                title: "2-Mile Run",
-                abbreviation: "2MR"
-            ) {
-                timeInput(minutes: $runMinutes, seconds: $runSeconds)
-            }
+            aerobicEventField
         }
         .padding(18)
         .premiumCard()
+    }
+
+    // MARK: - Aerobic Event (2-Mile Run or alternate Go/No-Go event)
+
+    private var aerobicEventField: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: alternateEvent == nil ? "figure.outdoor.cycle" : "stopwatch")
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.accent)
+
+                Text(alternateEvent?.fullName ?? "2-Mile Run")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Spacer()
+
+                Text(aeroSelection.rawValue)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.accent)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(MVMTheme.accent.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("AERO EVENT")
+                    .font(MVMTheme.mono(10))
+                    .kerning(1.2)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+
+                HStack(spacing: 6) {
+                    ForEach(AeroSelection.allCases) { option in
+                        let selected = option == aeroSelection
+                        Text(option.rawValue)
+                            .font(MVMTheme.mono(11, weight: .bold))
+                            .foregroundStyle(selected ? .white : MVMTheme.secondaryText)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(selected ? MVMTheme.accent : MVMTheme.cardSoft)
+                            .clipShape(Capsule())
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    aeroSelection = option
+                                }
+                            }
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(option == .run2mi ? "2 mile run" : (alternateEvent(for: option)?.fullName ?? option.rawValue))
+                            .accessibilityAddTraits(selected ? [.isButton, .isSelected] : [.isButton])
+                    }
+                }
+            }
+
+            if let alt = alternateEvent {
+                timeInput(minutes: $altMinutes, seconds: $altSeconds)
+
+                HStack {
+                    Text("\(altService.distance(for: alt)) \(MVMTheme.dot) MAX \(maxTimeLabel(for: alt))")
+                        .font(MVMTheme.mono(9))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .lineLimit(1)
+                    Spacer()
+                    Text(altIsGo ? "GO" : "NO-GO")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(altIsGo ? MVMTheme.success : MVMTheme.danger)
+                }
+            } else {
+                timeInput(minutes: $runMinutes, seconds: $runSeconds)
+            }
+        }
+        .padding(14)
+        .background(MVMTheme.cardSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.border)
+        }
     }
 
     private var scorePreview: some View {
@@ -289,7 +422,11 @@ struct AFTScoreSheet: View {
                 scorePill("HRP", preview.pushUpPoints)
                 scorePill("SDC", preview.sdcPoints)
                 scorePill("PLK", preview.plankPoints)
-                scorePill("2MR", preview.runPoints)
+                if alternateEvent != nil {
+                    aeroResultPill
+                } else {
+                    scorePill("2MR", preview.runPoints)
+                }
             }
         }
         .padding(18)
@@ -401,5 +538,25 @@ struct AFTScoreSheet: View {
         if value >= 60 { return MVMTheme.accent }
         if value >= 40 { return MVMTheme.warning }
         return MVMTheme.danger
+    }
+
+    /// Aerobic-slot result pill for alternate events — shows GO/NO-GO instead
+    /// of a 0-100 point value, since these are pass/fail (60 or 0 in totals).
+    private var aeroResultPill: some View {
+        VStack(spacing: 4) {
+            Text(aeroSelection.rawValue)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(MVMTheme.secondaryText)
+            Text(altIsGo ? "GO" : "NO-GO")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(altIsGo ? MVMTheme.success : MVMTheme.danger)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(MVMTheme.cardSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12).stroke(MVMTheme.border)
+        }
     }
 }

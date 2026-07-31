@@ -36,6 +36,13 @@ nonisolated struct AFTScoreRecord: Codable, Identifiable, Hashable, Sendable {
     var totalScore: Int
     var weakestEvents: [String]
 
+    /// Which aerobic event this result used. `nil` means the standard 2-mile
+    /// run (the default) — when set, `runSeconds`/`runPoints` above hold the
+    /// alternate event's time and its flat 60/0 Go/No-Go points instead.
+    /// Optional and decoded with a fallback of `nil` so previously saved
+    /// results (all 2-mile-run) decode and display unchanged.
+    var aerobicEvent: AFTAlternateEvent?
+
     init(
         date: Date = .now,
         age: Int = 0,
@@ -52,7 +59,8 @@ nonisolated struct AFTScoreRecord: Codable, Identifiable, Hashable, Sendable {
         plankPoints: Int,
         runPoints: Int,
         totalScore: Int,
-        weakestEvents: [String]
+        weakestEvents: [String],
+        aerobicEvent: AFTAlternateEvent? = nil
     ) {
         self.id = UUID()
         self.date = date
@@ -71,13 +79,14 @@ nonisolated struct AFTScoreRecord: Codable, Identifiable, Hashable, Sendable {
         self.runPoints = runPoints
         self.totalScore = totalScore
         self.weakestEvents = weakestEvents
+        self.aerobicEvent = aerobicEvent
     }
 
     enum CodingKeys: String, CodingKey {
         case id, date, age, sex, standard
         case deadliftLbs, pushUpReps, sdcSeconds, plankSeconds, runSeconds
         case deadliftPoints, pushUpPoints, sdcPoints, plankPoints, runPoints
-        case totalScore, weakestEvents
+        case totalScore, weakestEvents, aerobicEvent
     }
 
     init(from decoder: Decoder) throws {
@@ -99,5 +108,6 @@ nonisolated struct AFTScoreRecord: Codable, Identifiable, Hashable, Sendable {
         runPoints      = try c.decode(Int.self, forKey: .runPoints)
         totalScore     = try c.decode(Int.self, forKey: .totalScore)
         weakestEvents  = try c.decode([String].self, forKey: .weakestEvents)
+        aerobicEvent   = try c.decodeIfPresent(AFTAlternateEvent.self, forKey: .aerobicEvent)
     }
 }
