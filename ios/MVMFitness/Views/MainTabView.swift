@@ -57,7 +57,7 @@ nonisolated enum AppTab: Int, CaseIterable, Sendable {
         case .home: return "Home"
         case .score: return "Score"
         case .train: return "Train"
-        case .trend: return "Trend"
+        case .trend: return "Progress"
         case .you: return "You"
         }
     }

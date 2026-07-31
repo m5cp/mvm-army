@@ -161,6 +161,41 @@ final class AppViewModel {
 
     // MARK: - Plan Generation
 
+    /// Build-your-own week: an empty, fully editable plan. The user picks
+    /// which days train; each day starts blank and is filled in with the
+    /// existing editor (add, reorder, autocomplete). No generator involved.
+    func createCustomPlan(trainingDays: Set<Int>) {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        let weekday = cal.component(.weekday, from: today)
+        let daysFromMonday = (weekday + 5) % 7
+        let monday = cal.date(byAdding: .day, value: -daysFromMonday, to: today) ?? today
+
+        let days: [WorkoutDay] = (0..<7).map { index in
+            let date = cal.date(byAdding: .day, value: index, to: monday) ?? today
+            let isTraining = trainingDays.contains(index)
+            return WorkoutDay(
+                dayIndex: index,
+                date: date,
+                title: isTraining ? "My Custom Session" : "Recovery & Mobility",
+                exercises: [],
+                isRestDay: !isTraining,
+                templateTag: "custom",
+                tags: isTraining ? ["Custom"] : []
+            )
+        }
+
+        currentPlan = WeeklyPlan(
+            weekStartDate: monday,
+            goal: "Custom",
+            level: currentLevel.rawValue,
+            equipment: currentEquipment.rawValue,
+            minutesPerWorkout: currentMinutes,
+            days: days
+        )
+        persistAll()
+    }
+
     func generateWeeklyPlan() {
         let days = UserDefaults.standard.integer(forKey: "daysPerWeek")
         let daysPerWeek = days > 0 ? min(days, 7) : 3

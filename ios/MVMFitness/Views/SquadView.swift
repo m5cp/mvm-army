@@ -7,6 +7,10 @@ struct SquadView: View {
     @State private var store = SquadStore()
     @State private var showAddMember = false
     @State private var showTestDay = false
+    @State private var selectedMember: SquadMember?
+    @State private var showInvite = false
+    @State private var showScan = false
+    @State private var showMyStats = false
     @State private var showUpgrade = false
     @State private var showFirstUseNotice = false
     @AppStorage("squadNoticeShown") private var noticeShown = false
@@ -44,6 +48,12 @@ struct SquadView: View {
                 }
             }
             .sheet(isPresented: $showAddMember) { AddSquadMemberSheet(store: store) }
+            .sheet(item: $selectedMember) { member in
+                SquadMemberDetailSheet(store: store, memberID: member.id)
+            }
+            .sheet(isPresented: $showInvite) { SquadInviteSheet(store: store) }
+            .sheet(isPresented: $showScan) { SquadScanSheet(store: store) }
+            .sheet(isPresented: $showMyStats) { SquadMyStatsSheet() }
             .sheet(isPresented: $showTestDay) { SquadAFTTestDayView(store: store) }
             .sheet(isPresented: $showUpgrade) { UpgradeView() }
             .alert("Your Squad, Your Responsibility", isPresented: $showFirstUseNotice) {
@@ -115,14 +125,19 @@ struct SquadView: View {
 
     private func memberRow(_ member: SquadMember) -> some View {
         let aft = store.latestAFT(for: member)
-        return HStack(spacing: 12) {
+        let subtitleParts = [member.rankTitle, "\(member.standard.rawValue) · Age \(member.age())", member.email].compactMap { $0 }.filter { !$0.isEmpty }
+        return Button {
+            selectedMember = member
+        } label: {
+        HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(member.name)
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
-                Text("\(member.standard.rawValue) · Age \(member.age())")
+                Text(subtitleParts.joined(separator: " · "))
                     .font(.caption2)
                     .foregroundStyle(MVMTheme.tertiaryText)
+                    .lineLimit(1)
             }
             Spacer()
             if let aft {
@@ -139,10 +154,16 @@ struct SquadView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(MVMTheme.tertiaryText)
             }
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(MVMTheme.tertiaryText)
         }
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(MVMTheme.card))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(MVMTheme.border))
+        .contentShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(PressScaleButtonStyle())
         .contextMenu {
             Button("Archive", role: .destructive) { store.archiveMember(member) }
         }
@@ -164,6 +185,53 @@ struct SquadView: View {
             }
             .disabled(store.activeMembers.isEmpty)
             .opacity(store.activeMembers.isEmpty ? 0.5 : 1)
+
+            HStack(spacing: 10) {
+                Button {
+                    showInvite = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "qrcode")
+                        Text("Invite").font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(maxWidth: .infinity).frame(height: 46)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(MVMTheme.card))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(MVMTheme.border))
+                    .contentShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    showScan = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "qrcode.viewfinder")
+                        Text("Scan").font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(maxWidth: .infinity).frame(height: 46)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(MVMTheme.card))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(MVMTheme.border))
+                    .contentShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    showMyStats = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "person.text.rectangle")
+                        Text("My Stats").font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(maxWidth: .infinity).frame(height: 46)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(MVMTheme.card))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(MVMTheme.border))
+                    .contentShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+            }
 
             ShareLink(item: store.exportCSV(), preview: SharePreview("Squad Results CSV")) {
                 HStack {

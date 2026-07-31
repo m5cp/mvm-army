@@ -11,6 +11,7 @@ nonisolated enum FitnessTestKind: String, CaseIterable, Identifiable, Sendable {
     case airForce = "AIR FORCE"
     case marine = "MARINES"
     case advanced = "ADVANCED"
+    case rotc = "ROTC"
     var id: String { rawValue }
 
     var subtitle: String {
@@ -21,6 +22,7 @@ nonisolated enum FitnessTestKind: String, CaseIterable, Identifiable, Sendable {
         case .airForce: return "PT \(MVMTheme.dot) COMPOSITE"
         case .marine: return "PFT \(MVMTheme.dot) CFT"
         case .advanced: return "READINESS \(MVMTheme.dot) 0\u{2013}100"
+        case .rotc: return "ROTC \(MVMTheme.dot) ACADEMY"
         }
     }
 
@@ -32,6 +34,7 @@ nonisolated enum FitnessTestKind: String, CaseIterable, Identifiable, Sendable {
         case .airForce: return "Air Force PT"
         case .marine: return "Marine PFT / CFT"
         case .advanced: return "Advanced Readiness"
+        case .rotc: return "ROTC & Academies"
         }
     }
 }
@@ -65,6 +68,7 @@ struct AFTCalculatorView: View {
     @State private var showExportSheet = false
     @State private var showAFTShareSheet: Bool = false
     @State private var showScoreHistory: Bool = false
+    @State private var showScoringReference: Bool = false
     @State private var showResultPDFSheet: Bool = false
     @State private var resultPDFURL: URL?
     @State private var isGeneratingResultPDF: Bool = false
@@ -214,6 +218,8 @@ struct AFTCalculatorView: View {
                         MarineTestContent()
                     case .advanced:
                         AdvancedReadinessContent()
+                    case .rotc:
+                        ApplicantAssessmentContent()
                     }
                 }
                 .padding(20)
@@ -238,6 +244,16 @@ struct AFTCalculatorView: View {
         .toolbarBackground(MVMTheme.screen, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showScoringReference = true
+                } label: {
+                    Image(systemName: "book.closed")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(MVMTheme.secondaryText)
+                }
+                .accessibilityLabel("Scoring references")
+            }
             if selectedTest == .aft {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -261,6 +277,9 @@ struct AFTCalculatorView: View {
         }
         .sheet(isPresented: $showScoreHistory) {
             AFTScoreSheet()
+        }
+        .sheet(isPresented: $showScoringReference) {
+            ScoringReferenceView()
         }
         .sheet(isPresented: $showAFTShareSheet) {
             AFTShareSheet(score: AFTScoreRecord(

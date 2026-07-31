@@ -31,6 +31,7 @@ struct ProfileView: View {
     @State private var showDeleteConfirm: Bool = false
     @State private var showABCP = false
     @State private var showCFT = false
+    @State private var showScoringReference = false
     @State private var copiedMemberID = false
     @State private var memberIDCopyTrigger = false
     @State private var appLockService = AppLockService()
@@ -104,6 +105,7 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showABCP) { ABCPView() }
         .sheet(isPresented: $showCFT) { CFTView() }
+        .sheet(isPresented: $showScoringReference) { ScoringReferenceView() }
     }
 
     // MARK: - Header
@@ -415,6 +417,10 @@ struct ProfileView: View {
             sectionDivider
             Button { showCFT = true } label: {
                 settingsRowWithSubtitle(icon: "timer", title: "Combat Field Test (CFT)", subtitle: "7-event test day timer & history")
+            }
+            sectionDivider
+            Button { showScoringReference = true } label: {
+                settingsRowWithSubtitle(icon: "book.closed.fill", title: "Scoring References", subtitle: "Min/max for every event on every test")
             }
         }
     }

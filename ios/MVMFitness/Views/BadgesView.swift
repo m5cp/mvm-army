@@ -114,41 +114,41 @@ struct BadgesView: View {
                  status: quickStartLogged ? "LOGGED" : "LOCKED", earned: quickStartLogged),
 
             // ── Starters ──────────────────────────────────────────────────
-            Coin(key: "firstShare", art: .symbol("square.and.arrow.up.circle.fill"), name: "Spread the word",
+            Coin(key: "firstShare", art: .png("badge-first-share"), name: "Spread the word",
                  status: hasSharedOnce ? "SHARED" : "LOCKED", earned: hasSharedOnce),
-            Coin(key: "earlyBird", art: .symbol("sunrise.fill"), name: "Early bird",
+            Coin(key: "earlyBird", art: .png("badge-early-bird"), name: "Early bird",
                  status: earlyBird ? "0500 CLUB" : "LOCKED", earned: earlyBird),
-            Coin(key: "firstMile", art: .symbol("figure.run.circle.fill"), name: "First mile",
+            Coin(key: "firstMile", art: .png("badge-first-mile"), name: "First mile",
                  status: totalGPSMiles >= 1 ? "TRACKED" : "LOCKED", earned: totalGPSMiles >= 1),
 
             // ── Distance (long-haul) ──────────────────────────────────────
-            Coin(key: "miles25", art: .symbol("road.lanes"), name: "25-mile club",
+            Coin(key: "miles25", art: .png("badge-25mi"), name: "25-mile club",
                  status: mileStatus(25), earned: totalGPSMiles >= 25),
-            Coin(key: "miles100", art: .symbol("flag.checkered"), name: "100-mile club",
+            Coin(key: "miles100", art: .png("badge-100mi"), name: "100-mile club",
                  status: mileStatus(100), earned: totalGPSMiles >= 100),
-            Coin(key: "miles500", art: .symbol("crown.fill"), name: "500-mile club",
+            Coin(key: "miles500", art: .png("badge-500mi"), name: "500-mile club",
                  status: mileStatus(500), earned: totalGPSMiles >= 500),
-            Coin(key: "month30", art: .symbol("calendar.circle.fill"), name: "30-mile month",
+            Coin(key: "month30", art: .png("badge-month30"), name: "30-mile month",
                  status: bestMonthMiles >= 30 ? "\(Int(bestMonthMiles)) MI BEST" : "LOCKED", earned: bestMonthMiles >= 30),
 
             // ── Consistency ───────────────────────────────────────────────
-            Coin(key: "streak14", art: .symbol("flame.fill"), name: "14-day streak",
+            Coin(key: "streak14", art: .png("badge-streak14"), name: "14-day streak",
                  status: vm.streak >= 14 ? "ACTIVE" : "LOCKED", earned: vm.streak >= 14),
-            Coin(key: "streak30", art: .symbol("flame.circle.fill"), name: "30-day streak",
+            Coin(key: "streak30", art: .png("badge-streak30"), name: "30-day streak",
                  status: vm.streak >= 30 ? "ACTIVE" : "LOCKED", earned: vm.streak >= 30),
 
             // ── Holiday awards (limited-edition style: train on the day) ──
-            Coin(key: "veteransDay", art: .symbol("star.circle.fill"), name: "Veterans Day",
+            Coin(key: "veteransDay", art: .png("badge-veterans-day"), name: "Veterans Day",
                  status: veteransDay ? "NOV 11" : "TRAIN NOV 11", earned: veteransDay),
-            Coin(key: "memorialDay", art: .symbol("medal.fill"), name: "Memorial Day",
+            Coin(key: "memorialDay", art: .png("badge-memorial-day"), name: "Memorial Day",
                  status: memorialDay ? "HONORED" : "TRAIN MEM DAY", earned: memorialDay),
-            Coin(key: "independenceDay", art: .symbol("sparkles"), name: "Independence Day",
+            Coin(key: "independenceDay", art: .png("badge-independence-day"), name: "Independence Day",
                  status: independenceDay ? "JUL 4" : "TRAIN JUL 4", earned: independenceDay),
-            Coin(key: "armyBirthday", art: .symbol("birthday.cake.fill"), name: "Army Birthday",
+            Coin(key: "armyBirthday", art: .png("badge-army-birthday"), name: "Army Birthday",
                  status: armyBirthday ? "JUN 14" : "TRAIN JUN 14", earned: armyBirthday),
 
             // ── Cross-service ─────────────────────────────────────────────
-            Coin(key: "jointForce", art: .symbol("globe.americas.fill"), name: "Joint force",
+            Coin(key: "jointForce", art: .png("badge-joint-force"), name: "Joint force",
                  status: jointForce ? "ALL SERVICES" : "LOCKED", earned: jointForce)
         ]
     }
