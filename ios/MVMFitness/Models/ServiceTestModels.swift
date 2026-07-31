@@ -45,6 +45,50 @@ nonisolated enum ServiceTestBranch: String, Codable, CaseIterable, Identifiable,
     }
 }
 
+/// The user's service branch (or Fitness Athlete), chosen at onboarding and
+/// changeable any time in Profile. Only sets DEFAULTS (which calculator opens
+/// first) — every test stays available to everyone, and no stored data or
+/// syncing depends on this value.
+nonisolated enum UserServiceBranch: String, Codable, CaseIterable, Identifiable, Sendable {
+    case army = "Army"
+    case navy = "Navy"
+    case airForce = "Air Force"
+    case marines = "Marines"
+    case athlete = "Fitness Athlete"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .army: return "shield.lefthalf.filled"
+        case .navy: return "figure.pool.swim"
+        case .airForce: return "wind"
+        case .marines: return "figure.strengthtraining.functional"
+        case .athlete: return "bolt.heart.fill"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .army: return "AFT calculator first"
+        case .navy: return "Navy PRT calculator first"
+        case .airForce: return "Air Force PT calculator first"
+        case .marines: return "Marine PFT/CFT calculator first"
+        case .athlete: return "AFT calculator first"
+        }
+    }
+
+    /// Raw value of the `FitnessTestKind` the calculator should open with.
+    var defaultTestRawValue: String {
+        switch self {
+        case .army, .athlete: return "AFT"
+        case .navy: return "NAVY"
+        case .airForce: return "AIR FORCE"
+        case .marines: return "MARINES"
+        }
+    }
+}
+
 /// One event line inside a saved service-test result — display-ready strings
 /// so history and share cards never re-run scoring.
 nonisolated struct ServiceTestEventDetail: Codable, Hashable, Sendable {

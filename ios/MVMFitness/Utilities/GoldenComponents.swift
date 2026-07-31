@@ -257,8 +257,15 @@ struct GradedPhoto: View {
 
 // MARK: - Badge coin (screen 15a)
 
+/// Badge artwork: either a bundled 3D coin PNG (reward art) or an SF Symbol
+/// rendered as a coin for badges without dedicated PNG art.
+enum BadgeArt: Hashable {
+    case png(String)     // icon3d-* asset name
+    case symbol(String)  // SF Symbol name
+}
+
 struct BadgeCoin: View {
-    let asset: String // icon3d-* PNG (static reward art — never UI chrome)
+    let art: BadgeArt
     let name: String
     let status: String // "JUL 12" / "ACTIVE" / "LOCKED"
     let earned: Bool
@@ -266,13 +273,45 @@ struct BadgeCoin: View {
     /// Drives a one-time celebratory scale-up; never affects layout or earn logic.
     var isNewlyEarned: Bool = false
 
+    /// Legacy convenience — existing call sites pass the PNG asset name.
+    init(asset: String, name: String, status: String, earned: Bool, isNewlyEarned: Bool = false) {
+        self.art = .png(asset)
+        self.name = name
+        self.status = status
+        self.earned = earned
+        self.isNewlyEarned = isNewlyEarned
+    }
+
+    init(art: BadgeArt, name: String, status: String, earned: Bool, isNewlyEarned: Bool = false) {
+        self.art = art
+        self.name = name
+        self.status = status
+        self.earned = earned
+        self.isNewlyEarned = isNewlyEarned
+    }
+
     @State private var coinScale: CGFloat = 1
     @State private var ringOpacity: Double = 0
 
-    var body: some View {
-        VStack(spacing: 7) {
+    @ViewBuilder
+    private var artView: some View {
+        switch art {
+        case .png(let asset):
             Image(asset).resizable().scaledToFill()
                 .scaleEffect(1.3)
+        case .symbol(let symbol):
+            ZStack {
+                MVMTheme.well
+                Image(systemName: symbol)
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(earned ? AnyShapeStyle(MVMTheme.amberButtonGradient) : AnyShapeStyle(MVMTheme.textFaint))
+            }
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 7) {
+            artView
                 .saturation(earned ? 1 : 0)
                 .brightness(earned ? 0 : -0.38)
                 .frame(width: 62, height: 62)

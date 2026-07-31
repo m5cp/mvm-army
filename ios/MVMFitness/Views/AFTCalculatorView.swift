@@ -40,7 +40,9 @@ struct AFTCalculatorView: View {
     @Environment(AppViewModel.self) private var vm
     @Environment(StoreViewModel.self) private var store
 
+    @AppStorage("defaultCalculatorTest") private var defaultCalculatorTest: String = "AFT"
     @State private var selectedTest: FitnessTestKind = .aft
+    @State private var appliedDefaultTest = false
     @State private var showUpgradeFromGate = false
     @State private var soldierName: String = ""
     @State private var ageText: String = "25"
@@ -57,6 +59,9 @@ struct AFTCalculatorView: View {
     @State private var runSecText: String = "00"
 
     @State private var didSave = false
+    @State private var showTestDayMode = false
+    @State private var isAutoFillingRun = false
+    @State private var autoFillMessage: String?
     @State private var showExportSheet = false
     @State private var showAFTShareSheet: Bool = false
     @State private var showScoreHistory: Bool = false
@@ -219,7 +224,15 @@ struct AFTCalculatorView: View {
             .hidesTabBarOnScroll()
         }
         .sensoryFeedback(.success, trigger: didSave)
-        .onAppear { prefillFromLastScore() }
+        .onAppear {
+            prefillFromLastScore()
+            // Open with the branch's calculator (set at onboarding / Profile).
+            // Applied once — the user can still switch to any test freely.
+            if !appliedDefaultTest {
+                appliedDefaultTest = true
+                selectedTest = FitnessTestKind(rawValue: defaultCalculatorTest) ?? .aft
+            }
+        }
         .navigationTitle(selectedTest.navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.screen, for: .navigationBar)
@@ -275,6 +288,9 @@ struct AFTCalculatorView: View {
         }
         .sheet(isPresented: $showUpgradeFromGate) {
             UpgradeView()
+        }
+        .fullScreenCover(isPresented: $showTestDayMode) {
+            TestDayModeView(soldierName: soldierName, age: scoringAge, sex: sex, standard: standard)
         }
     }
 
@@ -506,7 +522,65 @@ struct AFTCalculatorView: View {
 
     private var runEventRow: some View {
         eventRow(event: .run2mi, title: "2-Mile Run", points: runPoints) {
-            timeWell(minText: $runMinText, secText: $runSecText, minField: .runMin, secField: .runSec)
+            VStack(spacing: 8) {
+                timeWell(minText: $runMinText, secText: $runSecText, minField: .runMin, secField: .runSec)
+
+                Button {
+                    autoFillRunTime()
+                } label: {
+                    HStack(spacing: 6) {
+                        if isAutoFillingRun {
+                            ProgressView().tint(MVMTheme.amber).controlSize(.small)
+                        } else {
+                            Image(systemName: "heart.text.square")
+                                .font(.caption.weight(.bold))
+                        }
+                        Text(autoFillMessage ?? "Auto-fill from your last run")
+                            .font(.caption.weight(.semibold))
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(MVMTheme.amber)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(MVMTheme.amber.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .contentShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+                .disabled(isAutoFillingRun)
+            }
+        }
+    }
+
+    /// Pulls a 2-mile estimate from Apple Health running workouts (best recent
+    /// pace × 2 mi); falls back to the fastest in-app Quick Start run. Never
+    /// touches scoring — it only fills the input field.
+    private func autoFillRunTime() {
+        isAutoFillingRun = true
+        autoFillMessage = nil
+        Task {
+            var seconds = await HealthKitManager.shared.estimatedTwoMileSeconds()
+
+            if seconds == nil {
+                // Fallback: best pace across in-app GPS runs ≥ half a mile.
+                let candidates = vm.quickStartRecords.filter {
+                    ($0.activity == .outdoorRun || $0.activity == .indoorRun) && $0.distanceMiles >= 0.5 && $0.elapsedSeconds > 0
+                }
+                let best = candidates
+                    .map { Double($0.elapsedSeconds) / $0.distanceMiles }
+                    .filter { $0 > 240 && $0 < 1200 }
+                    .min()
+                seconds = best.map { Int(($0 * 2).rounded()) }
+            }
+
+            if let seconds {
+                runMinText = "\(seconds / 60)"
+                runSecText = String(format: "%02d", seconds % 60)
+                autoFillMessage = "Filled from your best recent run"
+            } else {
+                autoFillMessage = "No recent runs found — log a Quick Start run first"
+            }
+            isAutoFillingRun = false
         }
     }
 
@@ -790,6 +864,36 @@ struct AFTCalculatorView: View {
 
     private var actionButtons: some View {
         VStack(spacing: 12) {
+            // Guided proctor flow — timers, voice, auto-save.
+            Button {
+                normalizeSecondsFields()
+                showTestDayMode = true
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "stopwatch.fill")
+                        .font(.headline.weight(.bold))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Test Day Mode")
+                            .font(.headline.weight(.bold))
+                        Text("Guided test \(MVMTheme.dot) timers \(MVMTheme.dot) voice \(MVMTheme.dot) auto-save")
+                            .font(.caption2.weight(.medium))
+                            .opacity(0.8)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                }
+                .foregroundStyle(MVMTheme.text)
+                .padding(.horizontal, 18)
+                .frame(height: 62)
+                .frame(maxWidth: .infinity)
+                .background(MVMTheme.cardGradient)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay { RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.amber.opacity(0.4), lineWidth: 1) }
+                .contentShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
             AmberButton(title: didSave ? "Saved" : "Save AFT Result") {
                 normalizeSecondsFields()
                 vm.saveAFTCalculatorResult(preview)

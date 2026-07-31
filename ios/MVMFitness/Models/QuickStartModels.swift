@@ -53,6 +53,10 @@ nonisolated struct QuickStartRecord: Codable, Identifiable, Sendable {
     let distanceMeters: Double
     let routeCoordinates: [CodableCoordinate]
     let averagePaceSecondsPerKm: Double?
+    /// Seconds since session start for each entry in `routeCoordinates` —
+    /// powers mile splits and the ghost-race pace curve. Optional so records
+    /// saved before this field existed still decode.
+    let routeTimeOffsets: [Double]?
 
     init(
         activity: QuickStartActivity,
@@ -61,7 +65,8 @@ nonisolated struct QuickStartRecord: Codable, Identifiable, Sendable {
         elapsedSeconds: Int,
         distanceMeters: Double,
         routeCoordinates: [CodableCoordinate] = [],
-        averagePaceSecondsPerKm: Double? = nil
+        averagePaceSecondsPerKm: Double? = nil,
+        routeTimeOffsets: [Double]? = nil
     ) {
         self.id = UUID()
         self.activity = activity
@@ -71,6 +76,7 @@ nonisolated struct QuickStartRecord: Codable, Identifiable, Sendable {
         self.distanceMeters = distanceMeters
         self.routeCoordinates = routeCoordinates
         self.averagePaceSecondsPerKm = averagePaceSecondsPerKm
+        self.routeTimeOffsets = routeTimeOffsets
     }
 
     var distanceMiles: Double { distanceMeters / 1609.34 }
