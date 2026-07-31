@@ -16,6 +16,7 @@ struct ProgressViewScreen: View {
     @State private var showTrainingCalendar: Bool = false
     @State private var showMyPTPlanSheet: Bool = false
     @State private var showDailyLog: Bool = false
+    @State private var routeMapRecord: QuickStartRecord?
 
 
     var body: some View {
@@ -43,6 +44,9 @@ struct ProgressViewScreen: View {
                         if !vm.aftScores.isEmpty {
                             aftHistoryCard
                         }
+                        if !vm.serviceTestRecords.isEmpty {
+                            serviceTestHistoryCard
+                        }
                         AIInsightsCard()
                             .opacity(appeared ? 1 : 0)
                             .offset(y: appeared ? 0 : 16)
@@ -69,6 +73,9 @@ struct ProgressViewScreen: View {
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .preferredColorScheme(.dark)
+        .fullScreenCover(item: $routeMapRecord) { record in
+            RouteMapView(record: record)
+        }
         .sheet(isPresented: $showAFTSheet) {
             AFTScoreSheet()
         }
@@ -156,7 +163,7 @@ struct ProgressViewScreen: View {
     /// True once there's anything worth charting. Until then the dashboard
     /// would just be a wall of dead zeros, so we show a guided state instead.
     private var hasMeaningfulHistory: Bool {
-        !vm.aftScores.isEmpty || !vm.completedRecords.isEmpty
+        !vm.aftScores.isEmpty || !vm.completedRecords.isEmpty || !vm.serviceTestRecords.isEmpty
     }
 
     private var trendFirstRunCard: some View {
@@ -1142,20 +1149,57 @@ struct ProgressViewScreen: View {
         .offset(y: appeared ? 0 : 12)
     }
 
-    private func quickStartRow(_ record: QuickStartRecord) -> some View {
+    // MARK: - Service Test History (Navy / Air Force / Marine / Advanced Readiness)
+
+    private var serviceTestHistoryCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "shield.lefthalf.filled")
+                    .foregroundStyle(MVMTheme.amber)
+                    .font(.subheadline.weight(.semibold))
+                Text("Service Tests")
+                    .font(.headline)
+                    .foregroundStyle(MVMTheme.primaryText)
+
+                Spacer()
+
+                Text("\(vm.serviceTestRecords.count) logged")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(MVMTheme.tertiaryText)
+            }
+
+            ForEach(vm.serviceTestRecords.prefix(6)) { record in
+                serviceTestRow(record)
+            }
+
+            if vm.serviceTestRecords.count > 6 {
+                Text("\(vm.serviceTestRecords.count - 6) more results")
+                    .font(.caption)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(20)
+        .premiumCard()
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
+    }
+
+    private func serviceTestRow(_ record: ServiceTestRecord) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: record.activity.icon)
+            Image(systemName: record.branch.icon)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(Color(hex: record.activity.gradientHex.0))
+                .foregroundStyle(MVMTheme.amber)
                 .frame(width: 32, height: 32)
-                .background(Color(hex: record.activity.gradientHex.0).opacity(0.12))
+                .background(MVMTheme.amber.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(record.activity.rawValue)
+                Text(record.subtitle.map { "\(record.branch.rawValue) \(MVMTheme.dot) \($0)" } ?? record.branch.rawValue)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(MVMTheme.primaryText)
-                Text(quickStartDateString(record.startDate))
+                    .lineLimit(1)
+                Text(quickStartDateString(record.date))
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(MVMTheme.tertiaryText)
             }
@@ -1163,19 +1207,73 @@ struct ProgressViewScreen: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 2) {
-                Text(record.formattedDuration)
+                Text(record.scoreDisplay)
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(MVMTheme.primaryText)
-                if record.activity.usesGPS {
-                    Text(record.formattedDistance)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(MVMTheme.tertiaryText)
-                }
+                    .lineLimit(1)
+                    .fixedSize()
+                Text(record.resultLabel)
+                    .font(.caption2.weight(.heavy))
+                    .foregroundStyle(record.passed ? MVMTheme.success : MVMTheme.danger)
+                    .lineLimit(1)
             }
         }
         .padding(12)
         .background(MVMTheme.cardSoft)
         .clipShape(.rect(cornerRadius: 14))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func quickStartRow(_ record: QuickStartRecord) -> some View {
+        let hasRoute = record.routeCoordinates.count > 1
+
+        return Button {
+            if hasRoute { routeMapRecord = record }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: record.activity.icon)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color(hex: record.activity.gradientHex.0))
+                    .frame(width: 32, height: 32)
+                    .background(Color(hex: record.activity.gradientHex.0).opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(record.activity.rawValue)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    Text(quickStartDateString(record.startDate))
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(record.formattedDuration)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                    if record.activity.usesGPS {
+                        Text(record.formattedDistance)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                    }
+                }
+
+                if hasRoute {
+                    Image(systemName: "map")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(MVMTheme.amber)
+                }
+            }
+            .padding(12)
+            .background(MVMTheme.cardSoft)
+            .clipShape(.rect(cornerRadius: 14))
+            .contentShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .disabled(!hasRoute)
+        .accessibilityHint(hasRoute ? "Shows the full-screen route map" : "")
     }
 
     private func quickStartDateString(_ date: Date) -> String {

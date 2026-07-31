@@ -1,17 +1,37 @@
 import SwiftUI
 
-/// Which test the Calculator tab is working with. AFT is the scored
-/// five-event test; CFT is the pass/fail seven-event Combat Field Test.
-/// (Always "AFT" — never the retired "ACFT" name.)
+/// Which test the Calculator tab is working with. AFT is the Army's scored
+/// five-event test; CFT is the pass/fail seven-event Combat Field Test; the
+/// rest are sister-service tests plus the proprietary Advanced Readiness
+/// benchmarks. (Always "AFT" — never the retired "ACFT" name.)
 nonisolated enum FitnessTestKind: String, CaseIterable, Identifiable, Sendable {
     case aft = "AFT"
     case cft = "CFT"
+    case navy = "NAVY"
+    case airForce = "AIR FORCE"
+    case marine = "MARINES"
+    case advanced = "ADVANCED"
     var id: String { rawValue }
 
     var subtitle: String {
         switch self {
-        case .aft: return "5 EVENTS \(MVMTheme.dot) SCORED"
-        case .cft: return "7 EVENTS \(MVMTheme.dot) GO/NO-GO"
+        case .aft: return "ARMY \(MVMTheme.dot) SCORED"
+        case .cft: return "ARMY \(MVMTheme.dot) GO/NO-GO"
+        case .navy: return "PRT \(MVMTheme.dot) CATEGORY"
+        case .airForce: return "PT \(MVMTheme.dot) COMPOSITE"
+        case .marine: return "PFT \(MVMTheme.dot) CFT"
+        case .advanced: return "READINESS \(MVMTheme.dot) 0\u{2013}100"
+        }
+    }
+
+    var navigationTitle: String {
+        switch self {
+        case .aft: return "AFT Calculator"
+        case .cft: return "Combat Field Test"
+        case .navy: return "Navy PRT"
+        case .airForce: return "Air Force PT"
+        case .marine: return "Marine PFT / CFT"
+        case .advanced: return "Advanced Readiness"
         }
     }
 }
@@ -164,7 +184,8 @@ struct AFTCalculatorView: View {
                 VStack(spacing: 14) {
                     testPicker
 
-                    if selectedTest == .aft {
+                    switch selectedTest {
+                    case .aft:
                         if let error = engine.loadError {
                             scoringUnavailableBanner(error)
                         }
@@ -178,8 +199,16 @@ struct AFTCalculatorView: View {
                         marginOverMinimumCard
                         overallPassFailCard
                         actionButtons
-                    } else {
+                    case .cft:
                         CFTContent()
+                    case .navy:
+                        NavyPRTContent()
+                    case .airForce:
+                        AirForcePTContent()
+                    case .marine:
+                        MarineTestContent()
+                    case .advanced:
+                        AdvancedReadinessContent()
                     }
                 }
                 .padding(20)
@@ -191,7 +220,7 @@ struct AFTCalculatorView: View {
         }
         .sensoryFeedback(.success, trigger: didSave)
         .onAppear { prefillFromLastScore() }
-        .navigationTitle(selectedTest == .aft ? "AFT Calculator" : "Combat Field Test")
+        .navigationTitle(selectedTest.navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MVMTheme.screen, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
@@ -251,25 +280,28 @@ struct AFTCalculatorView: View {
 
     // MARK: - Test Picker (AFT / CFT)
 
-    /// Lets the user choose which test they're taking. Mirrors the styling of
-    /// the STANDARD toggle so it reads as part of the same spec sheet.
+    /// Lets the user choose which test they're taking — the Army AFT/CFT plus
+    /// the sister-service tests and Advanced Readiness. A 3×2 grid of chips
+    /// styled like the STANDARD toggle so it reads as the same spec sheet.
     private var testPicker: some View {
         InsetWell {
-            HStack(spacing: 3) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 3), spacing: 3) {
                 ForEach(FitnessTestKind.allCases) { kind in
                     let selected = selectedTest == kind
                     VStack(spacing: 2) {
                         Text(kind.rawValue)
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                         Text(kind.subtitle)
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.system(size: 8, weight: .semibold))
                             .opacity(0.75)
                             .lineLimit(1)
-                            .fixedSize()
+                            .minimumScaleFactor(0.7)
                     }
                     .foregroundStyle(selected ? MVMTheme.onAmber : MVMTheme.textMuted)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 52)
+                    .frame(height: 48)
                     .background(selected ? AnyShapeStyle(MVMTheme.amberButtonGradient) : AnyShapeStyle(.clear))
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .contentShape(Rectangle())
@@ -279,7 +311,7 @@ struct AFTCalculatorView: View {
                         }
                     }
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(kind == .aft ? "Army Fitness Test, five scored events" : "Combat Field Test, seven events, go or no go")
+                    .accessibilityLabel("\(kind.navigationTitle), \(kind.subtitle)")
                     .accessibilityAddTraits(selected ? [.isButton, .isSelected] : [.isButton])
                 }
             }

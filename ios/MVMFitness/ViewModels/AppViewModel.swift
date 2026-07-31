@@ -20,6 +20,7 @@ final class AppViewModel {
     var ptPlanNeedsSync: Bool = false
     var wodPlanNeedsSync: Bool = false
     var quickStartRecords: [QuickStartRecord] = []
+    var serviceTestRecords: [ServiceTestRecord] = []
     var activeMilestone: Milestone?
     var showMilestoneUpgrade: Bool = false
     var dailyLogs: [DailyFitnessLog] = []
@@ -73,6 +74,7 @@ final class AppViewModel {
         wodPlan = data.wodPlan
         quickStartRecords = data.quickStartRecords
         dailyLogs = data.dailyLogs
+        serviceTestRecords = data.serviceTestRecords
         loadTodayFunctionalWOD()
     }
 
@@ -89,7 +91,8 @@ final class AppViewModel {
             aftCalculatorResults: aftCalculatorResults,
             wodPlan: wodPlan,
             quickStartRecords: quickStartRecords,
-            dailyLogs: dailyLogs
+            dailyLogs: dailyLogs,
+            serviceTestRecords: serviceTestRecords
         ))
         stepService.persist()
         syncWidgetData()
@@ -619,6 +622,26 @@ final class AppViewModel {
 
     var aftWeakestEvents: [String] {
         latestAFTScore?.weakestEvents ?? []
+    }
+
+    // MARK: - Sister-Service Tests (Navy PRT, Air Force PT, Marine PFT/CFT, Advanced Readiness)
+
+    /// Saves a sister-service test result. Mirrors the AFT flow: newest first,
+    /// logged into the daily log, persisted, and surfaced in history/progress/
+    /// calendar.
+    func saveServiceTestRecord(_ record: ServiceTestRecord) {
+        serviceTestRecords.insert(record, at: 0)
+        recordDailyLog()
+        persistAll()
+    }
+
+    var latestServiceTestRecord: ServiceTestRecord? {
+        serviceTestRecords.first
+    }
+
+    /// Most recent record for one test type — used for "vs last" deltas.
+    func previousServiceTestRecord(branch: ServiceTestBranch, before record: ServiceTestRecord) -> ServiceTestRecord? {
+        serviceTestRecords.first { $0.branch == branch && $0.id != record.id && $0.date <= record.date }
     }
 
     // MARK: - AFT Calculator
@@ -1462,6 +1485,24 @@ final class AppViewModel {
                     status: .completed, source: record.source, exerciseCount: record.exerciseCount
                 ))
             }
+        }
+
+        // Logged fitness tests show on the calendar as completed entries so a
+        // test day reads the same as a training day.
+        for score in aftScores where cal.isDate(score.date, inSameDayAs: date) {
+            entries.append(CalendarWorkoutEntry(
+                id: score.id, title: "AFT \(MVMTheme.dot) \(score.totalScore)/500", date: score.date,
+                type: "Test", duration: 60,
+                status: .completed, source: .individual, exerciseCount: 5
+            ))
+        }
+
+        for test in serviceTestRecords where cal.isDate(test.date, inSameDayAs: date) {
+            entries.append(CalendarWorkoutEntry(
+                id: test.id, title: "\(test.branch.rawValue) \(MVMTheme.dot) \(test.scoreDisplay)", date: test.date,
+                type: "Test", duration: 60,
+                status: .completed, source: .individual, exerciseCount: test.events.count
+            ))
         }
 
         return entries
