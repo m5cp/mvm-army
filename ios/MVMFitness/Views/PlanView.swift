@@ -13,6 +13,7 @@ struct PlanView: View {
     @State private var animateCards: Bool = false
     @State private var calendarService = CalendarExportService()
     @State private var showCalendarSheet: Bool = false
+    @State private var showCustomWeekBuilder: Bool = false
     @State private var showExportAlert: Bool = false
     @State private var exportAlertMessage: String = ""
     @State private var completeTrigger: Bool = false
@@ -58,6 +59,11 @@ struct PlanView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
+                    Button {
+                        showCustomWeekBuilder = true
+                    } label: {
+                        Label("Build My Own Week", systemImage: "square.and.pencil")
+                    }
                     if vm.currentPlan != nil {
                         Button {
                             vm.generateWeeklyPlan()
@@ -121,6 +127,9 @@ struct PlanView: View {
         }
         .sheet(isPresented: $showCalendarSheet) {
             calendarExportSheet
+        }
+        .sheet(isPresented: $showCustomWeekBuilder) {
+            CustomWeekBuilderSheet()
         }
         .alert("Calendar Export", isPresented: $showExportAlert) {
             Button("OK") {}
@@ -730,6 +739,25 @@ struct PlanView: View {
                 }
 
                 Button {
+                    showCustomWeekBuilder = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.pencil")
+                            .font(.subheadline.weight(.bold))
+                        Text("Build My Own Week")
+                            .font(.subheadline.weight(.bold))
+                    }
+                    .foregroundStyle(MVMTheme.amber)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(MVMTheme.amber.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay { RoundedRectangle(cornerRadius: 14).stroke(MVMTheme.amber.opacity(0.3)) }
+                    .contentShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
                     vm.generateWeeklyPlan()
                 } label: {
                     HStack(spacing: 8) {
@@ -984,5 +1012,82 @@ struct PlanView: View {
             exportAlertMessage = "Export failed: \(message)"
         }
         showExportAlert = true
+    }
+}
+
+
+// MARK: - Custom week builder
+
+/// Build-your-own plan: pick which days train, get an empty editable week.
+/// Every session starts blank and is filled with the existing day editor
+/// (tap a day → Edit: add exercises with autocomplete, drag to reorder).
+struct CustomWeekBuilderSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(AppViewModel.self) private var vm
+
+    @State private var trainingDays: Set<Int> = [0, 2, 4] // Mon/Wed/Fri
+    private let dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                MVMTheme.screen.ignoresSafeArea()
+                VStack(spacing: 20) {
+                    Text("Pick your training days. Each one starts as a blank session you build yourself — add exercises with search, set reps and sets, and drag to reorder.")
+                        .font(.subheadline)
+                        .foregroundStyle(MVMTheme.textMuted)
+                        .multilineTextAlignment(.center)
+
+                    HStack(spacing: 8) {
+                        ForEach(0..<7, id: \.self) { index in
+                            let selected = trainingDays.contains(index)
+                            Button {
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                    if selected { trainingDays.remove(index) } else { trainingDays.insert(index) }
+                                }
+                            } label: {
+                                VStack(spacing: 4) {
+                                    Text(dayNames[index])
+                                        .font(.caption2.weight(.bold))
+                                    Image(systemName: selected ? "dumbbell.fill" : "leaf.fill")
+                                        .font(.caption)
+                                }
+                                .foregroundStyle(selected ? MVMTheme.onAmber : MVMTheme.textMuted)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 58)
+                                .background(selected ? AnyShapeStyle(MVMTheme.amberButtonGradient) : AnyShapeStyle(MVMTheme.well))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .contentShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(PressScaleButtonStyle())
+                        }
+                    }
+
+                    Text("\(trainingDays.count) training day\(trainingDays.count == 1 ? "" : "s") \(MVMTheme.dot) \(7 - trainingDays.count) recovery")
+                        .font(MVMTheme.mono(11))
+                        .foregroundStyle(MVMTheme.textFaint)
+
+                    AmberButton(title: "Create My Week") {
+                        vm.createCustomPlan(trainingDays: trainingDays)
+                        dismiss()
+                    }
+
+                    Text("Replaces your current weekly plan. You can regenerate a coached plan any time from the Train menu.")
+                        .font(.caption2)
+                        .foregroundStyle(MVMTheme.textFaint)
+                        .multilineTextAlignment(.center)
+
+                    Spacer()
+                }
+                .padding(20)
+            }
+            .navigationTitle("Build My Own Week")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Cancel") { dismiss() } } }
+            .toolbarBackground(MVMTheme.screen, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+        }
+        .preferredColorScheme(.dark)
+        .presentationDetents([.medium, .large])
     }
 }

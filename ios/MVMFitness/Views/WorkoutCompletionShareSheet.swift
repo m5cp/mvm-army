@@ -176,11 +176,9 @@ struct WorkoutCompletionShareSheet: View {
                 }
             }
             .task {
-                renderedImage = CompletionCardCGRenderer.render(
-                    title: title,
-                    exerciseCount: exerciseCount,
-                    duration: "",
-                    date: .now
+                renderedImage = StyledCardRenderer.render(
+                    cardType: .completion(title: title, exerciseCount: exerciseCount, duration: ""),
+                    background: .goldenHour
                 )
             }
             .sheet(isPresented: $showEditor) {

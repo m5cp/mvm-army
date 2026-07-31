@@ -104,3 +104,50 @@ Branch `feature/polish-badges-ghostrace`. Preserve all of this on future edits.
   branch (menu to switch branch).
 - **App icons**: Profile → App → App Icon offers Classic / Blackout / Golden
   Hour (alternate icon assets AppIconDark / AppIconGold, app target only).
+
+---
+
+# Batch 4 — ROTC/Academy, References, Badge Art, Share Redesign, Squad, Builder (2026-07-31)
+
+Branch `feature/rotc-squad-badges`. Preserve on all future edits. Never "ACFT".
+
+- **ROTC & Academy Assessments**: Calculator tab has a 7th option (ROTC).
+  Engine: `Services/ApplicantFitnessAssessments.swift` (practice comparison
+  scale, never labeled official — keep every disclaimer). Programs: Army ROTC,
+  Air Force ROTC, Navy ROTC, Marine Option (scored via the official
+  MarineCorpsScoring PFT tables), Service Academy CFA. Each shows WHO CAN
+  GRADE info. "Compare Service Academies" opens AcademyComparisonView
+  (NavigationSplitView — do NOT wrap it in a NavigationStack). Results save
+  as ServiceTestRecord branch "ROTC & Academy" → history/trends/calendar/share.
+- **Scoring References**: `Views/ScoringReferenceView.swift` — min-pass and
+  max raw values for every event on AFT (rawNeeded 60/100), Navy PRT, Air
+  Force PT, Marine PFT/CFT (all PROBED from the live engines — never
+  hard-code numbers), Advanced Readiness anchor table (100/60/0-point
+  performances + ELITE→FOUNDATION bands — this is the go/no-go reference),
+  and a Body Composition section (Army ABCP in-app, USAF WHtR scored in-app,
+  Navy BCA & USMC BCP separate programs). Reachable from the calculator
+  toolbar book icon and Profile → Fitness Standards. Probe results cached
+  per age/sex.
+- **Badge art**: 14 new coin PNGs (badge-*.imageset) in the icon3d style —
+  amber ring, dark bronze face. BadgeArt.png for all 25 badges now.
+- **Share cards redesigned**: `Views/StyledShareSheet.swift` +
+  `StyledCardRenderer` replace the old flat CG cards for workout / progress /
+  completion / Quick Start / unit PT (deleted from ShareCardRenderer.swift —
+  do not resurrect). Photo-backed plates style with background picker:
+  Golden Hour, Night Ruck, Cold Ruck, solid Black, My Photo, Camera.
+  `ShareCardRenderer.presentShareSheet` now presents this sheet — call sites
+  unchanged. (PTPlanShareCardSheet / WODShareSheet / WODPlanSheet still use
+  their own older renderers — future polish target.)
+- **Tab rename**: Trend → Progress (AppTab title only).
+- **My Squad**: members now carry rank/title, email, phone (optional fields —
+  decode-compatible). Tap a member → detail sheet: edit contact info, Import
+  from Contacts (CNContactPicker, no permission needed), Email button
+  (mailto:), manual AFT (engine-scored) / CFT / WHtR entry, history. Squad
+  actions: Invite (code + QR), Scan (join a squad or import a member's Stats
+  QR), My Stats (member generates their stats QR from their own records —
+  shared only when they show/send it). CSV export now includes
+  rank/email/phone. Payloads: SquadInvitePayload / SquadStatsPayload
+  (JSON in QR, on-device only).
+- **Build My Own Week**: Train tab menu + empty state → pick training days →
+  blank editable week (`vm.createCustomPlan`), filled with the existing day
+  editor (autocomplete add, drag reorder). No generator involved.

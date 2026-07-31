@@ -8,6 +8,7 @@ nonisolated enum ServiceTestBranch: String, Codable, CaseIterable, Identifiable,
     case marinePFT = "Marine PFT"
     case marineCFT = "Marine CFT"
     case advancedReadiness = "Advanced Readiness"
+    case applicant = "ROTC & Academy"
 
     var id: String { rawValue }
 
@@ -19,6 +20,7 @@ nonisolated enum ServiceTestBranch: String, Codable, CaseIterable, Identifiable,
         case .marinePFT: return "PFT"
         case .marineCFT: return "CFT"
         case .advancedReadiness: return "ADV"
+        case .applicant: return "ROTC"
         }
     }
 
@@ -30,6 +32,7 @@ nonisolated enum ServiceTestBranch: String, Codable, CaseIterable, Identifiable,
         case .marinePFT: return "figure.strengthtraining.functional"
         case .marineCFT: return "figure.run.square.stack"
         case .advancedReadiness: return "bolt.shield"
+        case .applicant: return "graduationcap.fill"
         }
     }
 
@@ -41,6 +44,7 @@ nonisolated enum ServiceTestBranch: String, Codable, CaseIterable, Identifiable,
         case .marinePFT: return "ex-hand-release-pushup"
         case .marineCFT: return "photo-ruck-man-scree"
         case .advancedReadiness: return "photo-ruck-man-coldbreath"
+        case .applicant: return "photo-run-silhouette-sunrise"
         }
     }
 }
