@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+  body { margin:0; background:#0e0f12; -webkit-font-smoothing:antialiased; }
+  a { color:#e0a23c; text-decoration:none; }
+  a:hover { color:#f2be62; }
+  @keyframes floaty { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-10px) } }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#0e0f12;font-family:-apple-system,'SF Pro Text','SF Pro Display',system-ui,sans-serif;padding:0 0 90px">
+  <div style="max-width:1180px;margin:0 auto;padding:0 24px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px;padding:60px 0 36px">
+      <div>
+        <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#8a6a2e;font-weight:700">MVM Fitness</div>
+        <h1 style="margin:8px 0 0;font-size:40px;line-height:1.05;letter-spacing:-0.025em;color:#f4f4f5;font-weight:700">Achievements</h1>
+      </div>
+      <div style="display:flex;gap:28px;flex-shrink:0;padding-bottom:8px">
+        <div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#f4f4f5">{{ countEarned }}</div><div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#66686d">Earned</div></div>
+        <div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#f4f4f5">{{ countTotal }}</div><div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#66686d">Badges</div></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:400px minmax(0,1fr);gap:24px;align-items:stretch;margin-bottom:56px">
+      <div style="position:relative;overflow:hidden;border-radius:32px;background:linear-gradient(160deg,#23252c,#17181d 70%);padding:52px 36px 44px;display:flex;flex-direction:column;align-items:center;text-align:center">
+        <div style="position:absolute;top:-120px;left:50%;margin-left:-220px;width:440px;height:440px;border-radius:50%;background:radial-gradient(circle,rgba(246,195,79,0.14),rgba(246,195,79,0) 65%)"></div>
+        <div style="position:absolute;inset:0;background:repeating-conic-gradient(from 0.35turn at 50% 28%,rgba(255,255,255,0.016) 0deg 14deg,rgba(255,255,255,0) 14deg 28deg)"></div>
+        <img src="assets/badges3d/rosette.png" alt="Premium badge rosette" style="position:relative;width:250px;height:250px;object-fit:contain;filter:drop-shadow(0 30px 40px rgba(0,0,0,0.6));animation:floaty 5s ease-in-out infinite">
+        <h2 style="position:relative;margin:26px 0 0;font-size:30px;font-weight:700;letter-spacing:-0.02em;color:#f4f4f5">Congrats!</h2>
+        <p style="position:relative;margin:10px 0 0;font-size:15px;line-height:1.55;color:#8f9196;max-width:240px;text-wrap:pretty">You have just earned a Premium Badge</p>
+        <div style="position:relative;margin-top:26px;display:flex;align-items:center;gap:8px;padding:12px 26px;border-radius:999px;background:#f4f4f5;color:#141519;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s" style-hover="background:#ffffff">Continue <span style="font-size:15px">→</span></div>
+      </div>
+
+      <div style="border-radius:32px;background:#16171c;padding:36px 40px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:16px;font-weight:700;color:#f4f4f5">{{ heroName }}</div>
+          <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#e0a23c;font-weight:700;white-space:nowrap">Earned · {{ heroDate }}</div>
+        </div>
+        <p style="margin:0 0 28px;font-size:14px;line-height:1.6;color:#8f9196;max-width:460px;text-wrap:pretty">{{ heroCitation }}</p>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-height:220px">
+          <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(224,162,60,0.18),rgba(224,162,60,0) 62%)"></div>
+          <sc-if value="{{ heroImg }}" hint-placeholder-val="{{ false }}"><div role="img" aria-label="{{ heroName }}" style="position:relative;width:240px;height:240px;background-image:{{ heroImgCss }};background-size:contain;background-repeat:no-repeat;background-position:center;filter:drop-shadow(0 24px 34px rgba(0,0,0,0.55))"></div></sc-if>
+        </div>
+        <div style="display:flex;justify-content:center;gap:24px;margin-top:20px">
+          <div style="font-size:12px;color:#66686d">Held by <span style="color:#d5d6d9;font-weight:600">4.1%</span> of users</div>
+          <div style="font-size:12px;color:#66686d">Rendered <span style="color:#d5d6d9;font-weight:600">3D · 1024 px</span></div>
+        </div>
+      </div>
+    </div>
+
+    <sc-for list="{{ groups }}" as="group" hint-placeholder-count="4">
+      <div style="padding:26px 0 10px">
+        <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:22px">
+          <h3 style="margin:0;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#f4f4f5;font-weight:700">{{ group.label }}</h3>
+          <div style="flex:1;height:1px;background:#1e2025"></div>
+          <span style="font-size:12px;color:#5f6165;white-space:nowrap">{{ group.count }}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px">
+          <sc-for list="{{ group.items }}" as="b" hint-placeholder-count="5">
+            <div style="background:#16171c;border-radius:26px;padding:26px 14px 22px;display:flex;flex-direction:column;align-items:center;gap:14px;transition:background 0.2s,transform 0.2s" style-hover="background:#1b1d23;transform:translateY(-3px)">
+              <div style="position:relative;width:128px;height:128px;flex-shrink:0">
+                <div style="position:absolute;inset:-14px;border-radius:50%;background:{{ b.glow }}"></div>
+                <div role="img" aria-label="{{ b.name }}" style="position:relative;width:128px;height:128px;background-image:{{ b.imgCss }};background-size:contain;background-repeat:no-repeat;background-position:center;opacity:{{ b.opacity }};filter:{{ b.fx }}"></div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center">
+                <div style="font-size:14px;line-height:1.25;font-weight:600;color:#e8e9eb;letter-spacing:-0.005em">{{ b.name }}</div>
+                <div style="font-size:12px;line-height:1.4;color:#7c7e83;text-wrap:pretty">{{ b.how }}</div>
+                <div style="font-size:10px;letter-spacing:0.16em;font-weight:700;color:{{ b.statusColor }};white-space:nowrap;margin-top:2px">{{ b.status }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+
+    <div style="margin-top:52px;padding:24px 28px;border-radius:20px;background:#16171c">
+      <p style="margin:0;font-size:13px;line-height:1.65;color:#7c7e83;max-width:760px;text-wrap:pretty">Badges are real 3D renders (three.js, PBR metals, studio lighting) baked to 1024&nbsp;px transparent PNGs — masters in <span style="color:#b9bbc0">assets/badges3d/</span>, source model in <a href="badge-forge.html">badge-forge.html</a>. Re-run the forge to restyle the whole set.</p>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;heroBadge&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;new-record&quot;, &quot;tsType&quot;: &quot;string&quot;,
+    &quot;options&quot;: [&quot;first-test&quot;,&quot;quick-starter&quot;,&quot;functional&quot;,&quot;first-mile&quot;,&quot;ruck-ready&quot;,&quot;sessions-20&quot;,&quot;streak-7&quot;,&quot;perfect-week&quot;,&quot;new-record&quot;,&quot;miles-25&quot;,&quot;score-25&quot;,&quot;plan-12&quot;,&quot;miles-100&quot;,&quot;joint-force&quot;,&quot;miles-500&quot;,&quot;independence-day&quot;],
+    &quot;section&quot;: &quot;Spotlight&quot; },
+  &quot;showLocked&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Grid&quot; },
+  &quot;lockedDim&quot;: { &quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 60, &quot;min&quot;: 20, &quot;max&quot;: 90, &quot;step&quot;: 2, &quot;unit&quot;: &quot;%&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Grid&quot; },
+  &quot;glowColor&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;rgba(246,195,79,0.22)&quot;, &quot;tsType&quot;: &quot;string&quot;,
+    &quot;options&quot;: [&quot;rgba(246,195,79,0.22)&quot;,&quot;rgba(255,255,255,0.14)&quot;,&quot;rgba(255,122,31,0.24)&quot;], &quot;section&quot;: &quot;Grid&quot; }
+}">
+const BADGES = [
+  { id: "first-test", name: "First Test Logged", group: "start", earned: true,
+    how: "Log your first AFT",
+    citation: "Logged a baseline AFT. Everything after compares back to today." },
+  { id: "quick-starter", name: "Quick Starter", group: "start", earned: true,
+    how: "Finish a Quick Start session",
+    citation: "Completed a first Quick Start session. Action beats intention." },
+  { id: "functional", name: "Functional Fitness", group: "start", earned: true,
+    how: "Finish a functional workout",
+    citation: "Completed a first functional fitness workout." },
+  { id: "first-mile", name: "First Mile", group: "start", earned: true,
+    how: "Track 1 mile with GPS",
+    citation: "First GPS-tracked mile in the books." },
+  { id: "first-share", name: "Spread The Word", group: "start", earned: false,
+    how: "Share a score card",
+    citation: "Sent a score card to the squad. Standards are contagious." },
+  { id: "ruck-ready", name: "Ruck Ready", group: "start", earned: true,
+    how: "Log your first ruck",
+    citation: "Logged a first ruck. Weight on your back, miles underfoot." },
+  { id: "sessions-20", name: "20 Sessions", group: "consistency", earned: true,
+    how: "Log 20 sessions",
+    citation: "Twenty logged sessions. This is now a habit." },
+  { id: "perfect-week", name: "Perfect Week", group: "consistency", earned: true,
+    how: "Hit every scheduled session in a week",
+    citation: "Every scheduled session in a week, done." },
+  { id: "plan-finisher", name: "Plan Finisher", group: "consistency", earned: false,
+    how: "Complete any training plan",
+    citation: "Carried a full training plan to its last session." },
+  { id: "new-record", name: "New Record", group: "consistency", earned: true,
+    how: "Beat a personal best",
+    citation: "Beat a personal best on record." },
+  { id: "miles-25", name: "25-Mile Club", group: "consistency", earned: true,
+    how: "Track 25 total miles",
+    citation: "Twenty-five tracked miles." },
+  { id: "month-30", name: "30-Mile Month", group: "consistency", earned: false,
+    how: "30 miles inside one month",
+    citation: "Thirty miles inside a single month." },
+  { id: "early-bird", name: "Early Bird", group: "consistency", earned: false,
+    how: "10 sessions before 0600",
+    citation: "Ten sessions before 0600. The 0500 club is earned, not joined." },
+  { id: "streak-7", name: "7-Day Streak", group: "streaks", earned: true,
+    how: "Train 7 days in a row",
+    citation: "Seven consecutive training days." },
+  { id: "streak-14", name: "14-Day Streak", group: "streaks", earned: false,
+    how: "Train 14 days in a row",
+    citation: "Two unbroken weeks." },
+  { id: "streak-30", name: "30-Day Streak", group: "streaks", earned: false,
+    how: "Train 30 days in a row",
+    citation: "A full month without breaking the chain." },
+  { id: "streak-60", name: "60-Day Streak", group: "streaks", earned: false,
+    how: "Train 60 days in a row",
+    citation: "Sixty days, zero gaps." },
+  { id: "streak-90", name: "90-Day Streak", group: "streaks", earned: false,
+    how: "Train 90 days in a row",
+    citation: "A full quarter of daily work." },
+  { id: "streak-180", name: "6-Month Streak", group: "streaks", earned: false,
+    how: "Train 6 months in a row",
+    citation: "Half a year without missing a day." },
+  { id: "streak-365", name: "12-Month Streak", group: "streaks", earned: false,
+    how: "Train 12 months in a row",
+    citation: "365 days. Streaks don't lie." },
+  { id: "score-25", name: "+25 Total Score", group: "milestones", earned: false,
+    how: "Raise your AFT total by 25",
+    citation: "Raised the AFT total by 25 points. Proof of work." },
+  { id: "plan-12", name: "12-Week Plan", group: "milestones", earned: false,
+    how: "Complete a 12-week plan",
+    citation: "Twelve weeks, one mission, zero shortcuts." },
+  { id: "miles-100", name: "100-Mile Club", group: "milestones", earned: false,
+    how: "Track 100 total miles",
+    citation: "One hundred tracked miles." },
+  { id: "miles-500", name: "500-Mile Club", group: "milestones", earned: false,
+    how: "Track 500 total miles",
+    citation: "Five hundred miles. A commander's coin for the long haul." },
+  { id: "joint-force", name: "Joint Force", group: "milestones", earned: false,
+    how: "Score every service's fitness test",
+    citation: "Scored every service's fitness test. One standard, every branch." },
+  { id: "army-birthday", name: "Army Birthday", group: "honors", earned: false,
+    how: "Train on June 14",
+    citation: "Trained on June 14 — the Army's birthday." },
+  { id: "marines-birthday", name: "Marine Corps Birthday", group: "honors", earned: false,
+    how: "Train on November 10",
+    citation: "Trained on November 10 — the Marine Corps' birthday." },
+  { id: "navy-birthday", name: "Navy Birthday", group: "honors", earned: false,
+    how: "Train on October 13",
+    citation: "Trained on October 13 — the Navy's birthday." },
+  { id: "af-birthday", name: "Air Force Birthday", group: "honors", earned: false,
+    how: "Train on September 18",
+    citation: "Trained on September 18 — the Air Force's birthday." },
+  { id: "veterans-day", name: "Veterans Day", group: "honors", earned: false,
+    how: "Train on November 11",
+    citation: "Trained on November 11 in honor of those who served." },
+  { id: "memorial-day", name: "Memorial Day", group: "honors", earned: false,
+    how: "Train on Memorial Day",
+    citation: "Trained on Memorial Day. Some gave all — we remember in sweat." },
+  { id: "independence-day", name: "Independence Day", group: "honors", earned: false,
+    how: "Train on July 4",
+    citation: "Trained on July 4th." }
+];
+
+const GROUP_LABELS = {
+  start: "Getting started",
+  consistency: "Consistency",
+  streaks: "Streaks",
+  milestones: "Milestones",
+  honors: "Honors"
+};
+
+class Component extends DCLogic {
+  decorate(b) {
+    const showLocked = this.props.showLocked ?? true;
+    const dim = this.props.lockedDim ?? 60;
+    return {
+      ...b,
+      img: `assets/badges3d/${b.id}.png`,
+      imgCss: `url('assets/badges3d/${b.id}.png')`,
+      opacity: b.earned ? 1 : (showLocked ? (100 - dim * 0.55) / 100 : 0.06),
+      fx: b.earned ? "none" : `grayscale(${dim}%) brightness(${100 - dim * 0.4}%)`,
+      glow: b.earned ? `radial-gradient(circle, ${this.props.glowColor ?? "rgba(246,195,79,0.22)"}, rgba(0,0,0,0) 66%)` : "none",
+      status: b.earned ? "EARNED" : "LOCKED",
+      statusColor: b.earned ? "#e0a23c" : "#5b5d62"
+    };
+  }
+
+  renderVals() {
+    const items = BADGES.map(b => this.decorate(b));
+    const order = ["start", "consistency", "streaks", "milestones", "honors"];
+    const groups = order.map(k => {
+      const list = items.filter(i => i.group === k);
+      return { key: k, label: GROUP_LABELS[k], items: list, count: `${list.filter(i => i.earned).length}/${list.length}` };
+    });
+    const heroId = this.props.heroBadge ?? "new-record";
+    const hero = items.find(b => b.id === heroId) ?? items[0];
+    return {
+      groups,
+      countEarned: items.filter(i => i.earned).length,
+      countTotal: items.length,
+      heroName: hero.name,
+      heroCitation: hero.citation,
+      heroImg: hero.img,
+      heroImgCss: hero.imgCss,
+      heroDate: "12 Jul 2026"
+    };
+  }
+}
+
+</script>
+</body>
+</html>

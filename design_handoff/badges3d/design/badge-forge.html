@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>MVM Badge Forge</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<style>
+  body { margin:0; background:#0c0d10; color:#888; font:13px -apple-system,sans-serif; padding:20px; }
+  canvas.out { display:block; margin:0 0 20px; background:transparent; }
+  #sheet { width:1280px; height:1280px; }
+  #rosette { width:512px; height:512px; }
+</style>
+</head>
+<body>
+<div id="status">forging…</div>
+<canvas id="sheet" class="out" width="2560" height="2560"></canvas>
+<canvas id="sheet2" class="out" width="2048" height="1024" style="width:1024px;height:512px"></canvas>
+<canvas id="rosette" class="out" width="1024" height="1024"></canvas>
+<script type="module">
+import * as THREE from 'three';
+
+// ---------- renderer / env ----------
+const R = new THREE.WebGLRenderer({ alpha:true, antialias:true, preserveDrawingBuffer:true });
+R.setSize(512,512); R.setPixelRatio(1);
+R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.28;
+
+function studioEnv() {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0,0,0,512);
+  g.addColorStop(0,'#3a3d44'); g.addColorStop(0.5,'#17181c'); g.addColorStop(1,'#0a0a0c');
+  x.fillStyle = g; x.fillRect(0,0,1024,512);
+  const soft = (cx,cy,w,h,a) => {
+    const gr = x.createRadialGradient(cx,cy,10,cx,cy,Math.max(w,h));
+    gr.addColorStop(0,`rgba(255,255,255,${a})`); gr.addColorStop(1,'rgba(255,255,255,0)');
+    x.fillStyle = gr; x.fillRect(cx-w,cy-h,w*2,h*2);
+  };
+  soft(210,120,240,140,0.95);           // key softbox upper-left
+  soft(760,180,180,220,0.55);           // fill right
+  soft(512,470,400,90,0.28);            // floor bounce
+  const warm = x.createRadialGradient(950,380,10,950,380,220);
+  warm.addColorStop(0,'rgba(255,176,80,0.5)'); warm.addColorStop(1,'rgba(255,176,80,0)');
+  x.fillStyle = warm; x.fillRect(700,180,324,332); // warm rim
+  const tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const pm = new THREE.PMREMGenerator(R);
+  const env = pm.fromEquirectangular(tex).texture;
+  tex.dispose(); return env;
+}
+const ENV = studioEnv();
+
+// ---------- materials ----------
+const P = (color, o={}) => new THREE.MeshPhysicalMaterial({ color, roughness:0.3, metalness:1, ...o });
+const M = {
+  gold:      P(0xE8AC3E, { roughness:0.26 }),
+  goldHot:   P(0xF6C34F, { roughness:0.18 }),
+  silver:    P(0xC4CAD4, { roughness:0.28 }),
+  bronze:    P(0xB0713A, { roughness:0.34 }),
+  graphite:  P(0x33353C, { roughness:0.42, metalness:0.9 }),
+  darkGloss: new THREE.MeshPhysicalMaterial({ color:0x232529, roughness:0.16, metalness:0.25, clearcoat:1, clearcoatRoughness:0.12 }),
+  darkMatte: new THREE.MeshPhysicalMaterial({ color:0x1B1D22, roughness:0.55, metalness:0.3 }),
+  slate:     new THREE.MeshPhysicalMaterial({ color:0x3E434C, roughness:0.6, metalness:0.25 }),
+  white:     new THREE.MeshPhysicalMaterial({ color:0xEFF1F4, roughness:0.4, metalness:0.05 }),
+  red:       new THREE.MeshPhysicalMaterial({ color:0xC94036, roughness:0.32, metalness:0.15, clearcoat:0.6 }),
+  canvasDk:  new THREE.MeshPhysicalMaterial({ color:0x5A6170, roughness:0.55, metalness:0.2 }),
+  asphalt:   new THREE.MeshPhysicalMaterial({ color:0x2C2F36, roughness:0.8, metalness:0.1 }),
+  orange:    new THREE.MeshPhysicalMaterial({ color:0xFF7A1F, roughness:0.28, metalness:0.1, clearcoat:0.8, emissive:0x4A1B00, emissiveIntensity:0.35 }),
+  yellow:    new THREE.MeshPhysicalMaterial({ color:0xFFC53D, roughness:0.24, metalness:0.1, clearcoat:0.8, emissive:0x4A3000, emissiveIntensity:0.3 })
+};
+Object.entries(M).forEach(([k,m]) => { m.name = k; });
+
+// ---------- helpers ----------
+const mk = (geo, mat, p=[0,0,0], r=[0,0,0], name='part') => {
+  const m = new THREE.Mesh(geo, mat); m.position.set(...p); m.rotation.set(...r); m.name = name; return m;
+};
+function extr(shape, depth, mat, bevel=0.07, name='part') {
+  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled:true, bevelThickness:bevel, bevelSize:bevel, bevelSegments:4, curveSegments:40 });
+  g.center();
+  const m = new THREE.Mesh(g, mat); m.name = name; return m;
+}
+function starShape(r1=1, r2=0.44) {
+  const s = new THREE.Shape();
+  for (let i=0;i<10;i++){ const r=i%2?r2:r1, a=Math.PI/2+i*Math.PI/5;
+    i?s.lineTo(r*Math.cos(a),r*Math.sin(a)):s.moveTo(r*Math.cos(a),r*Math.sin(a)); }
+  s.closePath(); return s;
+}
+function flameShape(s=1) {
+  const sh = new THREE.Shape();
+  sh.moveTo(0,1.05*s);
+  sh.bezierCurveTo(0.55*s,0.55*s,0.66*s,0.2*s,0.52*s,-0.25*s);
+  sh.bezierCurveTo(0.44*s,-0.62*s,0.18*s,-0.82*s,0,-0.82*s);
+  sh.bezierCurveTo(-0.44*s,-0.82*s,-0.7*s,-0.5*s,-0.64*s,-0.08*s);
+  sh.bezierCurveTo(-0.58*s,0.28*s,-0.3*s,0.5*s,0,1.05*s);
+  return sh;
+}
+
+// ---------- icon builders ----------
+const B = {};
+B.star = (mat=M.gold) => { const g=new THREE.Group(); g.add(extr(starShape(0.95,0.42),0.3,mat,0.1,'star')); return g; };
+B.flame = () => {
+  const g = new THREE.Group();
+  g.add(extr(flameShape(1),0.32,M.orange,0.1,'flame_outer'));
+  const inner = extr(flameShape(0.56),0.3,M.yellow,0.08,'flame_inner');
+  inner.position.set(0.02,-0.14,0.14); g.add(inner); return g;
+};
+B.trophy = () => {
+  const g = new THREE.Group();
+  const cup = new THREE.LatheGeometry([[0.06,0.42],[0.3,0.46],[0.46,0.6],[0.52,0.82],[0.52,1.06],[0.47,1.1]].map(p=>new THREE.Vector2(...p)),40);
+  g.add(mk(cup,M.gold,[0,0,0],[0,0,0],'cup'));
+  const h = new THREE.TorusGeometry(0.24,0.055,16,32,Math.PI);
+  g.add(mk(h,M.gold,[-0.55,0.84,0],[0,0,Math.PI/2],'handle_l'));
+  g.add(mk(h,M.gold,[0.55,0.84,0],[0,0,-Math.PI/2],'handle_r'));
+  g.add(mk(new THREE.CylinderGeometry(0.09,0.13,0.26,24),M.gold,[0,0.3,0],[0,0,0],'stem'));
+  g.add(mk(new THREE.CylinderGeometry(0.3,0.34,0.09,32),M.gold,[0,0.14,0],[0,0,0],'foot'));
+  g.add(mk(new THREE.BoxGeometry(0.74,0.16,0.4),M.darkGloss,[0,0.02,0],[0,0,0],'base'));
+  return g;
+};
+B.dumbbell = () => {
+  const g = new THREE.Group();
+  g.add(mk(new THREE.CylinderGeometry(0.075,0.075,1.6,24),M.silver,[0,0,0],[0,0,Math.PI/2],'bar'));
+  [[0.55,0.38,0.18],[0.72,0.28,0.14]].forEach(([x,r,h],i)=>{
+    g.add(mk(new THREE.CylinderGeometry(r,r,h,40),M.graphite,[x,0,0],[0,0,Math.PI/2],'plate'+i));
+    g.add(mk(new THREE.CylinderGeometry(r,r,h,40),M.graphite,[-x,0,0],[0,0,Math.PI/2],'plate'+i+'b'));
+  });
+  g.add(mk(new THREE.CylinderGeometry(0.1,0.1,0.07,24),M.gold,[0.83,0,0],[0,0,Math.PI/2],'cap_r'));
+  g.add(mk(new THREE.CylinderGeometry(0.1,0.1,0.07,24),M.gold,[-0.83,0,0],[0,0,Math.PI/2],'cap_l'));
+  return g;
+};
+B.kettlebell = () => {
+  const g = new THREE.Group();
+  g.add(mk(new THREE.SphereGeometry(0.58,48,32),M.darkGloss,[0,-0.14,0],[0,0,0],'body'));
+  const handle = mk(new THREE.TorusGeometry(0.34,0.095,20,40),M.gold,[0,0.42,0],[0,0,0],'handle');
+  handle.scale.set(1,0.8,1); g.add(handle);
+  g.add(mk(new THREE.CylinderGeometry(0.3,0.33,0.07,32),M.graphite,[0,-0.72,0],[0,0,0],'base'));
+  return g;
+};
+B.stopwatch = () => {
+  const g = new THREE.Group();
+  g.add(mk(new THREE.CylinderGeometry(0.62,0.62,0.26,48),M.silver,[0,0,0],[Math.PI/2,0,0],'body'));
+  g.add(mk(new THREE.TorusGeometry(0.6,0.08,20,48),M.gold,[0,0,0.06],[0,0,0],'bezel'));
+  g.add(mk(new THREE.CylinderGeometry(0.48,0.48,0.03,48),M.white,[0,0,0.135],[Math.PI/2,0,0],'face'));
+  g.add(mk(new THREE.BoxGeometry(0.05,0.34,0.03),M.graphite,[0,0.14,0.17],[0,0,0],'hand_min'));
+  g.add(mk(new THREE.BoxGeometry(0.05,0.24,0.03),M.graphite,[0.1,0.02,0.17],[0,0,-1.15],'hand_hr'));
+  g.add(mk(new THREE.CylinderGeometry(0.05,0.05,0.05,16),M.gold,[0,0,0.18],[Math.PI/2,0,0],'pin'));
+  g.add(mk(new THREE.CylinderGeometry(0.09,0.11,0.14,20),M.gold,[0,0.72,0],[0,0,0],'crown'));
+  g.add(mk(new THREE.CylinderGeometry(0.06,0.08,0.12,20),M.gold,[-0.48,0.56,0],[0,0,0.7],'btn'));
+  return g;
+};
+B.bolt = () => { const g=new THREE.Group();
+  const s = new THREE.Shape();
+  [[0.14,1],[-0.36,0.14],[-0.05,0.14],[-0.3,-1],[0.4,-0.05],[0.08,-0.05]].forEach((p,i)=> i?s.lineTo(...p):s.moveTo(...p));
+  s.closePath(); g.add(extr(s,0.28,M.goldHot,0.07,'bolt')); return g;
+};
+B.shield = (starMat=M.gold) => {
+  const sh = new THREE.Shape();
+  sh.moveTo(0,-1); sh.bezierCurveTo(0.7,-0.55,0.82,-0.1,0.82,0.45); sh.lineTo(0.82,0.6);
+  sh.quadraticCurveTo(0.4,0.74,0,0.71); sh.quadraticCurveTo(-0.4,0.74,-0.82,0.6); sh.lineTo(-0.82,0.45);
+  sh.bezierCurveTo(-0.82,-0.1,-0.7,-0.55,0,-1);
+  const g = new THREE.Group();
+  g.add(extr(sh,0.24,M.silver,0.07,'shield_outer'));
+  const inner = extr(sh,0.18,M.darkGloss,0.05,'shield_inner'); inner.scale.setScalar(0.76); inner.position.z = 0.12; g.add(inner);
+  const st = extr(starShape(0.34,0.15),0.14,starMat,0.04,'shield_star'); st.position.z = 0.28; g.add(st);
+  return g;
+};
+B.mountain = () => {
+  const g = new THREE.Group();
+  g.add(mk(new THREE.ConeGeometry(0.78,1.15,4),M.slate,[-0.28,-0.05,0],[0,Math.PI/4,0],'peak_a'));
+  g.add(mk(new THREE.ConeGeometry(0.6,0.85,4),M.slate,[0.38,-0.24,0.18],[0,Math.PI/4,0],'peak_b'));
+  g.add(mk(new THREE.ConeGeometry(0.3,0.4,4),M.white,[-0.28,0.34,0],[0,Math.PI/4,0],'snow_a'));
+  g.add(mk(new THREE.ConeGeometry(0.24,0.3,4),M.white,[0.38,0.05,0.18],[0,Math.PI/4,0],'snow_b'));
+  return g;
+};
+B.sunrise = () => {
+  const g = new THREE.Group();
+  const half = new THREE.Shape(); half.absarc(0,0,0.62,0,Math.PI,false); half.closePath();
+  const sun = extr(half,0.24,M.goldHot,0.06,'sun'); sun.position.y = 0.1; g.add(sun);
+  for (let i=0;i<5;i++){ const a = Math.PI*(0.16+0.17*i);
+    g.add(mk(new THREE.BoxGeometry(0.1,0.32,0.1),M.gold,[Math.cos(a)*1.0,0.1+Math.sin(a)*1.0,0],[0,0,a-Math.PI/2],'ray'+i)); }
+  g.add(mk(new THREE.BoxGeometry(1.6,0.1,0.26),M.silver,[0,-0.22,0],[0,0,0],'horizon'));
+  g.add(mk(new THREE.BoxGeometry(1.05,0.09,0.22),M.graphite,[0,-0.44,0],[0,0,0],'ground'));
+  return g;
+};
+B.calendar = () => {
+  const g = new THREE.Group();
+  g.add(mk(new THREE.BoxGeometry(1.05,0.9,0.22),M.white,[0,-0.1,0],[0,0,0],'body'));
+  g.add(mk(new THREE.BoxGeometry(1.05,0.3,0.24),M.red,[0,0.42,0],[0,0,0],'header'));
+  g.add(mk(new THREE.CylinderGeometry(0.05,0.05,0.2,16),M.gold,[-0.3,0.62,0],[0,0,0],'ring_l'));
+  g.add(mk(new THREE.CylinderGeometry(0.05,0.05,0.2,16),M.gold,[0.3,0.62,0],[0,0,0],'ring_r'));
+  for (let r=0;r<2;r++) for (let c=0;c<3;c++)
+    g.add(mk(new THREE.BoxGeometry(0.16,0.12,0.03),M.graphite,[-0.3+c*0.3,0.05-r*0.28,0.12],[0,0,0],`d${r}${c}`));
+  return g;
+};
+B.rings = () => {
+  const g = new THREE.Group(); const mats=[M.gold,M.silver,M.bronze,M.graphite];
+  [[-0.34,0.34,0.04],[0.34,0.34,-0.04],[-0.34,-0.34,-0.04],[0.34,-0.34,0.04]].forEach(([x,y,z],i)=>
+    g.add(mk(new THREE.TorusGeometry(0.34,0.085,20,48),mats[i],[x,y,z],[0,0,0],'ring'+i)));
+  return g;
+};
+B.bell = () => {
+  const g = new THREE.Group();
+  const pts = [];
+  pts.push(new THREE.Vector2(0.001,1.05));
+  pts.push(new THREE.Vector2(0.1,1.02));
+  pts.push(new THREE.Vector2(0.16,0.92));
+  pts.push(new THREE.Vector2(0.2,0.75));
+  pts.push(new THREE.Vector2(0.24,0.5));
+  pts.push(new THREE.Vector2(0.36,0.26));
+  pts.push(new THREE.Vector2(0.55,0.1));
+  pts.push(new THREE.Vector2(0.58,0.02));
+  pts.push(new THREE.Vector2(0.5,0.0));
+  g.add(mk(new THREE.LatheGeometry(pts,56),M.goldHot,[0,-0.5,0],[0,0,0],'bell'));
+  g.add(mk(new THREE.SphereGeometry(0.13,24,16),M.graphite,[0,-0.55,0],[0,0,0],'clapper'));
+  g.add(mk(new THREE.SphereGeometry(0.11,24,16),M.gold,[0,0.58,0],[0,0,0],'knob'));
+  return g;
+};
+B.ruck = () => {
+  const g = new THREE.Group();
+  g.add(mk(new THREE.BoxGeometry(0.92,1.05,0.44),M.canvasDk,[0,0,0],[0,0,0],'body'));
+  g.add(mk(new THREE.BoxGeometry(0.98,0.3,0.5),M.graphite,[0,0.45,0],[0,0,0],'lid'));
+  g.add(mk(new THREE.BoxGeometry(0.6,0.42,0.14),M.darkGloss,[0,-0.22,0.26],[0,0,0],'pocket'));
+  g.add(mk(new THREE.BoxGeometry(0.1,0.55,0.04),M.graphite,[-0.2,0.05,0.25],[0,0,0],'strap_l'));
+  g.add(mk(new THREE.BoxGeometry(0.1,0.55,0.04),M.graphite,[0.2,0.05,0.25],[0,0,0],'strap_r'));
+  g.add(mk(new THREE.BoxGeometry(0.15,0.11,0.07),M.gold,[-0.2,-0.06,0.26],[0,0,0],'buckle_l'));
+  g.add(mk(new THREE.BoxGeometry(0.15,0.11,0.07),M.gold,[0.2,-0.06,0.26],[0,0,0],'buckle_r'));
+  return g;
+};
+B.road = (starMat=M.silver) => {
+  const g = new THREE.Group();
+  const s = new THREE.Shape();
+  [[-0.5,-0.85],[-0.24,0.7],[0.24,0.7],[0.5,-0.85]].forEach((p,i)=> i?s.lineTo(...p):s.moveTo(...p));
+  s.closePath();
+  g.add(extr(s,0.22,M.asphalt,0.05,'road'));
+  [[-0.52],[0],[0.5]].forEach(([y],i)=>
+    g.add(mk(new THREE.BoxGeometry(0.09,0.2,0.04),M.white,[0,y*0.75,0.15],[0,0,0],'dash'+i)));
+  const st = extr(starShape(0.3,0.13),0.16,starMat,0.05,'road_star'); st.position.set(0,0.98,0.05); g.add(st);
+  return g;
+};
+B.burst = () => {
+  const g = new THREE.Group();
+  g.add(mk(new THREE.SphereGeometry(0.3,32,24),M.goldHot,[0,0,0],[0,0,0],'core'));
+  for (let i=0;i<8;i++){ const a=i*Math.PI/4;
+    const c = mk(new THREE.ConeGeometry(0.1,0.4,20),M.gold,[Math.cos(a)*0.66,Math.sin(a)*0.66,0],[0,0,a-Math.PI/2],'ray'+i); g.add(c); }
+  return g;
+};
+B.arrowUp = () => { const g=new THREE.Group();
+  const s = new THREE.Shape();
+  [[0,1],[0.62,0.22],[0.27,0.22],[0.27,-0.85],[-0.27,-0.85],[-0.27,0.22],[-0.62,0.22]].forEach((p,i)=> i?s.lineTo(...p):s.moveTo(...p));
+  s.closePath(); g.add(extr(s,0.3,M.goldHot,0.08,'arrow')); return g;
+};
+B.rosette = () => {
+  const g = new THREE.Group();
+  for (let i=0;i<16;i++){ const a=i*Math.PI/8;
+    const fl = mk(new THREE.SphereGeometry(0.33,24,16),M.darkGloss,[Math.cos(a)*1.16,Math.sin(a)*1.16,-0.12],[0,0,0],'flute'+i);
+    fl.scale.set(1,1,0.55); g.add(fl); }
+  const ring = mk(new THREE.TorusGeometry(1.02,0.27,32,72),M.darkGloss,[0,0,0],[0,0,0],'ring'); g.add(ring);
+  g.add(mk(new THREE.CylinderGeometry(0.95,0.95,0.18,64),M.darkMatte,[0,0,-0.04],[Math.PI/2,0,0],'dish'));
+  g.add(mk(new THREE.TorusGeometry(0.68,0.045,16,64),M.graphite,[0,0,0.08],[0,0,0],'lip'));
+  const st = extr(starShape(0.52,0.23),0.3,M.goldHot,0.09,'star'); st.position.z = 0.34; g.add(st);
+  const rib = new THREE.Shape();
+  [[-0.23,0],[0.23,0],[0.23,-1.0],[0,-0.78],[-0.23,-1.0]].forEach((p,i)=> i?rib.lineTo(...p):rib.moveTo(...p));
+  rib.closePath();
+  const r1 = extr(rib,0.1,M.darkGloss,0.03,'ribbon_l'); r1.position.set(-0.34,-1.42,-0.22); r1.rotation.z = 0.3; r1.scale.set(1.25,1.3,1); g.add(r1);
+  const r2 = extr(rib,0.1,M.darkGloss,0.03,'ribbon_r'); r2.position.set(0.34,-1.42,-0.22); r2.rotation.z = -0.3; r2.scale.set(1.25,1.3,1); g.add(r2);
+  return g;
+};
+
+B.anchor = () => {
+  const g = new THREE.Group();
+  g.add(mk(new THREE.TorusGeometry(0.14,0.05,16,32),M.goldHot,[0,0.82,0],[0,0,0],'ring'));
+  g.add(mk(new THREE.CylinderGeometry(0.06,0.06,1.15,20),M.gold,[0,0.12,0],[0,0,0],'shaft'));
+  g.add(mk(new THREE.BoxGeometry(0.64,0.09,0.09),M.gold,[0,0.42,0],[0,0,0],'stock'));
+  g.add(mk(new THREE.TorusGeometry(0.48,0.075,16,48,Math.PI),M.gold,[0,-0.12,0],[0,0,Math.PI],'arms'));
+  g.add(mk(new THREE.ConeGeometry(0.11,0.3,16),M.goldHot,[-0.48,0.02,0],[0,0,-0.5],'fluke_l'));
+  g.add(mk(new THREE.ConeGeometry(0.11,0.3,16),M.goldHot,[0.48,0.02,0],[0,0,0.5],'fluke_r'));
+  return g;
+};
+B.wing = () => {
+  const g = new THREE.Group();
+  const tri = (pts) => { const s = new THREE.Shape(); pts.forEach((p,i)=> i?s.lineTo(...p):s.moveTo(...p)); s.closePath(); return s; };
+  const wl = extr(tri([[0,0.95],[-0.72,-0.8],[-0.05,-0.42]]),0.07,M.silver,0.03,'wing_l'); wl.position.set(-0.26,-0.09,0); g.add(wl);
+  const wr = extr(tri([[0,0.95],[0.72,-0.8],[0.05,-0.42]]),0.07,M.silver,0.03,'wing_r'); wr.position.set(0.26,-0.09,0); g.add(wr);
+  const keel = extr(tri([[0,0.9],[0.14,-0.52],[-0.14,-0.52]]),0.2,M.goldHot,0.04,'keel'); keel.position.set(0,-0.02,-0.04); g.add(keel);
+  g.rotation.z = -0.5;
+  return g;
+};
+B.globe = () => {
+  const g = new THREE.Group();
+  g.add(mk(new THREE.SphereGeometry(0.56,48,32),M.goldHot,[0,0,0],[0,0,0],'globe'));
+  g.add(mk(new THREE.TorusGeometry(0.66,0.06,20,72),M.silver,[0,0,0],[Math.PI/2.3,0,0.25],'orbit'));
+  return g;
+};
+B.flameBase = () => {
+  const g = new THREE.Group(); g.add(B.flame());
+  const base = mk(new THREE.TorusGeometry(0.48,0.09,20,48),M.gold,[0,-0.85,0],[0,0,0],'base');
+  base.scale.set(1.15,0.35,1); g.add(base); return g;
+};
+B.flameShield = () => {
+  const sh = new THREE.Shape();
+  sh.moveTo(0,-1); sh.bezierCurveTo(0.7,-0.55,0.82,-0.1,0.82,0.45); sh.lineTo(0.82,0.6);
+  sh.quadraticCurveTo(0.4,0.74,0,0.71); sh.quadraticCurveTo(-0.4,0.74,-0.82,0.6); sh.lineTo(-0.82,0.45);
+  sh.bezierCurveTo(-0.82,-0.1,-0.7,-0.55,0,-1);
+  const g = new THREE.Group();
+  g.add(extr(sh,0.24,M.gold,0.07,'shield_outer'));
+  const inner = extr(sh,0.18,M.darkGloss,0.05,'shield_inner'); inner.scale.setScalar(0.76); inner.position.z = 0.12; g.add(inner);
+  const fl = B.flame(); fl.scale.setScalar(0.42); fl.position.set(0,-0.04,0.3); g.add(fl);
+  return g;
+};
+B.flameRing = () => {
+  const g = new THREE.Group();
+  g.add(mk(new THREE.TorusGeometry(0.95,0.1,24,72),M.gold,[0,0,-0.1],[0,0,0],'ring'));
+  const fl = B.flame(); fl.scale.setScalar(0.68); g.add(fl); return g;
+};
+B.flameCrown = () => {
+  const g = new THREE.Group();
+  const fl = B.flame(); fl.position.y = -0.25; g.add(fl);
+  const cs = new THREE.Shape();
+  [[-0.5,0],[-0.5,0.3],[-0.28,0.12],[-0.14,0.36],[0,0.15],[0.14,0.36],[0.28,0.12],[0.5,0.3],[0.5,0]].forEach((p,i)=> i?cs.lineTo(...p):cs.moveTo(...p));
+  cs.closePath();
+  const crown = extr(cs,0.18,M.goldHot,0.05,'crown'); crown.position.set(0.03,0.95,0.05); g.add(crown);
+  return g;
+};
+
+// ---------- badge list (row-major, 5x5 — order matters for cropping) ----------
+const BADGES = [
+  ['first-test', () => B.stopwatch()],
+  ['quick-starter', () => B.bolt(), -0.2],
+  ['functional', () => B.kettlebell()],
+  ['first-mile', () => B.road(M.bronze), -0.3],
+  ['first-share', () => B.burst()],
+  ['ruck-ready', () => B.ruck()],
+  ['sessions-20', () => B.dumbbell()],
+  ['streak-7', () => B.flame()],
+  ['streak-14', () => B.flame()],
+  ['perfect-week', () => B.shield(), -0.25],
+  ['plan-finisher', () => B.star(), -0.22],
+  ['new-record', () => B.trophy()],
+  ['miles-25', () => B.road(M.silver), -0.3],
+  ['month-30', () => B.calendar()],
+  ['early-bird', () => B.sunrise()],
+  ['score-25', () => B.arrowUp(), -0.2],
+  ['plan-12', () => B.mountain()],
+  ['streak-30', () => B.flame()],
+  ['miles-100', () => B.road(M.gold), -0.3],
+  ['joint-force', () => B.rings(), -0.12],
+  ['army-birthday', () => B.star(M.goldHot), -0.22],
+  ['miles-500', () => B.road(M.goldHot), -0.3],
+  ['veterans-day', () => B.star(M.silver), -0.22],
+  ['memorial-day', () => B.flame()],
+  ['independence-day', () => B.bell(), -0.3]
+];
+window.__badgeOrder = BADGES.map(b => b[0]);
+
+// ---------- render loop ----------
+const cam = new THREE.PerspectiveCamera(34, 1, 0.1, 50);
+cam.position.set(0, 0.22, 3.5); cam.lookAt(0, 0, 0);
+
+function renderIcon(build, tiltY=-0.42) {
+  const scene = new THREE.Scene();
+  scene.environment = ENV;
+  const key = new THREE.DirectionalLight(0xffffff, 1.5); key.position.set(2.2,3,3.5); scene.add(key);
+  const rim = new THREE.DirectionalLight(0xffc580, 0.9); rim.position.set(-3,0.8,-2.5); scene.add(rim);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.12));
+  const parent = new THREE.Group();
+  const g = build();
+  const box = new THREE.Box3().setFromObject(g);
+  const size = box.getSize(new THREE.Vector3());
+  const c = box.getCenter(new THREE.Vector3());
+  g.position.sub(c);
+  parent.scale.setScalar(1.72 / Math.max(size.x, size.y, size.z));
+  parent.rotation.set(0.1, tiltY, 0);
+  parent.add(g); scene.add(parent);
+  parent.updateMatrixWorld(true);
+  const rb = new THREE.Box3().setFromObject(parent);
+  const rc2 = rb.getCenter(new THREE.Vector3());
+  parent.position.sub(rc2);
+  R.render(scene, cam);
+  return R.domElement;
+}
+
+const sheet = document.getElementById('sheet').getContext('2d');
+BADGES.forEach(([id, build, tilt], i) => {
+  const el = renderIcon(build, tilt ?? -0.42);
+  sheet.drawImage(el, (i%5)*512, Math.floor(i/5)*512, 512, 512);
+});
+
+const BADGES2 = [
+  ['marines-birthday', () => B.globe(), -0.2],
+  ['navy-birthday', () => B.anchor(), -0.3],
+  ['af-birthday', () => B.wing(), -0.18],
+  ['streak-60', () => B.flameBase()],
+  ['streak-90', () => B.flameShield(), -0.25],
+  ['streak-180', () => B.flameRing(), -0.22],
+  ['streak-365', () => B.flameCrown(), -0.3]
+];
+window.__badgeOrder2 = BADGES2.map(b => b[0]);
+const sheet2 = document.getElementById('sheet2').getContext('2d');
+BADGES2.forEach(([id, build, tilt], i) => {
+  const el = renderIcon(build, tilt ?? -0.42);
+  sheet2.drawImage(el, (i%4)*512, Math.floor(i/4)*512, 512, 512);
+});
+
+// rosette hero at 1024
+R.setSize(1024,1024);
+const rc = document.getElementById('rosette').getContext('2d');
+rc.drawImage(renderIcon(() => B.rosette(), -0.25), 0, 0, 1024, 1024);
+
+document.getElementById('status').textContent = 'done — 25 + 7 badges + rosette';
+</script>
+</body>
+</html>

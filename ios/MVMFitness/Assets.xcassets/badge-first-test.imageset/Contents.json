@@ -1,0 +1,12 @@
+{
+  "images": [
+    {
+      "filename": "badge-first-test.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

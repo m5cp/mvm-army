@@ -1,0 +1,194 @@
+{
+  "first-test": {
+    "name": "First Test Logged",
+    "group": "start",
+    "how": "Log your first AFT",
+    "citation": "Logged a baseline AFT. Everything after compares back to today."
+  },
+  "quick-starter": {
+    "name": "Quick Starter",
+    "group": "start",
+    "how": "Finish a Quick Start session",
+    "citation": "Completed a first Quick Start session. Action beats intention."
+  },
+  "functional": {
+    "name": "Functional Fitness",
+    "group": "start",
+    "how": "Finish a functional workout",
+    "citation": "Completed a first functional fitness workout."
+  },
+  "first-mile": {
+    "name": "First Mile",
+    "group": "start",
+    "how": "Track 1 mile with GPS",
+    "citation": "First GPS-tracked mile in the books."
+  },
+  "first-share": {
+    "name": "Spread The Word",
+    "group": "start",
+    "how": "Share a score card",
+    "citation": "Sent a score card to the squad. Standards are contagious."
+  },
+  "ruck-ready": {
+    "name": "Ruck Ready",
+    "group": "start",
+    "how": "Log your first ruck",
+    "citation": "Logged a first ruck. Weight on your back, miles underfoot."
+  },
+  "sessions-20": {
+    "name": "20 Sessions",
+    "group": "consistency",
+    "how": "Log 20 sessions",
+    "citation": "Twenty logged sessions. This is now a habit."
+  },
+  "perfect-week": {
+    "name": "Perfect Week",
+    "group": "consistency",
+    "how": "Hit every scheduled session in a week",
+    "citation": "Every scheduled session in a week, done."
+  },
+  "plan-finisher": {
+    "name": "Plan Finisher",
+    "group": "consistency",
+    "how": "Complete any training plan",
+    "citation": "Carried a full training plan to its last session."
+  },
+  "new-record": {
+    "name": "New Record",
+    "group": "consistency",
+    "how": "Beat a personal best",
+    "citation": "Beat a personal best on record."
+  },
+  "miles-25": {
+    "name": "25-Mile Club",
+    "group": "consistency",
+    "how": "Track 25 total miles",
+    "citation": "Twenty-five tracked miles."
+  },
+  "month-30": {
+    "name": "30-Mile Month",
+    "group": "consistency",
+    "how": "30 miles inside one month",
+    "citation": "Thirty miles inside a single month."
+  },
+  "early-bird": {
+    "name": "Early Bird",
+    "group": "consistency",
+    "how": "10 sessions before 0600",
+    "citation": "Ten sessions before 0600. The 0500 club is earned, not joined."
+  },
+  "streak-7": {
+    "name": "7-Day Streak",
+    "group": "streaks",
+    "how": "Train 7 days in a row",
+    "citation": "Seven consecutive training days."
+  },
+  "streak-14": {
+    "name": "14-Day Streak",
+    "group": "streaks",
+    "how": "Train 14 days in a row",
+    "citation": "Two unbroken weeks."
+  },
+  "streak-30": {
+    "name": "30-Day Streak",
+    "group": "streaks",
+    "how": "Train 30 days in a row",
+    "citation": "A full month without breaking the chain."
+  },
+  "streak-60": {
+    "name": "60-Day Streak",
+    "group": "streaks",
+    "how": "Train 60 days in a row",
+    "citation": "Sixty days, zero gaps."
+  },
+  "streak-90": {
+    "name": "90-Day Streak",
+    "group": "streaks",
+    "how": "Train 90 days in a row",
+    "citation": "A full quarter of daily work."
+  },
+  "streak-180": {
+    "name": "6-Month Streak",
+    "group": "streaks",
+    "how": "Train 6 months in a row",
+    "citation": "Half a year without missing a day."
+  },
+  "streak-365": {
+    "name": "12-Month Streak",
+    "group": "streaks",
+    "how": "Train 12 months in a row",
+    "citation": "365 days. Streaks don't lie."
+  },
+  "score-25": {
+    "name": "+25 Total Score",
+    "group": "milestones",
+    "how": "Raise your AFT total by 25",
+    "citation": "Raised the AFT total by 25 points. Proof of work."
+  },
+  "plan-12": {
+    "name": "12-Week Plan",
+    "group": "milestones",
+    "how": "Complete a 12-week plan",
+    "citation": "Twelve weeks, one mission, zero shortcuts."
+  },
+  "miles-100": {
+    "name": "100-Mile Club",
+    "group": "milestones",
+    "how": "Track 100 total miles",
+    "citation": "One hundred tracked miles."
+  },
+  "miles-500": {
+    "name": "500-Mile Club",
+    "group": "milestones",
+    "how": "Track 500 total miles",
+    "citation": "Five hundred miles. A commander's coin for the long haul."
+  },
+  "joint-force": {
+    "name": "Joint Force",
+    "group": "milestones",
+    "how": "Score every service's fitness test",
+    "citation": "Scored every service's fitness test. One standard, every branch."
+  },
+  "army-birthday": {
+    "name": "Army Birthday",
+    "group": "honors",
+    "how": "Train on June 14",
+    "citation": "Trained on June 14 — the Army's birthday."
+  },
+  "marines-birthday": {
+    "name": "Marine Corps Birthday",
+    "group": "honors",
+    "how": "Train on November 10",
+    "citation": "Trained on November 10 — the Marine Corps' birthday."
+  },
+  "navy-birthday": {
+    "name": "Navy Birthday",
+    "group": "honors",
+    "how": "Train on October 13",
+    "citation": "Trained on October 13 — the Navy's birthday."
+  },
+  "af-birthday": {
+    "name": "Air Force Birthday",
+    "group": "honors",
+    "how": "Train on September 18",
+    "citation": "Trained on September 18 — the Air Force's birthday."
+  },
+  "veterans-day": {
+    "name": "Veterans Day",
+    "group": "honors",
+    "how": "Train on November 11",
+    "citation": "Trained on November 11 in honor of those who served."
+  },
+  "memorial-day": {
+    "name": "Memorial Day",
+    "group": "honors",
+    "how": "Train on Memorial Day",
+    "citation": "Trained on Memorial Day. Some gave all — we remember in sweat."
+  },
+  "independence-day": {
+    "name": "Independence Day",
+    "group": "honors",
+    "how": "Train on July 4",
+    "citation": "Trained on July 4th."
+  }
+}
