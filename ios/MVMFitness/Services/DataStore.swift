@@ -59,7 +59,9 @@ enum DataStore {
             } catch {
                 print("DataStore save failed for \(key): \(error.localizedDescription)")
             }
-            if !deviceOnlyKeys.contains(key), let cloud = iCloudFolder {
+            if !deviceOnlyKeys.contains(key),
+               !OPSECService.isCloudSyncDisabled,
+               let cloud = iCloudFolder {
                 try? data.write(to: cloud.appendingPathComponent("\(key).json"), options: [.atomic])
             }
         }
@@ -69,7 +71,7 @@ enum DataStore {
         let localFile = localURL(key)
         var candidates: [URL] = []
         if FileManager.default.fileExists(atPath: localFile.path) { candidates.append(localFile) }
-        if !deviceOnlyKeys.contains(key), let cloud = iCloudFolder {
+        if !deviceOnlyKeys.contains(key), !OPSECService.isCloudSyncDisabled, let cloud = iCloudFolder {
             let cloudFile = cloud.appendingPathComponent("\(key).json")
             if FileManager.default.fileExists(atPath: cloudFile.path) { candidates.append(cloudFile) }
         }
@@ -133,6 +135,19 @@ enum DataStore {
     /// backgrounds — it is the only place a synchronous wait is warranted.
     static func flush() {
         ioQueue.sync {}
+    }
+
+    /// Removes every store file from iCloud. Called when the user turns cloud
+    /// sync off, so the switch means what its subtitle says.
+    static func purgeAllKeysFromCloud() {
+        ioQueue.async {
+            guard let cloud = iCloudFolder else { return }
+            if let contents = try? FileManager.default.contentsOfDirectory(at: cloud, includingPropertiesForKeys: nil) {
+                for file in contents where file.pathExtension == "json" {
+                    try? FileManager.default.removeItem(at: file)
+                }
+            }
+        }
     }
 
     /// Every key the app has ever written through this store. Used by

@@ -290,7 +290,7 @@ struct DAForm705ExportView: View {
         isGenerating = true
         Task {
             guard let pdfData = DAForm705PDFService.generatePDF(from: exportData),
-                  let url = DAForm705PDFService.savePDFToTemp(data: pdfData, soldierName: exportData.soldierName) else {
+                  let url = DAForm705PDFService.savePDFToTemp(data: pdfData, soldierName: OPSECService.shared.shareName(exportData.soldierName)) else {
                 isGenerating = false
                 return
             }

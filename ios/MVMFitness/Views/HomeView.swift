@@ -330,6 +330,7 @@ struct HomeView: View {
                 exerciseCount: completedExerciseCount
             )
         }
+        .task { quickStartVM.observeOPSEC() }
         .sheet(isPresented: $showQuickStartSheet) {
             QuickStartSelectionView(quickStart: quickStartVM)
         }

@@ -456,7 +456,7 @@ enum StyledCardRenderer {
             )
         case .quickStart(let record):
             var stats: [(String, String)] = [(record.formattedDuration, "DURATION")]
-            if record.activity.usesGPS {
+            if record.hasDistance {
                 stats.append((record.formattedDistance, "DISTANCE"))
                 stats.append((record.formattedPace, "AVG PACE"))
             }

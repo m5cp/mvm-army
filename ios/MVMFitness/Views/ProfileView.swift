@@ -16,6 +16,7 @@ struct ProfileView: View {
     @AppStorage("profileDisplayName") private var profileDisplayName = ""
     @AppStorage("timeFormatPreference") private var timeFormatRaw = TimeFormatPreference.system.rawValue
     @AppStorage("appLockEnabled") private var appLockEnabled = false
+    private var opsec = OPSECService.shared
 
     @State private var reminderTime = Calendar.current.date(from: DateComponents(hour: 6, minute: 0)) ?? .now
     @State private var showResetAlert = false
@@ -594,6 +595,9 @@ struct ProfileView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("App Lock, requires \(appLockService.biometryLabel) to open the app")
 
+            sectionDivider
+            opsecRows
+
             if let appLockErrorMessage {
                 sectionDivider
                 Text(appLockErrorMessage)
@@ -807,6 +811,82 @@ struct ProfileView: View {
             .padding(.vertical, 4)
             .mvmCard(cornerRadius: 16)
         }
+    }
+
+    /// OPSEC controls. A fitness app's activity data has previously exposed the
+    /// layout and patrol patterns of forward operating bases; these switches let
+    /// a user shut that off without giving up the rest of the app.
+    @ViewBuilder
+    private var opsecRows: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "shield.lefthalf.filled")
+                .font(.subheadline)
+                .foregroundStyle(MVMTheme.accent)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("OPSEC Mode")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(MVMTheme.primaryText)
+                Text("Turns off GPS, iCloud sync and identity on anything you share")
+                    .font(.caption2)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            Toggle("", isOn: Binding(get: { opsec.opsecMode }, set: { opsec.opsecMode = $0 }))
+                .labelsHidden()
+                .tint(MVMTheme.accent)
+        }
+        .frame(minHeight: 48)
+        .accessibilityElement(children: .combine)
+
+        sectionDivider
+        opsecDetailRow(
+            icon: "location.slash",
+            title: "No GPS or route recording",
+            subtitle: "Sessions still time and count. No location permission is requested.",
+            isOn: Binding(get: { opsec.gpsDisabled }, set: { opsec.gpsDisabled = $0 })
+        )
+
+        sectionDivider
+        opsecDetailRow(
+            icon: "icloud.slash",
+            title: "No iCloud sync",
+            subtitle: "Everything stays in this device's storage only.",
+            isOn: Binding(get: { opsec.iCloudDisabled }, set: { opsec.iCloudDisabled = $0 })
+        )
+
+        sectionDivider
+        opsecDetailRow(
+            icon: "person.slash",
+            title: "Strip name and unit from shares",
+            subtitle: "Scores still share. The person and the unit do not.",
+            isOn: Binding(get: { opsec.stripIdentity }, set: { opsec.stripIdentity = $0 })
+        )
+    }
+
+    private func opsecDetailRow(icon: String, title: String, subtitle: String, isOn: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.subheadline)
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(MVMTheme.primaryText)
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .tint(MVMTheme.accent)
+        }
+        .frame(minHeight: 48)
+        .accessibilityElement(children: .combine)
     }
 
     private var sectionDivider: some View {

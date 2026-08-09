@@ -166,7 +166,7 @@ struct AFTCalculatorView: View {
         let weakest = eventScores.sorted { $0.1 < $1.1 }.prefix(2).map(\.0)
 
         return AFTCalculatorResult(
-            soldierName: soldierName,
+            soldierName: OPSECService.shared.shareName(soldierName),
             age: scoringAge,
             sex: sex,
             standard: standard,

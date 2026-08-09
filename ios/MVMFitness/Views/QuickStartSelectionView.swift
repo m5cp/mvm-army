@@ -7,7 +7,7 @@ struct QuickStartSelectionView: View {
 
     /// Most recent GPS session of the selected activity worth racing against.
     private var ghostCandidate: QuickStartRecord? {
-        guard let activity = quickStart.selectedActivity, activity.usesGPS else { return nil }
+        guard let activity = quickStart.selectedActivity, quickStart.usesGPS else { return nil }
         return vm.quickStartRecords.first {
             $0.activity == activity && $0.distanceMeters > 200 && $0.elapsedSeconds > 60
         }
@@ -119,7 +119,7 @@ struct QuickStartSelectionView: View {
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    if activity.usesGPS {
+                    if !OPSECService.isGPSDisabled, activity.usesGPS {
                         HStack(spacing: 3) {
                             Image(systemName: "location.fill")
                                 .font(.system(size: 8))
@@ -150,7 +150,7 @@ struct QuickStartSelectionView: View {
 
     @ViewBuilder
     private func gpsInfoBanner(_ activity: QuickStartActivity) -> some View {
-        if activity.usesGPS {
+        if !OPSECService.isGPSDisabled, activity.usesGPS {
             HStack(spacing: 12) {
                 Image(systemName: "map.fill")
                     .font(.body.weight(.semibold))

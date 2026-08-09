@@ -156,6 +156,100 @@ final class AppViewModel {
         persistAll()
     }
 
+    // MARK: - Distance rollups
+
+    /// Total tracked miles across every GPS session. The only miles aggregation
+    /// in the app used to live privately inside BadgesView, so the Progress
+    /// screen had no way to show distance at all.
+    var totalTrackedMiles: Double {
+        quickStartRecords.reduce(0) { $0 + $1.distanceMiles }
+    }
+
+    func trackedMiles(since date: Date) -> Double {
+        quickStartRecords.filter { $0.startDate >= date }.reduce(0) { $0 + $1.distanceMiles }
+    }
+
+    var milesThisWeek: Double {
+        let cal = Calendar.current
+        let start = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: .now)) ?? .now
+        return trackedMiles(since: start)
+    }
+
+    var milesThisMonth: Double {
+        let cal = Calendar.current
+        let start = cal.date(from: cal.dateComponents([.year, .month], from: .now)) ?? .now
+        return trackedMiles(since: start)
+    }
+
+    /// Sessions, minutes and miles grouped by activity, newest window first.
+    struct ActivitySummary: Identifiable {
+        let name: String
+        let symbol: String
+        let sessions: Int
+        let minutes: Int
+        let miles: Double
+        var id: String { name }
+    }
+
+    /// Breaks logged work out by what it actually was — run, ruck, walk, bike,
+    /// hike, functional and unit PT — instead of a single undifferentiated
+    /// workout count.
+    var activityBreakdown: [ActivitySummary] {
+        var buckets: [String: (symbol: String, sessions: Int, seconds: Int, miles: Double)] = [:]
+
+        func add(_ name: String, _ symbol: String, seconds: Int, miles: Double) {
+            var entry = buckets[name] ?? (symbol, 0, 0, 0)
+            entry.sessions += 1
+            entry.seconds += seconds
+            entry.miles += miles
+            buckets[name] = entry
+        }
+
+        for record in quickStartRecords {
+            add(record.activity.rawValue, record.activity.icon,
+                seconds: record.elapsedSeconds, miles: record.distanceMiles)
+        }
+
+        // Keyed on title AND day, computed once. Matching on bare title dropped
+        // EVERY completed record ever titled "Outdoor Run" the moment the user
+        // did a single Quick Start of that name — including hand-created
+        // workouts — and was O(n*m) inside the loop.
+        let cal = Calendar.current
+        let quickStartKeys = Set(quickStartRecords.map {
+            "\($0.activity.rawValue)|\(cal.startOfDay(for: $0.startDate).timeIntervalSince1970)"
+        })
+
+        for record in completedRecords {
+            // A Quick Start already counted above also writes a completed
+            // record; skip those so sessions are not double counted.
+            let key = "\(record.title)|\(cal.startOfDay(for: record.date).timeIntervalSince1970)"
+            guard !quickStartKeys.contains(key) else { continue }
+            let ruckMiles = record.exercises
+                .filter { $0.cardioType == .ruck }
+                .reduce(0.0) { $0 + ($1.distanceMiles ?? 0) }
+            let walkMiles = record.exercises
+                .filter { $0.cardioType == .walk }
+                .reduce(0.0) { $0 + ($1.distanceMiles ?? 0) }
+
+            if ruckMiles > 0 { add("Ruck", "figure.hiking", seconds: 0, miles: ruckMiles) }
+            if walkMiles > 0 { add("Walk", "figure.walk", seconds: 0, miles: walkMiles) }
+            if ruckMiles == 0, walkMiles == 0 {
+                switch record.source {
+                case .unit: add("Unit PT", "person.3.fill", seconds: 0, miles: 0)
+                case .wod: add("Functional", "figure.strengthtraining.functional", seconds: 0, miles: 0)
+                default: add("Individual PT", "dumbbell.fill", seconds: 0, miles: 0)
+                }
+            }
+        }
+
+        return buckets
+            .map { ActivitySummary(name: $0.key, symbol: $0.value.symbol,
+                                   sessions: $0.value.sessions,
+                                   minutes: $0.value.seconds / 60,
+                                   miles: $0.value.miles) }
+            .sorted { $0.sessions > $1.sessions }
+    }
+
     // MARK: - Preferences
 
     var currentFocus: TrainingFocus {
@@ -1802,7 +1896,7 @@ final class AppViewModel {
         let durationMinutes = max(record.elapsedSeconds / 60, 1)
         var notes = record.activity.rawValue
         notes += "\nDuration: \(record.formattedDuration)"
-        if record.activity.usesGPS {
+        if record.hasDistance {
             notes += "\nDistance: \(record.formattedDistance)"
             notes += "\nPace: \(record.formattedPace)"
         }

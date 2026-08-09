@@ -70,8 +70,27 @@ final class QuickStartViewModel {
         String(format: "%.1f mph", currentSpeedMph)
     }
 
+    /// Observes the OPSEC switch so a live session stops recording the moment
+    /// GPS is turned off, rather than only hiding the map.
+    private var opsecObserver: NSObjectProtocol?
+
+    func observeOPSEC() {
+        guard opsecObserver == nil else { return }
+        opsecObserver = NotificationCenter.default.addObserver(
+            forName: .opsecGPSDisabled, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.locationService.stopTracking()
+                self.locationService.reset()
+                self.ghostEnabled = false
+            }
+        }
+    }
+
     var usesGPS: Bool {
-        selectedActivity?.usesGPS ?? false
+        guard !OPSECService.isGPSDisabled else { return false }
+        return selectedActivity?.usesGPS ?? false
     }
 
     func selectActivity(_ activity: QuickStartActivity) {
@@ -88,7 +107,9 @@ final class QuickStartViewModel {
         pauseAccumulated = 0
         startDate = .now
 
-        if activity.usesGPS {
+        // OPSEC mode records no route and never asks for location. The session
+        // still times and still counts; only the map goes away.
+        if activity.usesGPS, !OPSECService.isGPSDisabled {
             if locationService.isAuthorized {
                 locationService.startTracking()
             } else {

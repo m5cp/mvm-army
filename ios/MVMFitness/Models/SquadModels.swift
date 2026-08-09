@@ -118,8 +118,12 @@ final class SquadStore {
         return code
     }
 
+    /// Newest FIRST by test date. Results are stored insertion-ordered, and an
+    /// imported QR can carry an older date than something already logged — which
+    /// made standings show a stale total and render a regression that never
+    /// happened.
     func aftHistory(for member: SquadMember) -> [SquadAFTResult] {
-        data.aftResults.filter { $0.memberID == member.id }
+        data.aftResults.filter { $0.memberID == member.id }.sorted { $0.date > $1.date }
     }
     func cftHistory(for member: SquadMember) -> [SquadCFTResult] {
         data.cftResults.filter { $0.memberID == member.id }
@@ -218,7 +222,7 @@ final class SquadStore {
     func addWHtR(_ result: SquadWHtRResult) { data.whtrResults.insert(result, at: 0); persist() }
 
     func latestAFT(for member: SquadMember) -> SquadAFTResult? {
-        data.aftResults.first { $0.memberID == member.id }
+        aftHistory(for: member).first
     }
     func latestCFT(for member: SquadMember) -> SquadCFTResult? {
         data.cftResults.first { $0.memberID == member.id }
@@ -238,6 +242,62 @@ final class SquadStore {
         var aftGreen = 0, aftTotal = 0
         var cftGo = 0, cftTotal = 0
         var whtrMet = 0, whtrTotal = 0
+    }
+
+    /// Ranked roster. This is the leaderboard that makes sense for a military
+    /// unit: results are entered by a leader who witnessed them, and it never
+    /// leaves the squad. A global leaderboard of self-entered scores would rank
+    /// whoever is most willing to type 600, and publishing units and routes is
+    /// how a fitness app once exposed forward operating bases.
+    struct StandingRow: Identifiable {
+        let member: SquadMember
+        let total: Int?
+        let passed: Bool?
+        let date: Date?
+        let delta: Int?
+        var id: UUID { member.id }
+    }
+
+    /// Sorted best-first. Members with no logged AFT sort last, so the list
+    /// doubles as a "who still owes me a test" view.
+    func standings() -> [StandingRow] {
+        activeMembers.map { member in
+            let history = aftHistory(for: member)
+            let latest = history.first
+            let previous = history.dropFirst().first
+            return StandingRow(
+                member: member,
+                total: latest?.total,
+                passed: latest?.passed,
+                date: latest?.date,
+                delta: latest.flatMap { current in previous.map { current.total - $0.total } }
+            )
+        }
+        .sorted { a, b in
+            switch (a.total, b.total) {
+            case let (l?, r?): return l > r
+            case (nil, _?): return false
+            case (_?, nil): return true
+            default: return a.member.name.lowercased() < b.member.name.lowercased()
+            }
+        }
+    }
+
+    /// Members with no AFT on record, or whose most recent one is older than a
+    /// year — the two things a squad leader actually chases.
+    func overdueMembers(asOf date: Date = .now) -> [SquadMember] {
+        let cutoff = Calendar.current.date(byAdding: .month, value: -12, to: date) ?? date
+        return activeMembers.filter { member in
+            guard let latest = latestAFT(for: member) else { return true }
+            return latest.date < cutoff
+        }
+    }
+
+    /// Average of the most recent AFT total across members who have one.
+    var averageAFTTotal: Int? {
+        let totals = activeMembers.compactMap { latestAFT(for: $0)?.total }
+        guard !totals.isEmpty else { return nil }
+        return totals.reduce(0, +) / totals.count
     }
 
     var readiness: Readiness {

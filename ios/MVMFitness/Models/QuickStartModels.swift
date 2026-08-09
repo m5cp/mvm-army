@@ -51,6 +51,11 @@ nonisolated struct QuickStartRecord: Codable, Identifiable, Sendable {
     let endDate: Date
     let elapsedSeconds: Int
     let distanceMeters: Double
+
+    /// True when this record actually captured distance. Under OPSEC an outdoor
+    /// run has usesGPS true but no distance, and gating UI on the activity flag
+    /// rendered a "0.00 mi / --:--" stats card, share tile and calendar note.
+    var hasDistance: Bool { distanceMeters > 0 }
     let routeCoordinates: [CodableCoordinate]
     let averagePaceSecondsPerKm: Double?
     /// Seconds since session start for each entry in `routeCoordinates` —

@@ -235,14 +235,17 @@ struct SquadMyStatsSheet: View {
         // permanently. Take it from the score they actually recorded.
         let currentYear = Calendar.current.component(.year, from: .now)
         let derivedBirthYear = latest.map { currentYear - $0.age } ?? (currentYear - 25)
+        // OPSEC: share the score, not the person. Contact details and unit are
+        // the fields that turn a training code into targeting data.
+        let strip = OPSECService.shared.stripIdentity
         let payload = SquadStatsPayload(
             code: joinedSquadCode.isEmpty ? nil : joinedSquadCode,
-            name: name.isEmpty ? "Soldier" : name,
-            rankTitle: myRankTitle.isEmpty ? nil : myRankTitle,
-            email: myShareEmail.isEmpty ? nil : myShareEmail,
-            phone: mySharePhone.isEmpty ? nil : mySharePhone,
+            name: strip ? "Soldier" : (name.isEmpty ? "Soldier" : name),
+            rankTitle: strip || myRankTitle.isEmpty ? nil : myRankTitle,
+            email: strip || myShareEmail.isEmpty ? nil : myShareEmail,
+            phone: strip || mySharePhone.isEmpty ? nil : mySharePhone,
             memberID: stableMemberID,
-            unit: myUnitName.isEmpty ? nil : myUnitName,
+            unit: strip || myUnitName.isEmpty ? nil : myUnitName,
             birthYear: derivedBirthYear,
             sexRaw: (latest?.sex ?? .male).rawValue,
             standardRaw: (latest?.standard ?? .general).rawValue,

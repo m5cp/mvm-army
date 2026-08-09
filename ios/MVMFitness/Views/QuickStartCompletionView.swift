@@ -177,7 +177,7 @@ struct QuickStartCompletionView: View {
 
     private var statsCard: some View {
         VStack(spacing: 0) {
-            if record.activity.usesGPS {
+            if record.hasDistance {
                 HStack(spacing: 0) {
                     statItem(value: record.formattedDistance, label: "Distance")
                     Rectangle().fill(MVMTheme.border).frame(width: 1, height: 40)

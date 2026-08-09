@@ -5,6 +5,7 @@ struct SquadView: View {
     @Environment(StoreViewModel.self) private var storeVM
 
     @State private var store = SquadStore()
+    @State private var showAppInvite = false
     @State private var showAddMember = false
     @State private var showTestDay = false
     @State private var selectedMember: SquadMember?
@@ -22,6 +23,7 @@ struct SquadView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 18) {
                         readinessHeader
+                        standingsSection
                         rosterSection
                         actionsSection
                         Text(LegalText.full)
@@ -61,6 +63,7 @@ struct SquadView: View {
             } message: {
                 Text("Squad data stays on this device. You are responsible for it. Consider using initials or roster numbers instead of full names. Records here are unofficial training aids — official results live on DA Form 705/DA 5500 and in ATIS.")
             }
+            .sheet(isPresented: $showAppInvite) { appInviteSheet }
             .onAppear {
                 store.reload()
                 if !noticeShown { showFirstUseNotice = true }
@@ -101,6 +104,102 @@ struct SquadView: View {
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(MVMTheme.border))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label): \(value)")
+    }
+
+    /// Squad standings. Verified by the leader, kept inside the unit.
+    @ViewBuilder
+    private var standingsSection: some View {
+        let rows = store.standings()
+        let scored = rows.filter { $0.total != nil }
+        if !scored.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("STANDINGS")
+                        .font(.caption.weight(.heavy)).tracking(1.2)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                    Spacer()
+                    if let average = store.averageAFTTotal {
+                        Text("SQUAD AVG \(average)")
+                            .font(MVMTheme.mono(10))
+                            .foregroundStyle(MVMTheme.tertiaryText)
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
+                }
+
+                VStack(spacing: 0) {
+                    ForEach(Array(scored.enumerated()), id: \.element.id) { index, row in
+                        standingRow(rank: index + 1, row: row)
+                        if index < scored.count - 1 {
+                            Rectangle()
+                                .fill(MVMTheme.border.opacity(0.5))
+                                .frame(height: 1)
+                        }
+                    }
+                }
+                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(MVMTheme.card))
+
+                let overdue = store.overdueMembers()
+                if !overdue.isEmpty {
+                    Text("\(overdue.count) \(overdue.count == 1 ? "member needs" : "members need") a test on record: \(overdue.map(\.name).joined(separator: ", "))")
+                        .font(.caption2)
+                        .foregroundStyle(MVMTheme.warning)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private func standingRow(rank: Int, row: SquadStore.StandingRow) -> some View {
+        HStack(spacing: 12) {
+            Text("\(rank)")
+                .font(MVMTheme.mono(12, weight: .bold))
+                .foregroundStyle(rank == 1 ? MVMTheme.accent : MVMTheme.tertiaryText)
+                .frame(width: 22, alignment: .leading)
+                .lineLimit(1)
+                .fixedSize()
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(row.member.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                if let rank = row.member.rankTitle, !rank.isEmpty {
+                    Text(rank)
+                        .font(.caption2)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            if let delta = row.delta, delta != 0 {
+                Text(delta > 0 ? "+\(delta)" : "\(delta)")
+                    .font(MVMTheme.mono(10, weight: .bold))
+                    .foregroundStyle(delta > 0 ? MVMTheme.success : MVMTheme.warning)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(row.total.map(String.init) ?? "—")
+                    .font(MVMTheme.mono(15, weight: .bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+                    .lineLimit(1)
+                    .fixedSize()
+                Text(row.passed == true ? "GO" : "NO GO")
+                    .font(MVMTheme.mono(9, weight: .bold))
+                    .foregroundStyle(row.passed == true ? MVMTheme.success : MVMTheme.danger)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Rank \(rank), \(row.member.name), \(row.total.map { "\($0) points" } ?? "no score"), \(row.passed == true ? "go" : "no go")")
     }
 
     private var rosterSection: some View {
@@ -173,6 +272,43 @@ struct SquadView: View {
         }
     }
 
+    /// An invite to the app itself. No roster, no scores, no personal data —
+    /// just a pointer to the App Store, so it is safe to hand to anyone.
+    private var appInviteSheet: some View {
+        NavigationStack {
+            VStack(spacing: 18) {
+                if let image = MVMQRService.appInvite() {
+                    Image(uiImage: image)
+                        .interpolation(.none)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: 240)
+                        .padding(14)
+                        .background(RoundedRectangle(cornerRadius: 18).fill(.white))
+                }
+                Text("Invite to MVM Fitness")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+                Text("Have them scan this to get the app. It carries no personal data — no roster, no scores, no unit.")
+                    .font(.subheadline)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity)
+            .background(MVMTheme.background.ignoresSafeArea())
+            .navigationTitle("Invite")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { showAppInvite = false }
+                }
+            }
+        }
+    }
+
     private var actionsSection: some View {
         VStack(spacing: 10) {
             Button {
@@ -197,6 +333,21 @@ struct SquadView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "qrcode")
                         Text("Invite").font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(maxWidth: .infinity).frame(height: 46)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(MVMTheme.card))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(MVMTheme.border))
+                    .contentShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Button {
+                    showAppInvite = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "app.badge")
+                        Text("Invite to App").font(.subheadline.weight(.semibold))
                     }
                     .foregroundStyle(MVMTheme.accent)
                     .frame(maxWidth: .infinity).frame(height: 46)

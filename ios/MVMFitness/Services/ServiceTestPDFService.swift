@@ -98,7 +98,7 @@ enum ServiceTestPDFService {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
         let rows: [(String, String)] = [
-            ("NAME", soldierName.isEmpty ? "—" : soldierName),
+            ("NAME", OPSECService.shared.stripIdentity || soldierName.isEmpty ? "—" : soldierName),
             ("ASSESSMENT", record.branch.displayName),
             ("DATE", formatter.string(from: record.date)),
             ("TYPE", "Example / practice score — not an official test event")

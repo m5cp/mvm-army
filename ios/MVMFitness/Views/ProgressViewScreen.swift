@@ -32,6 +32,7 @@ struct ProgressViewScreen: View {
                         primaryMetricsRow
                         thisWeekHero
                         interactiveWeekStrip
+                        distanceSection
                         localActivitySection
                         if !vm.quickStartRecords.isEmpty {
                             quickStartHistoryCard
@@ -554,6 +555,103 @@ struct ProgressViewScreen: View {
     }
 
     // MARK: - Activity Cards Section
+
+    /// Miles and a per-activity breakdown. Progress used to be step-count only:
+    /// distance appeared exactly once, as an 8pt caption on the five most recent
+    /// GPS sessions, and nothing was broken out by what the work actually was.
+    @ViewBuilder
+    private var distanceSection: some View {
+        let breakdown = vm.activityBreakdown
+        let miles = vm.totalTrackedMiles
+        if miles > 0 || !breakdown.isEmpty {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 8) {
+                    Image(systemName: "map")
+                        .foregroundStyle(MVMTheme.accent)
+                        .font(.subheadline.weight(.semibold))
+                    Text(miles > 0 ? "Distance" : "Activity Breakdown")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(MVMTheme.primaryText)
+                }
+
+                // Only show mileage tiles when there ARE miles — a strength-only
+                // user was getting a "Distance" header over three zeros.
+                if miles > 0 {
+                    HStack(spacing: 10) {
+                        milesTile("THIS WEEK", vm.milesThisWeek)
+                        milesTile("THIS MONTH", vm.milesThisMonth)
+                        milesTile("ALL TIME", miles)
+                    }
+                }
+
+                if !breakdown.isEmpty {
+                    Text("BY ACTIVITY")
+                        .font(MVMTheme.mono(10))
+                        .kerning(1.4)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+
+                    VStack(spacing: 0) {
+                        ForEach(breakdown) { item in
+                            HStack(spacing: 12) {
+                                Image(systemName: item.symbol)
+                                    .font(.subheadline)
+                                    .foregroundStyle(MVMTheme.accent)
+                                    .frame(width: 24)
+                                Text(item.name)
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(MVMTheme.primaryText)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                                Spacer(minLength: 8)
+                                if item.miles > 0 {
+                                    Text(String(format: "%.1f mi", item.miles))
+                                        .font(MVMTheme.mono(11, weight: .bold))
+                                        .foregroundStyle(MVMTheme.accent)
+                                        .lineLimit(1)
+                                        .fixedSize()
+                                }
+                                Text("\(item.sessions)")
+                                    .font(MVMTheme.mono(12, weight: .bold))
+                                    .foregroundStyle(MVMTheme.primaryText)
+                                    .lineLimit(1)
+                                    .fixedSize()
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .accessibilityElement(children: .combine)
+                        }
+                    }
+                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(MVMTheme.card))
+                }
+            }
+        }
+    }
+
+    private func milesTile(_ label: String, _ miles: Double) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label)
+                .font(MVMTheme.mono(9))
+                .kerning(1.1)
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .lineLimit(1)
+                .fixedSize()
+            Text(String(format: "%.1f", miles))
+                .font(MVMTheme.mono(19, weight: .bold))
+                .foregroundStyle(MVMTheme.primaryText)
+                .lineLimit(1)
+                .fixedSize()
+            Text("MILES")
+                .font(MVMTheme.mono(8))
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(MVMTheme.card))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label), \(String(format: "%.1f", miles)) miles")
+    }
 
     private var localActivitySection: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -1362,7 +1460,7 @@ struct ProgressViewScreen: View {
                     Text(record.formattedDuration)
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(MVMTheme.primaryText)
-                    if record.activity.usesGPS {
+                    if record.hasDistance {
                         Text(record.formattedDistance)
                             .font(.caption2.weight(.medium))
                             .foregroundStyle(MVMTheme.tertiaryText)
