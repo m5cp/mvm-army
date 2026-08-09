@@ -168,6 +168,13 @@ private struct SvcResultCard: View {
     let didSave: Bool
     let onSave: () -> Void
     let onShare: () -> Void
+    /// Builds the record to export. Every assessment gets an unofficial score
+    /// sheet, not just the AFT.
+    var pdfRecord: (() -> ServiceTestRecord)?
+
+    @AppStorage("profileDisplayName") private var profileDisplayName = ""
+    @State private var pdfURL: URL?
+    @State private var showPDFShare = false
 
     var body: some View {
         VStack(spacing: 14) {
@@ -230,6 +237,44 @@ private struct SvcResultCard: View {
                 .contentShape(RoundedRectangle(cornerRadius: 16))
             }
             .buttonStyle(PressScaleButtonStyle())
+
+            if let pdfRecord {
+                Button {
+                    let record = pdfRecord()
+                    guard let data = ServiceTestPDFService.generatePDF(from: record, soldierName: profileDisplayName),
+                          let url = ServiceTestPDFService.savePDFToTemp(data: data, record: record) else { return }
+                    pdfURL = url
+                    showPDFShare = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "doc.text")
+                        Text("Save Score Sheet (PDF)")
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(MVMTheme.text)
+                    .frame(height: 50)
+                    .frame(maxWidth: .infinity)
+                    .background(MVMTheme.well)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.hairline, lineWidth: 1)
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+
+                Text("Score sheets and cards from this app are unofficial practice records.")
+                    .font(.caption2)
+                    .foregroundStyle(MVMTheme.textFaint)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+            }
+        }
+        .sheet(isPresented: $showPDFShare) {
+            if let pdfURL {
+                ShareSheet(items: [pdfURL])
+            }
         }
     }
 }
@@ -375,7 +420,8 @@ struct NavyPRTContent: View {
                     vm.saveServiceTestRecord(buildRecord())
                     didSave = true
                 },
-                onShare: { shareRecord = buildRecord() }
+                onShare: { shareRecord = buildRecord() },
+                pdfRecord: { buildRecord() }
             )
         }
         .sensoryFeedback(.success, trigger: didSave)
@@ -593,7 +639,8 @@ struct AirForcePTContent: View {
                     vm.saveServiceTestRecord(buildRecord())
                     didSave = true
                 },
-                onShare: { shareRecord = buildRecord() }
+                onShare: { shareRecord = buildRecord() },
+                pdfRecord: { buildRecord() }
             )
         }
         .sensoryFeedback(.success, trigger: didSave)
@@ -785,7 +832,8 @@ struct MarineTestContent: View {
                     vm.saveServiceTestRecord(buildRecord())
                     didSave = true
                 },
-                onShare: { shareRecord = buildRecord() }
+                onShare: { shareRecord = buildRecord() },
+                pdfRecord: { buildRecord() }
             )
         }
         .sensoryFeedback(.success, trigger: didSave)
@@ -1016,7 +1064,8 @@ struct AdvancedReadinessContent: View {
                     vm.saveServiceTestRecord(buildRecord())
                     didSave = true
                 },
-                onShare: { if isComplete { shareRecord = buildRecord() } }
+                onShare: { if isComplete { shareRecord = buildRecord() } },
+                pdfRecord: { buildRecord() }
             )
             .disabled(!isComplete)
         }

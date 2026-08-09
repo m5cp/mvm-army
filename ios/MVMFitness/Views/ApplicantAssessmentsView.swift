@@ -119,6 +119,10 @@ struct ApplicantAssessmentContent: View {
         return result.practiceComposite >= 60
     }
 
+    @AppStorage("profileDisplayName") private var profileDisplayName = ""
+    @State private var pdfURL: URL?
+    @State private var showPDFShare = false
+
     private func buildRecord() -> ServiceTestRecord {
         var events: [ServiceTestEventDetail] = []
         if let marineResult {
@@ -264,6 +268,11 @@ struct ApplicantAssessmentContent: View {
         .sensoryFeedback(.success, trigger: didSave)
         .sheet(item: $shareRecord) { record in
             ServiceTestShareSheet(record: record, previousScore: vm.serviceTestRecords.first { $0.branch == .applicant && $0.subtitle == record.subtitle && $0.id != record.id }?.scoreValue)
+        }
+        .sheet(isPresented: $showPDFShare) {
+            if let pdfURL {
+                ShareSheet(items: [pdfURL])
+            }
         }
         .sheet(isPresented: $showAcademies) {
             AcademyComparisonView()
@@ -459,6 +468,33 @@ struct ApplicantAssessmentContent: View {
                 .contentShape(RoundedRectangle(cornerRadius: 16))
             }
             .buttonStyle(PressScaleButtonStyle())
+
+            Button {
+                let record = buildRecord()
+                guard let data = ServiceTestPDFService.generatePDF(from: record, soldierName: profileDisplayName),
+                      let url = ServiceTestPDFService.savePDFToTemp(data: data, record: record) else { return }
+                pdfURL = url
+                showPDFShare = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "doc.text")
+                    Text("Save Score Sheet (PDF)")
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(MVMTheme.text)
+                .frame(height: 50)
+                .frame(maxWidth: .infinity)
+                .background(MVMTheme.well)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay { RoundedRectangle(cornerRadius: 16).stroke(MVMTheme.hairline, lineWidth: 1) }
+                .contentShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(PressScaleButtonStyle())
+
+            Text("Score sheets and cards from this app are unofficial practice records. They cannot be submitted to any admissions or scholarship board.")
+                .font(.caption2)
+                .foregroundStyle(MVMTheme.textFaint)
+                .multilineTextAlignment(.center)
         }
     }
 

@@ -12,6 +12,26 @@ nonisolated enum ServiceTestBranch: String, Codable, CaseIterable, Identifiable,
 
     var id: String { rawValue }
 
+    /// Full name used on the unofficial score sheet.
+    var displayName: String { rawValue }
+
+    /// Where the OFFICIAL record for this assessment actually lives. Printed on
+    /// every exported score sheet so nobody mistakes the app's output for one.
+    var authorityNote: String {
+        switch self {
+        case .navy:
+            return "Official Navy PRT results are recorded by your Command Fitness Leader in PRIMS. This sheet is not a PRIMS entry."
+        case .airForce:
+            return "Official Air Force PT results are recorded by a certified PTL and live in myFSS. This sheet is not an official AF Form 4446."
+        case .marinePFT, .marineCFT:
+            return "Official Marine Corps PFT/CFT results are recorded in MCTFS by an authorised monitor. This sheet is not an MCTFS entry."
+        case .advancedReadiness:
+            return "Advanced Readiness benchmarks are this app's own proprietary standards. They are NOT official military selection criteria and no unit, school or selection board recognises them."
+        case .applicant:
+            return "ROTC and Service Academy fitness standards are set by each program and scored by an authorised administrator. These are practice values only and cannot be submitted to any admissions or scholarship board."
+        }
+    }
+
     /// Short code for chips and compact rows.
     var shortCode: String {
         switch self {

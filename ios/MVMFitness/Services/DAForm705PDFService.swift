@@ -54,7 +54,7 @@ enum DAForm705PDFService {
             .foregroundColor: UIColor.darkGray
         ]
 
-        let title = "AFT SCORE REPORT — UNOFFICIAL"
+        let title = "EXAMPLE AFT SCORE REPORT — UNOFFICIAL"
         let titleSize = (title as NSString).size(withAttributes: titleAttrs)
         let titleX = (pageWidth - titleSize.width) / 2
         (title as NSString).draw(at: CGPoint(x: titleX, y: currentY), withAttributes: titleAttrs)
@@ -83,7 +83,7 @@ enum DAForm705PDFService {
             .font: UIFont.boldSystemFont(ofSize: 8),
             .foregroundColor: UIColor(red: 0.5, green: 0.3, blue: 0.0, alpha: 1.0)
         ]
-        let bannerText = "UNOFFICIAL — FOR PERSONAL REFERENCE ONLY — NOT AN OFFICIAL ARMY RECORD"
+        let bannerText = "EXAMPLE ONLY — NOT DA FORM 705 — NOT AN OFFICIAL ARMY RECORD"
         let bannerSize = (bannerText as NSString).size(withAttributes: bannerAttrs)
         let bannerX = margin + (contentWidth - bannerSize.width) / 2
         (bannerText as NSString).draw(at: CGPoint(x: bannerX, y: currentY + 6), withAttributes: bannerAttrs)
@@ -118,7 +118,8 @@ enum DAForm705PDFService {
 
         let halfWidth = (contentWidth - 8) / 2
         let row1Y = currentY
-        drawLabeledField(in: ctx, at: row1Y, x: margin, width: halfWidth, label: "5. TYPE", value: "Example Score")
+        // Deliberately hardcoded: this sheet is an example, never a real record.
+        drawLabeledField(in: ctx, at: row1Y, x: margin, width: halfWidth, label: "5. TYPE", value: "EXAMPLE — practice score")
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd MMM yyyy"
         currentY = drawLabeledField(in: ctx, at: row1Y, x: margin + halfWidth + 8, width: halfWidth, label: "6. DATE", value: dateFormatter.string(from: data.testDate))
@@ -341,7 +342,7 @@ enum DAForm705PDFService {
         let footerY = pageHeight - margin + 4
         let dateStr = DateFormatter.shortFileDate.string(from: .now)
 
-        let leftText = "AFT SCORE REPORT — UNOFFICIAL"
+        let leftText = "EXAMPLE — UNOFFICIAL — NOT DA FORM 705"
         (leftText as NSString).draw(at: CGPoint(x: margin, y: footerY), withAttributes: footerAttrs)
 
         let rightText = "Generated \(dateStr) — MVM Fitness App"

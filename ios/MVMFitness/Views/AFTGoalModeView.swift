@@ -655,6 +655,16 @@ enum AFTGoalCardRenderer {
             let leftStr = NSAttributedString(string: "Me vs Me", attributes: leftAttrs)
             leftStr.draw(at: CGPoint(x: 60, y: footerY + 20))
 
+            // This card carries a score, so it gets the same marking as the AFT
+            // and service cards.
+            let unofficialAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.monospacedSystemFont(ofSize: 11, weight: .semibold),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.35),
+                .kern: 1.2
+            ]
+            NSAttributedString(string: "UNOFFICIAL — PRACTICE / TARGET SCORE", attributes: unofficialAttrs)
+                .draw(at: CGPoint(x: 60, y: footerY + 46))
+
             ShareCardCGHelpers.drawAppQRFooter(context: context, width: width, footerTopY: footerY)
         }
     }

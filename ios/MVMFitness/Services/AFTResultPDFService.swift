@@ -52,7 +52,7 @@ enum AFTResultPDFService {
             .font: UIFont.boldSystemFont(ofSize: 16),
             .foregroundColor: UIColor.black
         ]
-        let title = "AFT RESULT SUMMARY"
+        let title = "AFT RESULT SUMMARY — UNOFFICIAL"
         (title as NSString).draw(at: CGPoint(x: margin, y: currentY), withAttributes: titleAttrs)
 
         let dateFormatter = DateFormatter()
@@ -72,7 +72,20 @@ enum AFTResultPDFService {
             .foregroundColor: UIColor.gray
         ]
         ("Me vs Me — Army Fitness Test" as NSString).draw(at: CGPoint(x: margin, y: currentY), withAttributes: subtitleAttrs)
-        currentY += 18
+        currentY += 14
+
+        // This is a practice summary, not a graded test event. Say so on the
+        // page rather than leaving it to be inferred.
+        let disclaimerAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 8.5),
+            .foregroundColor: UIColor.black
+        ]
+        ("EXAMPLE / PRACTICE SCORE — NOT AN OFFICIAL ARMY RECORD. Official AFT results are recorded on DA Form 705 and in ATIS."
+            as NSString).draw(
+                in: CGRect(x: margin, y: currentY, width: pageWidth - margin * 2, height: 22),
+                withAttributes: disclaimerAttrs
+            )
+        currentY += 24
 
         UIColor(white: 0.85, alpha: 1).setStroke()
         let line = UIBezierPath()

@@ -502,6 +502,16 @@ enum ServiceTestCardRenderer {
         NSAttributedString(string: "MVM FITNESS", attributes: taglineAttrs)
             .draw(at: CGPoint(x: 60, y: y + 44))
 
+        // A shared card is a training brag, not a record. Mark it, small but
+        // legible, so it cannot be passed off as an official result.
+        let unofficialAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.monospacedSystemFont(ofSize: 11, weight: .semibold),
+            .foregroundColor: cream.withAlphaComponent(0.55),
+            .kern: 1.2
+        ]
+        NSAttributedString(string: "UNOFFICIAL — PRACTICE SCORE", attributes: unofficialAttrs)
+            .draw(at: CGPoint(x: 60, y: y + 70))
+
         ShareCardCGHelpers.drawAppQRFooter(context: context, width: width, footerTopY: y - 16)
     }
 }
