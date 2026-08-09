@@ -104,13 +104,10 @@ struct QRScannerSheet: View {
                 .font(.title3.weight(.bold))
                 .foregroundStyle(MVMTheme.primaryText)
 
-            #if targetEnvironment(simulator)
-            Text("Camera preview is unavailable in the Simulator. Run on a device to scan.")
-            #else
-            Text(cameraDenied
-                 ? "Camera access is off. Turn it on in Settings to scan a code."
-                 : "Point the camera at a squad, plan or workout QR code.")
-            #endif
+            // The modifier chain has to live INSIDE each branch. Trailing it
+            // after #endif orphans it from the Text and the compiler reads it as
+            // a bare member on View.
+            Text(placeholderMessage)
                 .font(.subheadline)
                 .foregroundStyle(MVMTheme.secondaryText)
                 .multilineTextAlignment(.center)
@@ -313,6 +310,18 @@ struct QRScannerSheet: View {
         }
         .padding(18)
         .premiumCard()
+    }
+
+    /// Simulator has no camera at all; on device the message depends on whether
+    /// the user has denied access.
+    private var placeholderMessage: String {
+        #if targetEnvironment(simulator)
+        return "Camera preview is unavailable in the Simulator. Run on a device to scan."
+        #else
+        return cameraDenied
+            ? "Camera access is off. Turn it on in Settings to scan a code."
+            : "Point the camera at a squad, plan or workout QR code."
+        #endif
     }
 
     private func handleScannedCode(_ code: String) {
