@@ -817,28 +817,51 @@ struct AdvancedReadinessContent: View {
         ReadinessScoringData.curves[eventID]
     }
 
-    private func rawValue(_ eventID: String) -> Double {
-        guard let curve = curve(eventID) else { return 0 }
+    /// Returns nil when the user has not entered this event yet, so the
+    /// benchmark's completeness guard can distinguish "blank" from "zero".
+    private func rawValue(_ eventID: String) -> Double? {
+        guard let curve = curve(eventID) else { return nil }
         switch curve.unit {
         case "seconds":
-            return Double(svcTime(minInputs[eventID] ?? "0", secInputs[eventID] ?? "0"))
+            let minText = minInputs[eventID] ?? ""
+            let secText = secInputs[eventID] ?? ""
+            guard !(minText.isEmpty && secText.isEmpty) else { return nil }
+            let seconds = svcTime(minText, secText)
+            return seconds > 0 ? Double(seconds) : nil
         case "pass/fail":
-            return (binaryInputs[eventID] ?? false) ? 1 : 0
+            guard let value = binaryInputs[eventID] else { return nil }
+            return value ? 1 : 0
         default: // reps, points
-            return Double(Int(repInputs[eventID] ?? "") ?? 0)
+            let text = repInputs[eventID] ?? ""
+            guard !text.isEmpty, let reps = Int(text), reps >= 0 else { return nil }
+            return Double(reps)
         }
     }
 
     private var results: [String: Double] {
-        Dictionary(uniqueKeysWithValues: benchmark.events.map { ($0.eventID, rawValue($0.eventID)) })
+        var out: [String: Double] = [:]
+        for event in benchmark.events {
+            if let value = rawValue(event.eventID) { out[event.eventID] = value }
+        }
+        return out
     }
 
-    private var total: Double {
-        benchmark.totalScore(results: results, curves: ReadinessScoringData.curves) ?? 0
+    /// nil until every event in the benchmark has been entered.
+    private var totalOrNil: Double? {
+        benchmark.totalScore(results: results, curves: ReadinessScoringData.curves)
     }
+
+    private var isComplete: Bool { totalOrNil != nil }
+    private var total: Double { totalOrNil ?? 0 }
 
     private var rating: ReadinessRating { ReadinessRating.from(score: total) }
-    private var passed: Bool { total >= 60 } // Developing or better
+    private var passed: Bool { isComplete && total >= 60 } // Developing or better
+
+    /// Faint when the event has not been entered yet.
+    private static func pointsColor(for score: Double?) -> Color {
+        guard let score else { return MVMTheme.textFaint }
+        return score >= 60 ? MVMTheme.success : score > 0 ? MVMTheme.warning : MVMTheme.danger
+    }
 
     private func shortCode(_ eventID: String) -> String {
         switch eventID {
@@ -864,11 +887,12 @@ struct AdvancedReadinessContent: View {
 
     private func rawDisplay(_ eventID: String) -> String {
         guard let curve = curve(eventID) else { return "—" }
+        guard let value = rawValue(eventID) else { return "—" }
         switch curve.unit {
-        case "seconds": return svcTimeDisplay(Int(rawValue(eventID)))
-        case "pass/fail": return (binaryInputs[eventID] ?? false) ? "PASS" : "NOT DONE"
-        case "points": return "\(Int(rawValue(eventID))) PTS"
-        default: return "\(Int(rawValue(eventID))) REPS"
+        case "seconds": return svcTimeDisplay(Int(value))
+        case "pass/fail": return value >= 1 ? "PASS" : "NOT DONE"
+        case "points": return "\(Int(value)) PTS"
+        default: return "\(Int(value)) REPS"
         }
     }
 
@@ -882,7 +906,7 @@ struct AdvancedReadinessContent: View {
             resultLabel: rating.rawValue.uppercased(),
             passed: passed,
             events: benchmark.events.map { event in
-                let score = curve(event.eventID)?.score(for: rawValue(event.eventID)) ?? 0
+                let score = rawValue(event.eventID).flatMap { raw in curve(event.eventID)?.score(for: raw) } ?? 0
                 return .init(code: shortCode(event.eventID), raw: rawDisplay(event.eventID), points: String(format: "%.0f", score))
             }
         )
@@ -932,12 +956,13 @@ struct AdvancedReadinessContent: View {
 
             ForEach(benchmark.events, id: \.eventID) { event in
                 if let curve = curve(event.eventID) {
-                    let score = curve.score(for: rawValue(event.eventID))
+                    let entered = rawValue(event.eventID)
+                    let score = entered.map { curve.score(for: $0) }
                     SvcEventRow(
                         code: shortCode(event.eventID),
                         title: "\(curve.displayName) \(MVMTheme.dot) \(Int(event.weight * 100))%",
-                        pointsDisplay: String(format: "%.0f", score),
-                        pointsColor: score >= 60 ? MVMTheme.success : score > 0 ? MVMTheme.warning : MVMTheme.danger
+                        pointsDisplay: score.map { String(format: "%.0f", $0) } ?? "—",
+                        pointsColor: Self.pointsColor(for: score)
                     ) {
                         eventInput(for: event.eventID, curve: curve)
                     }
@@ -945,18 +970,20 @@ struct AdvancedReadinessContent: View {
             }
 
             SvcResultCard(
-                scoreDisplay: String(format: "%.0f", total),
+                scoreDisplay: isComplete ? String(format: "%.0f", total) : "—",
                 maxDisplay: "/ 100",
-                resultLabel: rating.rawValue.uppercased(),
+                resultLabel: isComplete ? rating.rawValue.uppercased() : "ENTER ALL EVENTS",
                 passed: passed,
                 saveTitle: "Save Advanced Readiness Result",
                 didSave: didSave,
                 onSave: {
+                    guard isComplete else { return }
                     vm.saveServiceTestRecord(buildRecord())
                     didSave = true
                 },
-                onShare: { shareRecord = buildRecord() }
+                onShare: { if isComplete { shareRecord = buildRecord() } }
             )
+            .disabled(!isComplete)
         }
         .sensoryFeedback(.success, trigger: didSave)
         .sheet(item: $shareRecord) { record in
@@ -969,10 +996,21 @@ struct AdvancedReadinessContent: View {
     /// If a benchmark includes the AFT total event, pre-fill it from the
     /// user's latest saved AFT score so re-entry is never required.
     private func prefillAFTTotal() {
+        seedBinaryDefaults()
         guard benchmark.events.contains(where: { $0.eventID == "armyFitnessTotal" }),
               repInputs["armyFitnessTotal"] == nil,
               let latest = vm.latestAFTScore else { return }
         repInputs["armyFitnessTotal"] = "\(latest.totalScore)"
+    }
+
+    /// A pass/fail chip renders "Not Completed" as selected, so leaving the
+    /// value nil would show an answered control while the model treats the
+    /// event as blank — an invisible reason the Save button stays disabled.
+    /// Seeding false makes the displayed state and the model agree.
+    private func seedBinaryDefaults() {
+        for event in benchmark.events where curve(event.eventID)?.unit == "pass/fail" {
+            if binaryInputs[event.eventID] == nil { binaryInputs[event.eventID] = false }
+        }
     }
 
     @ViewBuilder

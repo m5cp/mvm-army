@@ -28,15 +28,18 @@ struct EventCurve: Codable {
             return performance >= 1 ? 100 : 0
         }
 
+        // A non-positive measurement is not a performance — it means the field
+        // was left blank. Without this guard a lowerIsBetter event treats 0
+        // seconds as the fastest possible time and awards the maximum score.
+        guard performance > 0 else { return 0 }
+
         let ordered = anchors.sorted { $0.performance < $1.performance }
 
         if performance <= ordered[0].performance {
-            return direction == .higherIsBetter ? ordered[0].score : ordered[0].score
+            return ordered[0].score
         }
         if performance >= ordered[ordered.count - 1].performance {
-            return direction == .higherIsBetter
-                ? ordered[ordered.count - 1].score
-                : ordered[ordered.count - 1].score
+            return ordered[ordered.count - 1].score
         }
 
         for index in 0..<(ordered.count - 1) {

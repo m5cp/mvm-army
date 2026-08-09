@@ -19,6 +19,8 @@ public enum TableScorer {
         case .higherIsBetter:
             return thresholds.sorted { $0.threshold > $1.threshold }.first(where: { value >= $0.threshold })?.points
         case .lowerIsBetter:
+            // Zero is a blank field, not a perfect time.
+            guard value > 0 else { return nil }
             return thresholds.sorted { $0.threshold < $1.threshold }.first(where: { value <= $0.threshold })?.points
         }
     }
@@ -255,6 +257,13 @@ public struct NavyEventResult: Codable { public let points: Int; public let cate
 public enum NavyScoring {
     public static func score(event: NavyEvent, rawValue: Int, age: Int, sex: ServiceSex, altitude: NavyAltitude) -> NavyEventResult {
         let profile = NavyProfile(age: age, sex: sex, altitude: altitude); guard let rows = tables[profile] else { return .init(points: 0, category: .failure, level: .none) }
+        // A non-positive time is a blank field; without this the fastest row matches.
+        switch event {
+        case .run1_5Mile, .row2Kilometer, .swim500Yard, .swim450Meter:
+            guard rawValue > 0 else { return .init(points: 0, category: .failure, level: .none) }
+        case .pushUps, .forearmPlank:
+            break
+        }
         let matched: NavyStandardRow?
         switch event {
         case .pushUps: matched = rows.first(where: { rawValue >= $0.pushUps })

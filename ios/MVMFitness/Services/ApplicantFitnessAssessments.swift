@@ -159,6 +159,9 @@ public struct ApplicantScoreCurve: Codable, Sendable {
     public func score(for performance: Double) -> Double {
         guard !anchors.isEmpty else { return 0 }
 
+        // Zero is a blank field, not a record performance.
+        guard performance > 0 else { return 0 }
+
         if performance <= anchors[0].performance {
             return clamp(anchors[0].score)
         }

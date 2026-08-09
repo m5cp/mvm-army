@@ -1046,9 +1046,18 @@ final class AppViewModel {
         let calendar = Calendar.current
         let completedDays = Set(completedRecords.map { calendar.startOfDay(for: $0.date) })
 
-        var streakCount = 0
-        var currentDay = calendar.startOfDay(for: .now)
+        let today = calendar.startOfDay(for: .now)
 
+        // A streak stays alive until a full day is missed. If today has no
+        // session yet, count back from yesterday rather than reporting zero.
+        var currentDay = today
+        if !completedDays.contains(today) {
+            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
+                  completedDays.contains(yesterday) else { return 0 }
+            currentDay = yesterday
+        }
+
+        var streakCount = 0
         while completedDays.contains(currentDay) {
             streakCount += 1
             guard let previous = calendar.date(byAdding: .day, value: -1, to: currentDay) else { break }

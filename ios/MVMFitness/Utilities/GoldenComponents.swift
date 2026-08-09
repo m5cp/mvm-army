@@ -267,6 +267,9 @@ enum BadgeArt: Hashable {
 struct BadgeCoin: View {
     let art: BadgeArt
     let name: String
+    /// Optional "how to earn" line shown under the name. Empty keeps the
+    /// original two-line layout for existing call sites.
+    var how: String = ""
     let status: String // "JUL 12" / "ACTIVE" / "LOCKED"
     let earned: Bool
     /// True only for the brief window right after a badge flips locked -> earned.
@@ -274,17 +277,19 @@ struct BadgeCoin: View {
     var isNewlyEarned: Bool = false
 
     /// Legacy convenience — existing call sites pass the PNG asset name.
-    init(asset: String, name: String, status: String, earned: Bool, isNewlyEarned: Bool = false) {
+    init(asset: String, name: String, how: String = "", status: String, earned: Bool, isNewlyEarned: Bool = false) {
         self.art = .png(asset)
         self.name = name
+        self.how = how
         self.status = status
         self.earned = earned
         self.isNewlyEarned = isNewlyEarned
     }
 
-    init(art: BadgeArt, name: String, status: String, earned: Bool, isNewlyEarned: Bool = false) {
+    init(art: BadgeArt, name: String, how: String = "", status: String, earned: Bool, isNewlyEarned: Bool = false) {
         self.art = art
         self.name = name
+        self.how = how
         self.status = status
         self.earned = earned
         self.isNewlyEarned = isNewlyEarned
@@ -324,6 +329,16 @@ struct BadgeCoin: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(earned ? MVMTheme.text : MVMTheme.textMuted)
                 .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+            if !how.isEmpty {
+                Text(how)
+                    .font(.system(size: 9))
+                    .foregroundStyle(MVMTheme.textFaint)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+            }
             Text(status)
                 .font(MVMTheme.mono(9)).kerning(1)
                 .foregroundStyle(earned ? MVMTheme.amber : MVMTheme.textFaint)

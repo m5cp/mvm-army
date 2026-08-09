@@ -287,6 +287,17 @@ private enum MarineScoringMath {
     ) -> MarineEventScore {
         let time = max(0, seconds)
 
+        // A zero time means the field was left blank, not a record run.
+        guard time > 0 else {
+            return MarineEventScore(
+                points: 0,
+                passed: false,
+                maximumPoints: standard.maximumPoints,
+                rawValue: 0,
+                eventName: eventName
+            )
+        }
+
         guard time <= standard.minimumPassingSeconds else {
             return MarineEventScore(
                 points: 0,
