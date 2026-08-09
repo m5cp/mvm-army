@@ -855,12 +855,45 @@ struct AdvancedReadinessContent: View {
     private var total: Double { totalOrNil ?? 0 }
 
     private var rating: ReadinessRating { ReadinessRating.from(score: total) }
-    private var passed: Bool { isComplete && total >= 60 } // Developing or better
+    /// Every GO/NO-GO event (the rucks, water confidence) met its standard.
+    private var gatesPassed: Bool {
+        benchmark.gatesPassed(results: results, curves: ReadinessScoringData.curves)
+    }
+
+    /// Points alone are not a pass — a missed ruck cap fails the benchmark
+    /// outright, exactly like the Air Force 2 km walk gates its composite.
+    private var passed: Bool { isComplete && gatesPassed && total >= 60 }
 
     /// Faint when the event has not been entered yet.
     private static func pointsColor(for score: Double?) -> Color {
         guard let score else { return MVMTheme.textFaint }
         return score >= 60 ? MVMTheme.success : score > 0 ? MVMTheme.warning : MVMTheme.danger
+    }
+
+    /// Every row now states the standard it is measured against — the maximum
+    /// allowable time for a gate, or the 60/100 point references otherwise.
+    /// Previously the row showed only the event's weight.
+    private static func rowTitle(curve: EventCurve, event: BenchmarkEvent) -> String {
+        if let standard = curve.standardLabel {
+            return "\(curve.displayName) \(MVMTheme.dot) \(standard)"
+        }
+        return "\(curve.displayName) \(MVMTheme.dot) \(Int(event.weight * 100))%"
+    }
+
+    private static func rowValue(curve: EventCurve, entered: Double?, score: Double?) -> String {
+        if curve.isGate {
+            guard entered != nil else { return "—" }
+            return curve.passesGate(entered) ? "GO" : "NO GO"
+        }
+        return score.map { String(format: "%.0f", $0) } ?? "—"
+    }
+
+    private static func rowColor(curve: EventCurve, entered: Double?, score: Double?) -> Color {
+        if curve.isGate {
+            guard entered != nil else { return MVMTheme.textFaint }
+            return curve.passesGate(entered) ? MVMTheme.success : MVMTheme.danger
+        }
+        return pointsColor(for: score)
     }
 
     private func shortCode(_ eventID: String) -> String {
@@ -903,7 +936,7 @@ struct AdvancedReadinessContent: View {
             scoreDisplay: String(format: "%.0f", total),
             maxDisplay: "/ 100",
             scoreValue: total,
-            resultLabel: rating.rawValue.uppercased(),
+            resultLabel: gatesPassed ? rating.rawValue.uppercased() : "NO GO \(MVMTheme.dot) STANDARD NOT MET",
             passed: passed,
             events: benchmark.events.map { event in
                 let score = rawValue(event.eventID).flatMap { raw in curve(event.eventID)?.score(for: raw) } ?? 0
@@ -960,9 +993,9 @@ struct AdvancedReadinessContent: View {
                     let score = entered.map { curve.score(for: $0) }
                     SvcEventRow(
                         code: shortCode(event.eventID),
-                        title: "\(curve.displayName) \(MVMTheme.dot) \(Int(event.weight * 100))%",
-                        pointsDisplay: score.map { String(format: "%.0f", $0) } ?? "—",
-                        pointsColor: Self.pointsColor(for: score)
+                        title: Self.rowTitle(curve: curve, event: event),
+                        pointsDisplay: Self.rowValue(curve: curve, entered: entered, score: score),
+                        pointsColor: Self.rowColor(curve: curve, entered: entered, score: score)
                     ) {
                         eventInput(for: event.eventID, curve: curve)
                     }
@@ -972,7 +1005,9 @@ struct AdvancedReadinessContent: View {
             SvcResultCard(
                 scoreDisplay: isComplete ? String(format: "%.0f", total) : "—",
                 maxDisplay: "/ 100",
-                resultLabel: isComplete ? rating.rawValue.uppercased() : "ENTER ALL EVENTS",
+                resultLabel: isComplete
+                    ? (gatesPassed ? rating.rawValue.uppercased() : "NO GO \(MVMTheme.dot) STANDARD NOT MET")
+                    : "ENTER ALL EVENTS",
                 passed: passed,
                 saveTitle: "Save Advanced Readiness Result",
                 didSave: didSave,

@@ -134,9 +134,10 @@ struct SquadMyStatsSheet: View {
     @AppStorage("myRankTitle") private var myRankTitle = ""
     @AppStorage("myShareEmail") private var myShareEmail = ""
     @AppStorage("mySharePhone") private var mySharePhone = ""
-    @AppStorage("birthYear") private var birthYear = 1998
-    @AppStorage("soldierSex") private var soldierSexRaw = SoldierSex.male.rawValue
-    @AppStorage("aftStandard") private var aftStandardRaw = AFTStandard.general.rawValue
+    @AppStorage("myUnitName") private var myUnitName = ""
+    /// A stable identity for this device's soldier, so a rename on the leader's
+    /// roster does not create a duplicate member on the next scan.
+    @AppStorage("myShareMemberID") private var myShareMemberIDRaw = ""
 
     @State private var name = ""
     @State private var qrImage: UIImage?
@@ -156,6 +157,7 @@ struct SquadMyStatsSheet: View {
                         Group {
                             TextField("Name", text: $name)
                             TextField("Rank / Title (optional)", text: $myRankTitle)
+                            TextField("Unit (optional)", text: $myUnitName)
                             TextField("Email (optional)", text: $myShareEmail)
                                 .keyboardType(.emailAddress)
                                 .textInputAutocapitalization(.never)
@@ -170,6 +172,7 @@ struct SquadMyStatsSheet: View {
                         .onChange(of: myRankTitle) { _, _ in regenerate() }
                         .onChange(of: myShareEmail) { _, _ in regenerate() }
                         .onChange(of: mySharePhone) { _, _ in regenerate() }
+            .onChange(of: myUnitName) { _, _ in regenerate() }
 
                         if let qrImage {
                             Image(uiImage: qrImage)
@@ -214,17 +217,35 @@ struct SquadMyStatsSheet: View {
         .preferredColorScheme(.dark)
     }
 
+    /// Created once and reused, so every code this device emits identifies the
+    /// same soldier.
+    private var stableMemberID: UUID {
+        if let existing = UUID(uuidString: myShareMemberIDRaw) { return existing }
+        let fresh = UUID()
+        myShareMemberIDRaw = fresh.uuidString
+        return fresh
+    }
+
     private func regenerate() {
         let latest = vm.latestAFTScore
+        // Identity used to come from three @AppStorage keys — birthYear,
+        // soldierSex, aftStandard — that NOTHING in the app ever wrote. Every
+        // code emitted claimed 1998 / Male / General, so the receiving roster
+        // scored the soldier against the wrong age band and sex column
+        // permanently. Take it from the score they actually recorded.
+        let currentYear = Calendar.current.component(.year, from: .now)
+        let derivedBirthYear = latest.map { currentYear - $0.age } ?? (currentYear - 25)
         let payload = SquadStatsPayload(
             code: joinedSquadCode.isEmpty ? nil : joinedSquadCode,
             name: name.isEmpty ? "Soldier" : name,
             rankTitle: myRankTitle.isEmpty ? nil : myRankTitle,
             email: myShareEmail.isEmpty ? nil : myShareEmail,
             phone: mySharePhone.isEmpty ? nil : mySharePhone,
-            birthYear: birthYear,
-            sexRaw: soldierSexRaw,
-            standardRaw: aftStandardRaw,
+            memberID: stableMemberID,
+            unit: myUnitName.isEmpty ? nil : myUnitName,
+            birthYear: derivedBirthYear,
+            sexRaw: (latest?.sex ?? .male).rawValue,
+            standardRaw: (latest?.standard ?? .general).rawValue,
             aftDate: latest?.date,
             aftRaw: latest.map { [$0.deadliftLbs, $0.pushUpReps, $0.sdcSeconds, $0.plankSeconds, $0.runSeconds] },
             aftPoints: latest.map { [$0.deadliftPoints, $0.pushUpPoints, $0.sdcPoints, $0.plankPoints, $0.runPoints] },
@@ -247,6 +268,7 @@ struct SquadMyStatsSheet: View {
 
 struct SquadScanSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(StoreViewModel.self) private var purchases
     let store: SquadStore
 
     @AppStorage("joinedSquadName") private var joinedSquadName = ""
@@ -327,7 +349,7 @@ struct SquadScanSheet: View {
         }
 
         if let stats = try? decoder.decode(SquadStatsPayload.self, from: data), stats.kind == "mvmSquadStats" {
-            let summary = store.importStats(stats)
+            let summary = store.importStats(stats, isPremium: purchases.isPremium)
             resultIsError = false
             scanTrigger.toggle()
             resultMessage = summary

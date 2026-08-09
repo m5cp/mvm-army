@@ -2,6 +2,11 @@ import SwiftUI
 
 /// Onboarding step 6 — the system notification prompt fires ONLY if the user taps Enable.
 struct NotificationPrimerView: View {
+    @AppStorage("dailyReminderEnabled") private var dailyReminderEnabled = false
+    // Must match ProfileView's keys, or onboarding schedules one time while the
+    // Profile row displays — and later reschedules — a different one.
+    @AppStorage("reminderHour") private var reminderHour = 6
+    @AppStorage("reminderMinute") private var reminderMinute = 0
     let onFinished: () -> Void
 
     var body: some View {
@@ -21,7 +26,19 @@ struct NotificationPrimerView: View {
 
             Button {
                 Task {
-                    _ = await NotificationManager.requestPermission()
+                    // Permission was requested and nothing was ever scheduled —
+                    // the user granted access during onboarding and then never
+                    // received a single reminder, while the Profile toggle still
+                    // read Off. Turn the preference on and schedule it.
+                    let granted = await NotificationManager.requestPermission()
+                    if granted {
+                        dailyReminderEnabled = true
+                        var comps = DateComponents()
+                        comps.hour = reminderHour
+                        comps.minute = reminderMinute
+                        let when = Calendar.current.date(from: comps) ?? .now
+                        await NotificationManager.scheduleDailyReminder(at: when)
+                    }
                     AnalyticsService.track(.notificationPrimerEnabled)
                     onFinished()
                 }

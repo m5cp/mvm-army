@@ -36,6 +36,12 @@ enum DataStore {
 
     // MARK: - Public API (matches LocalStore exactly)
 
+    /// Keys that must never leave the device. The Squad roster holds OTHER
+    /// soldiers' names, emails and phone numbers, and the app tells the user on
+    /// screen that "Squad data stays on this device" — mirroring it into the
+    /// owner's personal iCloud contradicted that promise.
+    static let deviceOnlyKeys: Set<String> = ["squadData"]
+
     static func save<T: Codable>(_ value: T, forKey key: String) {
         // Encode on the caller so the value is captured as bytes and the write
         // can safely hop threads.
@@ -53,7 +59,7 @@ enum DataStore {
             } catch {
                 print("DataStore save failed for \(key): \(error.localizedDescription)")
             }
-            if let cloud = iCloudFolder {
+            if !deviceOnlyKeys.contains(key), let cloud = iCloudFolder {
                 try? data.write(to: cloud.appendingPathComponent("\(key).json"), options: [.atomic])
             }
         }
@@ -63,7 +69,7 @@ enum DataStore {
         let localFile = localURL(key)
         var candidates: [URL] = []
         if FileManager.default.fileExists(atPath: localFile.path) { candidates.append(localFile) }
-        if let cloud = iCloudFolder {
+        if !deviceOnlyKeys.contains(key), let cloud = iCloudFolder {
             let cloudFile = cloud.appendingPathComponent("\(key).json")
             if FileManager.default.fileExists(atPath: cloudFile.path) { candidates.append(cloudFile) }
         }
@@ -154,6 +160,23 @@ enum DataStore {
                 for file in contents where file.pathExtension == "json" {
                     try? FileManager.default.removeItem(at: file)
                 }
+            }
+        }
+    }
+
+    /// Earlier builds mirrored every key to iCloud, including the squad roster.
+    /// Marking it device-only stops FUTURE writes but leaves other soldiers'
+    /// names, emails and phone numbers sitting in the owner's iCloud container.
+    /// Remove them once.
+    private static let cloudPurgeFlag = "deviceOnlyCloudPurged_v1"
+
+    static func purgeDeviceOnlyKeysFromCloud() {
+        guard !UserDefaults.standard.bool(forKey: cloudPurgeFlag) else { return }
+        UserDefaults.standard.set(true, forKey: cloudPurgeFlag)
+        ioQueue.async {
+            guard let cloud = iCloudFolder else { return }
+            for key in deviceOnlyKeys {
+                try? FileManager.default.removeItem(at: cloud.appendingPathComponent("\(key).json"))
             }
         }
     }

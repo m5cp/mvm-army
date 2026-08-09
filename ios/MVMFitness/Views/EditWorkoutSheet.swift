@@ -211,9 +211,17 @@ struct EditWorkoutSheet: View {
                         noteField(index: index)
 
                         Button(role: .destructive) {
+                            // Remove by identity, not by index. This row's body
+                            // holds live bindings into exercises[index] and may
+                            // have a TextField still committing — removing by a
+                            // captured index re-evaluates a stale row and traps
+                            // with "Index out of range".
+                            let doomedID = exercises[safe: index]?.id
                             withAnimation {
-                                exercises.remove(at: index)
                                 expandedID = nil
+                                if let doomedID {
+                                    exercises.removeAll { $0.id == doomedID }
+                                }
                             }
                         } label: {
                             HStack(spacing: 6) {

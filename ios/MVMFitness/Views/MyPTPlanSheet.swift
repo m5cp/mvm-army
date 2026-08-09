@@ -1140,6 +1140,8 @@ struct PlanShareSheet: View {
 
 struct PlanPDFExportSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(StoreViewModel.self) private var store
+    @State private var showUpgrade: Bool = false
 
     let plan: WeeklyPlan
     let goal: PTGoal?
@@ -1220,6 +1222,7 @@ struct PlanPDFExportSheet: View {
             }
             .toolbarBackground(MVMTheme.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .sheet(isPresented: $showUpgrade) { UpgradeView() }
             .sheet(isPresented: $showShareSheet) {
                 if let pdfURL {
                     ShareSheet(items: [pdfURL])
@@ -1250,6 +1253,13 @@ struct PlanPDFExportSheet: View {
     }
 
     private func generateAndShare() {
+        // Plan PDF export is advertised as Pro on the paywall and had no check
+        // at all. The calculator's own exports stay free; this is programming
+        // you built for other people.
+        guard ProGate.isUnlocked(.planPDFExport, isPremium: store.isPremium) else {
+            showUpgrade = true
+            return
+        }
         isGenerating = true
 
         guard let pdfData = PTPlanPDFService.generatePDF(from: plan, goal: goal) else {

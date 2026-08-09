@@ -1149,11 +1149,13 @@ struct HomeView: View {
                     photo: "photo-ruck-man-coldbreath"
                 ) {
                     toolTapTrigger.toggle()
-                    if ProGate.isUnlocked(.unitPTBuilder, isPremium: store.isPremium, savedUnitPTPlanCount: vm.unitPTPlans.count) {
-                        showUnitPTSheet = true
-                    } else {
-                        showUpgradeFromGate = true
-                    }
+                    // Always open the sheet. The gate belongs on GENERATING a new
+                    // plan, not on opening the builder — this row is the only way
+                    // to view, edit, share or delete the plan you already have, so
+                    // gating it locked a free user out of their own work. The old
+                    // count was also wrong: it counted plans scanned from someone
+                    // else's QR, which the builder never writes.
+                    showUnitPTSheet = true
                 }
 
                 planRow(

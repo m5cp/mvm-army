@@ -4,6 +4,8 @@ import CoreImage.CIFilterBuiltins
 struct UnitPTBuilderSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppViewModel.self) private var vm
+    @Environment(StoreViewModel.self) private var store
+    @State private var showUpgradeFromBuilder = false
 
     @State private var fullPlan: UnitPTFullPlan?
     @State private var showQRSheet: Bool = false
@@ -85,6 +87,7 @@ struct UnitPTBuilderSheet: View {
                     )
                 }
             }
+            .sheet(isPresented: $showUpgradeFromBuilder) { UpgradeView() }
             .sheet(isPresented: $showQRSheet) {
                 if let plan = fullPlan {
                     UnitPTFullPlanQRSheet(plan: plan)
@@ -208,6 +211,16 @@ struct UnitPTBuilderSheet: View {
             unitPlanBreakdownPreview
 
             Button {
+                // The gate belongs here, on generating a NEW plan — not on
+                // opening the builder, which is the only way to view, edit,
+                // share or delete the plan you already have. Free users keep one
+                // saved plan and can always get back to it.
+                guard ProGate.isUnlocked(.unitPTBuilder,
+                                         isPremium: store.isPremium,
+                                         savedUnitPTPlanCount: (fullPlan == nil && vm.unitPTFullPlan == nil) ? 0 : 1) else {
+                    showUpgradeFromBuilder = true
+                    return
+                }
                 let plan = vm.generateUnitPTFullPlan(
                     goal: selectedGoal,
                     weeks: selectedWeeks,

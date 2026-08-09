@@ -43,6 +43,15 @@ final class QuickStartViewModel {
         String(format: "%.2f mi", distanceMiles)
     }
 
+    /// Live average pace in seconds per mile, or nil before enough distance to
+    /// be meaningful. Used by the target-pace control and mirrored to the watch.
+    var currentPaceSecondsPerMile: Double? {
+        guard locationService.totalDistanceMeters > 50, elapsedSeconds > 0 else { return nil }
+        let miles = distanceMiles
+        guard miles > 0.01 else { return nil }
+        return Double(elapsedSeconds) / miles
+    }
+
     var formattedPace: String {
         guard locationService.totalDistanceMeters > 50, elapsedSeconds > 0 else { return "--:-- /mi" }
         let miles = distanceMiles

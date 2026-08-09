@@ -14,6 +14,14 @@ struct SquadMemberDetailSheet: View {
     @State private var rankTitle = ""
     @State private var email = ""
     @State private var phone = ""
+    @State private var unit = ""
+    /// Birth year, sex and standard were creation-only. A wrong birth year
+    /// silently scored the member against the wrong age band forever, with no
+    /// way to correct it — the single most damaging gap in the roster.
+    @State private var birthYearText = ""
+    @State private var editSex: SoldierSex = .male
+    @State private var editStandard: AFTStandard = .general
+    @State private var showDeleteConfirm = false
     @State private var showContactPicker = false
     @State private var showAFTEntry = false
     @State private var showCFTEntry = false
@@ -34,6 +42,7 @@ struct SquadMemberDetailSheet: View {
                             contactCard(member)
                             actionsCard(member)
                             historyCard(member)
+                            dangerZone
                         }
                         .padding(20)
                     }
@@ -53,6 +62,17 @@ struct SquadMemberDetailSheet: View {
                 }
             }
             .onAppear { loadFields() }
+            // Swiping the sheet down used to discard every edit silently.
+            .onDisappear { saveFields() }
+            .alert("Remove \(name.isEmpty ? "member" : name)?", isPresented: $showDeleteConfirm) {
+                Button("Remove", role: .destructive) {
+                    if let member { store.deleteMember(member) }
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This permanently deletes their contact details and every result you have logged for them. It cannot be undone.")
+            }
             .sheet(isPresented: $showContactPicker) {
                 ContactPicker { contact in
                     let full = "\(contact.givenName) \(contact.familyName)".trimmingCharacters(in: .whitespaces)
@@ -87,6 +107,10 @@ struct SquadMemberDetailSheet: View {
         rankTitle = member.rankTitle ?? ""
         email = member.email ?? ""
         phone = member.phone ?? ""
+        unit = member.unit ?? ""
+        birthYearText = "\(member.birthYear)"
+        editSex = member.sex
+        editStandard = member.standard
     }
 
     private func saveFields() {
@@ -95,8 +119,33 @@ struct SquadMemberDetailSheet: View {
         updated.rankTitle = rankTitle.isEmpty ? nil : rankTitle
         updated.email = email.isEmpty ? nil : email
         updated.phone = phone.isEmpty ? nil : phone
+        updated.unit = unit.isEmpty ? nil : unit
+        // Only accept a plausible birth year; anything else would land in the
+        // "Over 62" age band via max(17, ...) and score silently wrong.
+        let thisYear = Calendar.current.component(.year, from: .now)
+        if let year = Int(birthYearText), year >= thisYear - 75, year <= thisYear - 17 {
+            updated.birthYear = year
+        }
+        updated.sex = editSex
+        updated.standard = editStandard
         store.updateMember(updated)
         saveTrigger.toggle()
+    }
+
+    private var dangerZone: some View {
+        Button(role: .destructive) {
+            showDeleteConfirm = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "trash")
+                Text("Remove from squad")
+            }
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(MVMTheme.danger)
     }
 
     // MARK: - Contact card
@@ -109,8 +158,23 @@ struct SquadMemberDetailSheet: View {
 
             field("Name", text: $name)
             field("Rank / Title", text: $rankTitle)
+            field("Unit", text: $unit)
             field("Email", text: $email, keyboard: .emailAddress)
             field("Phone", text: $phone, keyboard: .phonePad)
+            field("Birth year", text: $birthYearText, keyboard: .numberPad)
+
+            HStack(spacing: 10) {
+                Picker("Sex", selection: $editSex) {
+                    ForEach(SoldierSex.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Picker("Standard", selection: $editStandard) {
+                    ForEach(AFTStandard.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+            }
+            .onChange(of: editSex) { _, _ in saveFields() }
+            .onChange(of: editStandard) { _, _ in saveFields() }
 
             HStack(spacing: 10) {
                 Button {

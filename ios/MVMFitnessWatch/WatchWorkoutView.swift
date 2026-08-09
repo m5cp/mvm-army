@@ -100,6 +100,9 @@ private struct MetricsView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
 
+                    ghostPacer(currentPace: manager.averagePaceSecondsPerMile(at: context.date))
+                        .padding(.top, 6)
+
                     controls
                         .padding(.top, 8)
                 }
@@ -122,6 +125,51 @@ private struct MetricsView: View {
                 .lineLimit(2)
                 .fixedSize()
         }
+    }
+
+    /// Ghost pacer, settable from the wrist. The target is a scalar seconds-per-
+    /// mile so it fits a 40mm screen and can be adjusted mid-run; the phone
+    /// receives the change over Watch Connectivity and vice versa.
+    @ViewBuilder
+    private func ghostPacer(currentPace: Double?) -> some View {
+        let link = WatchConnectivityManager.shared
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 5) {
+                Text(MetricsView.paceText(link.targetPaceSecondsPerMile))
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(WatchTheme.accentLight)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text("GHOST\nTARGET")
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(WatchTheme.subtleText)
+                    .lineLimit(2)
+                    .fixedSize()
+                Spacer(minLength: 0)
+                Button { link.adjustTargetPace(by: -5) } label: { Image(systemName: "minus") }
+                    .buttonStyle(.bordered)
+                Button { link.adjustTargetPace(by: 5) } label: { Image(systemName: "plus") }
+                    .buttonStyle(.bordered)
+            }
+            .font(.system(size: 11, weight: .bold))
+
+            if let target = link.targetPaceSecondsPerMile, let currentPace {
+                let delta = currentPace - target
+                Text(delta <= 0
+                     ? "AHEAD \(MetricsView.gapText(-delta))"
+                     : "BEHIND \(MetricsView.gapText(delta))")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(delta <= 0 ? WatchTheme.success : WatchTheme.warning)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
+    }
+
+    /// Seconds per mile rendered as a compact gap, e.g. "12s/mi".
+    static func gapText(_ seconds: Double) -> String {
+        "\(Int(abs(seconds).rounded()))s/mi"
     }
 
     private var controls: some View {

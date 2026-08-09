@@ -37,3 +37,12 @@ extension View {
             .frame(maxWidth: .infinity)
     }
 }
+
+
+extension Collection {
+    /// Bounds-checked access. Used where a captured index can go stale between
+    /// a SwiftUI body evaluation and the action that reads it.
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}

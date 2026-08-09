@@ -17,6 +17,7 @@ struct ProgressViewScreen: View {
     @State private var showMyPTPlanSheet: Bool = false
     @State private var showDailyLog: Bool = false
     @State private var routeMapRecord: QuickStartRecord?
+    @State private var showAllQuickStarts = false
 
 
     var body: some View {
@@ -73,6 +74,31 @@ struct ProgressViewScreen: View {
         .toolbarBackground(MVMTheme.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .preferredColorScheme(.dark)
+        .sheet(isPresented: $showAllQuickStarts) {
+            NavigationStack {
+                // quickStartRow is itself a Button with .disabled(!hasRoute);
+                // wrapping it in another Button re-enabled routeless sessions and
+                // opened an empty map.
+                List(vm.quickStartRecords) { record in
+                    quickStartRow(record)
+                        .listRowBackground(MVMTheme.card)
+                }
+                .scrollContentBackground(.hidden)
+                .background(MVMTheme.background)
+                .navigationTitle("All Sessions")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") { showAllQuickStarts = false }
+                    }
+                }
+            }
+        }
+        // Dismiss the list once a route is chosen, rather than racing a sheet
+        // dismissal and a cover presentation in the same tick.
+        .onChange(of: routeMapRecord?.id) { _, newValue in
+            if newValue != nil { showAllQuickStarts = false }
+        }
         .fullScreenCover(item: $routeMapRecord) { record in
             RouteMapView(record: record)
         }
@@ -1137,10 +1163,20 @@ struct ProgressViewScreen: View {
             }
 
             if vm.quickStartRecords.count > 5 {
-                Text("\(vm.quickStartRecords.count - 5) more sessions")
+                // This was plain Text, so every route older than the five most
+                // recent was permanently unreachable.
+                Button {
+                    showAllQuickStarts = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("\(vm.quickStartRecords.count - 5) more sessions")
+                        Image(systemName: "chevron.right")
+                    }
                     .font(.caption)
-                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .foregroundStyle(MVMTheme.accent)
                     .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(20)

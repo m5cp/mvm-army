@@ -168,7 +168,8 @@ struct SquadView: View {
         }
         .buttonStyle(PressScaleButtonStyle())
         .contextMenu {
-            Button("Archive", role: .destructive) { store.archiveMember(member) }
+            Button("Archive") { store.archiveMember(member) }
+            Button("Remove", role: .destructive) { store.deleteMember(member) }
         }
     }
 

@@ -22,8 +22,14 @@ enum WorkoutGenerator {
         currentWeek: Int = 1
     ) -> WeeklyPlan {
         let calendar = Calendar.current
+        // Week N used to be anchored to today + (N-1)x7, so after "Next Week"
+        // the plan covered a window that did not include today — which made
+        // ensureTodayHasWorkout regenerate it on every single Home appearance.
+        // Every week is now anchored to today, and only the CONTENT varies by
+        // week, so the current week always contains the current date.
+        let today = calendar.startOfDay(for: .now)
         let weekOffset = currentWeek - 1
-        let today = calendar.date(byAdding: .day, value: weekOffset * 7, to: calendar.startOfDay(for: .now)) ?? calendar.startOfDay(for: .now)
+        _ = weekOffset
 
         let armyMode = ArmyGenerator.mapArmyMode(ptMode: ptMode, dutyType: dutyType)
         let armyEquipment = ArmyGenerator.mapArmyEquipment(equipment)

@@ -25,6 +25,15 @@ struct MVMFitnessApp: App {
                 .environment(viewModel)
                 .environment(store)
                 .preferredColorScheme(.dark)
+                .task {
+                    DataStore.purgeDeviceOnlyKeysFromCloud()
+                    PhoneConnectivityManager.shared.activate()
+                    // Without this the phone received a pace edit from the watch
+                    // and discarded it, so the link was one-directional.
+                    PhoneConnectivityManager.shared.onTargetPaceChanged = { _ in
+                        viewModel.syncWidgetData()
+                    }
+                }
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
                         viewModel.pedometer.refreshTodaySteps()

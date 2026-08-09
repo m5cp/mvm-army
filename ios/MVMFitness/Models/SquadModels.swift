@@ -15,6 +15,7 @@ nonisolated struct SquadMember: Codable, Identifiable, Hashable, Sendable {
     var rankTitle: String?
     var email: String?
     var phone: String?
+    var unit: String?
 
     func age(on date: Date = .now) -> Int {
         max(17, Calendar.current.component(.year, from: date) - birthYear)
@@ -130,16 +131,28 @@ final class SquadStore {
     /// Imports a scanned member-stats payload: updates the matching member (by
     /// case-insensitive name) or creates one, then appends any shared results.
     /// Returns a human-readable summary for the confirmation UI.
-    func importStats(_ payload: SquadStatsPayload) -> String {
+    func importStats(_ payload: SquadStatsPayload, isPremium: Bool = true) -> String {
         let member: SquadMember
-        if let existing = data.members.first(where: { $0.name.lowercased() == payload.name.lowercased() && !$0.isArchived }) {
+        // Prefer the stable id the sender embeds; fall back to name only for
+        // codes generated before that existed. Matching on lowercased name alone
+        // created a duplicate whenever someone was renamed, and collided two
+        // soldiers who happen to share a name.
+        let existingMatch = payload.memberID.flatMap { id in data.members.first { $0.id == id } }
+            ?? data.members.first { $0.name.lowercased() == payload.name.lowercased() && !$0.isArchived }
+        if let existing = existingMatch {
             var updated = existing
             if let rank = payload.rankTitle, !rank.isEmpty { updated.rankTitle = rank }
             if let email = payload.email, !email.isEmpty { updated.email = email }
             if let phone = payload.phone, !phone.isEmpty { updated.phone = phone }
+            if let unit = payload.unit, !unit.isEmpty { updated.unit = unit }
             updateMember(updated)
             member = updated
         } else {
+            // The free roster cap was enforced only on the + button, so a free
+            // user could scan their way past it indefinitely.
+            guard isPremium || activeMembers.count < ProGate.freeSquadMemberLimit else {
+                return "Roster is full. Upgrade to add more than \(ProGate.freeSquadMemberLimit) members."
+            }
             var created = SquadMember(
                 name: payload.name,
                 birthYear: payload.birthYear,
@@ -149,6 +162,8 @@ final class SquadStore {
             created.rankTitle = payload.rankTitle
             created.email = payload.email
             created.phone = payload.phone
+            created.unit = payload.unit
+            if let id = payload.memberID { created.id = id }
             addMember(created)
             member = created
         }
@@ -165,7 +180,13 @@ final class SquadStore {
                 total: total,
                 passed: payload.aftPassed ?? false
             )
-            addAFT(result)
+            // Rescanning the same code appended a duplicate row every time.
+            let alreadyHave = data.aftResults.contains {
+                $0.memberID == member.id
+                    && abs($0.date.timeIntervalSince(result.date)) < 60
+                    && $0.total == result.total
+            }
+            if !alreadyHave { addAFT(result) }
             imported.append("AFT \(total)")
         }
         if let seconds = payload.cftSeconds {
@@ -175,6 +196,17 @@ final class SquadStore {
         let detail = imported.isEmpty ? "contact info" : imported.joined(separator: ", ")
         return "\(member.name): \(detail) imported."
     }
+    /// Permanently removes a member AND every result row referencing them.
+    /// Archiving alone left another soldier's name, email and phone in
+    /// `squadData` forever with no way to get them out.
+    func deleteMember(_ member: SquadMember) {
+        data.members.removeAll { $0.id == member.id }
+        data.aftResults.removeAll { $0.memberID == member.id }
+        data.cftResults.removeAll { $0.memberID == member.id }
+        data.whtrResults.removeAll { $0.memberID == member.id }
+        persist()
+    }
+
     func archiveMember(_ member: SquadMember) {
         if let i = data.members.firstIndex(where: { $0.id == member.id }) {
             data.members[i].isArchived = true; persist()
@@ -304,6 +336,9 @@ nonisolated struct SquadStatsPayload: Codable, Sendable {
     let rankTitle: String?
     let email: String?
     let phone: String?
+    /// Stable identity so a rename does not create a duplicate member.
+    var memberID: UUID?
+    var unit: String?
     let birthYear: Int
     let sexRaw: String
     let standardRaw: String

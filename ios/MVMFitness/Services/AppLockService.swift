@@ -60,8 +60,15 @@ final class AppLockService {
         var error: NSError?
 
         guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
-            lastError = "Face ID / Touch ID isn't set up on this device. Add one in Settings, or turn off App Lock."
-            return false
+            // The old copy told the user to "turn off App Lock" — but that
+            // toggle lives in Profile, which is BEHIND the lock. With no
+            // passcode set there was no way back in short of reinstalling and
+            // losing all local data. If the device cannot authenticate at all,
+            // the lock cannot be honoured, so disable it rather than trap them.
+            lastError = "This device has no passcode, Face ID or Touch ID set up, so App Lock has been turned off. Add one in Settings to use it."
+            UserDefaults.standard.set(false, forKey: "appLockEnabled")
+            isUnlocked = true
+            return true
         }
 
         let reason = "Unlock MVM Fitness"

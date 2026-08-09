@@ -7,6 +7,10 @@ enum ScoreDirection: String, Codable {
     case higherIsBetter
     case lowerIsBetter
     case binary
+    /// Finish inside a maximum allowable time, or fail. Not graded on a curve:
+    /// a ruck march is a standard you meet or you don't, and awarding partial
+    /// credit for finishing 40 minutes late misrepresents it.
+    case goNoGo
 }
 
 struct ScoreAnchor: Codable, Hashable {
@@ -20,12 +24,81 @@ struct EventCurve: Codable {
     let unit: String
     let direction: ScoreDirection
     let anchors: [ScoreAnchor]
+    /// Maximum allowable time in seconds for a `.goNoGo` event.
+    var capSeconds: Double?
+
+    init(id: String, displayName: String, unit: String, direction: ScoreDirection,
+         anchors: [ScoreAnchor], capSeconds: Double? = nil) {
+        self.id = id
+        self.displayName = displayName
+        self.unit = unit
+        self.direction = direction
+        self.anchors = anchors
+        self.capSeconds = capSeconds
+    }
+
+    /// True when this event gates the benchmark rather than contributing points.
+    var isGate: Bool { direction == .goNoGo || direction == .binary }
+
+    /// Human-readable standard shown on the event row, e.g. "MUST FINISH 3:00:00".
+    var standardLabel: String? {
+        switch direction {
+        case .goNoGo:
+            guard let capSeconds else { return nil }
+            let total = Int(capSeconds)
+            return String(format: "MUST FINISH %d:%02d:%02d", total / 3600, (total % 3600) / 60, total % 60)
+        case .binary:
+            return "GO / NO-GO"
+        case .lowerIsBetter:
+            // Anchors are ascending by performance (fastest first), so the
+            // 60-point reference is the SLOWEST time that still scores 60 —
+            // `first(where:)` would return the 100-point anchor and print the
+            // same number twice.
+            guard let best = anchors.map(\.performance).min(),
+                  let pass = anchors.filter({ $0.score >= 60 }).map(\.performance).max() else { return nil }
+            return "60 PT \(Self.clock(pass)) \(MVMTheme.dot) 100 PT \(Self.clock(best))"
+        case .higherIsBetter:
+            guard let top = anchors.map(\.performance).max(),
+                  let pass = anchors.first(where: { $0.score >= 60 })?.performance else { return nil }
+            if unit == "seconds" {
+                return "60 PT \(Self.clock(pass)) \(MVMTheme.dot) 100 PT \(Self.clock(top))"
+            }
+            return "60 PT \(Int(pass)) \(MVMTheme.dot) 100 PT \(Int(top))"
+        }
+    }
+
+    private static func clock(_ seconds: Double) -> String {
+        let total = Int(seconds)
+        if total >= 3600 {
+            return String(format: "%d:%02d:%02d", total / 3600, (total % 3600) / 60, total % 60)
+        }
+        return String(format: "%d:%02d", total / 60, total % 60)
+    }
+
+    /// A gate event passes when it is entered and meets the standard.
+    func passesGate(_ performance: Double?) -> Bool {
+        guard let performance else { return false }
+        switch direction {
+        case .goNoGo:
+            guard let capSeconds else { return false }
+            return performance > 0 && performance <= capSeconds
+        case .binary:
+            return performance >= 1
+        default:
+            return true
+        }
+    }
 
     func score(for performance: Double) -> Double {
         guard !anchors.isEmpty else { return 0 }
 
         if direction == .binary {
             return performance >= 1 ? 100 : 0
+        }
+
+        if direction == .goNoGo {
+            guard let capSeconds, performance > 0 else { return 0 }
+            return performance <= capSeconds ? 100 : 0
         }
 
         // A non-positive measurement is not a performance — it means the field
@@ -69,6 +142,20 @@ struct ReadinessBenchmark: Codable {
     let displayName: String
     let events: [BenchmarkEvent]
 
+    /// Scored (non-gate) events, with their weights renormalised so the graded
+    /// portion still totals 100 once GO/NO-GO events are pulled out.
+    func scoredEvents(curves: [String: EventCurve]) -> [(event: BenchmarkEvent, weight: Double)] {
+        let scored = events.filter { curves[$0.eventID]?.isGate == false }
+        let sum = scored.reduce(0.0) { $0 + $1.weight }
+        guard sum > 0 else { return [] }
+        return scored.map { ($0, $0.weight / sum) }
+    }
+
+    func gateEvents(curves: [String: EventCurve]) -> [BenchmarkEvent] {
+        events.filter { curves[$0.eventID]?.isGate == true }
+    }
+
+    /// The graded score, out of 100, over the non-gate events only.
     func totalScore(
         results: [String: Double],
         curves: [String: EventCurve]
@@ -77,13 +164,22 @@ struct ReadinessBenchmark: Codable {
             return nil
         }
 
-        let total = events.reduce(0.0) { partial, item in
-            guard let raw = results[item.eventID],
-                  let curve = curves[item.eventID] else { return partial }
+        let total = scoredEvents(curves: curves).reduce(0.0) { partial, item in
+            guard let raw = results[item.event.eventID],
+                  let curve = curves[item.event.eventID] else { return partial }
             return partial + curve.score(for: raw) * item.weight
         }
 
         return max(0, min(100, total))
+    }
+
+    /// Every GO/NO-GO event met its standard. A benchmark cannot be passed on
+    /// points alone — the same way the Air Force 2 km walk gates its composite.
+    func gatesPassed(results: [String: Double], curves: [String: EventCurve]) -> Bool {
+        gateEvents(curves: curves).allSatisfy { event in
+            guard let curve = curves[event.eventID] else { return false }
+            return curve.passesGate(results[event.eventID])
+        }
     }
 }
 
@@ -122,10 +218,14 @@ enum ReadinessScoringData {
                        anchors: anchors([(1020,100),(1080,95),(1140,90),(1200,85),(1260,80),(1320,75),(1380,70),(1440,65),(1500,60),(1560,55),(1620,50),(1680,40),(1800,25),(1920,10),(2040,0)])),
             EventCurve(id: "run5mi", displayName: "5-Mile Run", unit: "seconds", direction: .lowerIsBetter,
                        anchors: anchors([(1800,100),(1860,97),(1920,94),(1980,91),(2040,88),(2100,85),(2160,80),(2220,75),(2280,70),(2340,65),(2400,60),(2460,50),(2520,40),(2640,20),(2760,0)])),
-            EventCurve(id: "ruck12mi45", displayName: "12-Mile Ruck (45 lb)", unit: "seconds", direction: .lowerIsBetter,
-                       anchors: anchors([(8100,100),(8400,97),(8700,94),(9000,90),(9300,86),(9600,82),(9900,78),(10200,74),(10500,70),(10800,65),(11100,60),(11400,50),(11700,40),(12000,30),(12600,0)])),
-            EventCurve(id: "ruck10mi45", displayName: "10-Mile Ruck (45 lb)", unit: "seconds", direction: .lowerIsBetter,
-                       anchors: anchors([(6600,100),(6900,96),(7200,92),(7500,88),(7800,84),(8100,80),(8400,75),(8700,70),(9000,65),(9300,60),(9600,50),(9900,40),(10200,30),(10800,10),(11400,0)])),
+            // A ruck march is pass/fail against a maximum allowable time, not a
+            // graded curve. 15:00 per mile is the recognised standard, so the cap
+            // is 3:00:00 for twelve miles.
+            EventCurve(id: "ruck12mi45", displayName: "12-Mile Ruck (45 lb)", unit: "seconds", direction: .goNoGo,
+                       anchors: anchors([(10800,100),(10801,0)]), capSeconds: 10800),
+            // Same 15:00 per mile standard — 2:30:00 for ten miles.
+            EventCurve(id: "ruck10mi45", displayName: "10-Mile Ruck (45 lb)", unit: "seconds", direction: .goNoGo,
+                       anchors: anchors([(9000,100),(9001,0)]), capSeconds: 9000),
             EventCurve(id: "shuttle300yd", displayName: "300 yd Shuttle", unit: "seconds", direction: .lowerIsBetter,
                        anchors: anchors([(50,100),(52,95),(54,90),(56,85),(58,80),(60,75),(62,70),(64,65),(66,60),(68,55),(70,50),(74,40),(78,30),(84,15),(90,0)])),
             EventCurve(id: "farmer400m106", displayName: "Farmer Carry 400 m (2 × 53 lb)", unit: "seconds", direction: .lowerIsBetter,

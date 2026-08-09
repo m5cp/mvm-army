@@ -1168,40 +1168,49 @@ struct StickerPickerSheet: View {
     }
 }
 
+/// Real camera capture. This was a shipped Rork development placeholder that
+/// told users "Install this app on your device via the Rork App to use the
+/// camera" — while a working `CameraPicker` already existed in AFTShareSheet.
 struct CameraOverlayView: View {
     @Environment(\.dismiss) private var dismiss
 
     let onCapture: (UIImage) -> Void
 
     var body: some View {
-        ZStack {
-            MVMTheme.background.ignoresSafeArea()
-
-            VStack(spacing: 20) {
-                Image(systemName: "camera.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.secondary)
-                Text("Camera Preview")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                Text("Install this app on your device\nvia the Rork App to use the camera.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-
-                Button {
+        Group {
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                CameraPicker { image in
+                    if let image { onCapture(image) }
                     dismiss()
-                } label: {
-                    Text("Close")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 200, height: 48)
-                        .background(MVMTheme.heroGradient)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
-                .buttonStyle(PressScaleButtonStyle())
+                .ignoresSafeArea()
+            } else {
+                ZStack {
+                    MVMTheme.background.ignoresSafeArea()
+                    VStack(spacing: 16) {
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                        Text("No camera available")
+                            .font(.headline)
+                            .foregroundStyle(MVMTheme.primaryText)
+                        Text("This device does not have a camera, or access is turned off in Settings.")
+                            .font(.subheadline)
+                            .foregroundStyle(MVMTheme.secondaryText)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                        Button { dismiss() } label: {
+                            Text("Close")
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 200, height: 48)
+                                .background(MVMTheme.heroGradient)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                        .buttonStyle(PressScaleButtonStyle())
+                    }
+                }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

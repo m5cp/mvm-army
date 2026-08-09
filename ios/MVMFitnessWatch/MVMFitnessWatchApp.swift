@@ -9,6 +9,9 @@ struct MVMFitnessWatchApp: App {
             ContentView()
                 .environment(viewModel)
                 .task {
+                    // Activate the phone link first so the first refresh has
+                    // real data rather than the empty App Group defaults.
+                    WatchConnectivityManager.shared.activate()
                     viewModel.refresh()
                 }
         }

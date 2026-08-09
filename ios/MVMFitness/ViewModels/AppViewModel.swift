@@ -128,6 +128,26 @@ final class AppViewModel {
             planWeek: currentPlan?.currentWeek ?? 0,
             planTotalWeeks: currentPlan?.totalWeeks ?? 0
         )
+
+        // The App Group above only reaches the widget — its container does not
+        // cross to the watch. Send the same snapshot over Watch Connectivity,
+        // which is what actually makes the watch screens show real data.
+        var snapshot: [String: Any] = [
+            PhoneConnectivityManager.Keys.workoutTitle: todayWork?.title ?? "",
+            PhoneConnectivityManager.Keys.exerciseCount: todayWork?.exercises.count ?? 0,
+            PhoneConnectivityManager.Keys.streak: streak,
+            PhoneConnectivityManager.Keys.steps: pedometer.todaySteps,
+            PhoneConnectivityManager.Keys.planWeek: currentPlan?.currentWeek ?? 0,
+            PhoneConnectivityManager.Keys.planTotalWeeks: currentPlan?.totalWeeks ?? 0,
+            PhoneConnectivityManager.Keys.completedToday: completedToday
+        ]
+        // Only send a score when one exists. Sending 0 made the watch render a
+        // "0 / 600 — NEEDS WORK" ring for a user who has never taken the test.
+        if let latest = latestAFTScore {
+            snapshot[PhoneConnectivityManager.Keys.aftScore] = latest.totalScore
+            snapshot[PhoneConnectivityManager.Keys.aftPassed] = AFTCardRenderer.isPassing(latest)
+        }
+        PhoneConnectivityManager.shared.send(snapshot: snapshot)
     }
 
     func syncTodaySteps() {
@@ -280,7 +300,22 @@ final class AppViewModel {
 
         if let plan = currentPlan {
             let hasTodayInPlan = plan.days.contains { calendar.isDate($0.date, inSameDayAs: today) }
-            if !hasTodayInPlan {
+            // Only regenerate a plan this code actually authored. A week the
+            // user built by hand, or imported from a squad-mate's QR, was being
+            // silently replaced with generated Army templates the first morning
+            // its date window did not cover today.
+            // Per-plan, not per-day. `allSatisfy` meant a single imported day —
+            // which PDFUploadView writes into an otherwise generated plan —
+            // froze the user's week permanently with no way to roll it over.
+            // `source` alone is not enough: createCustomPlan builds days without
+            // passing one, and the memberwise default is .individual — so a
+            // hand-built week looked generated and was replaced with Army
+            // templates the following Monday. Custom days carry templateTag
+            // "custom", which is what actually distinguishes them.
+            let isGenerated = plan.days.contains {
+                ($0.source == .individual || $0.source == .random) && $0.templateTag != "custom"
+            }
+            if !hasTodayInPlan, isGenerated {
                 let completedDays = plan.days.filter(\.isCompleted)
                 generateWeeklyPlan()
                 if var newPlan = currentPlan {
@@ -1354,13 +1389,19 @@ final class AppViewModel {
         persistAll()
     }
 
+    /// Rest-day indices for a 7-day week. Each case must leave exactly
+    /// `trainingDays` working days — 3 and 4 both returned three rest days, so
+    /// picking "3 days a week" silently scheduled four sessions and the two
+    /// options were indistinguishable.
     private func computeRestDays(trainingDays: Int) -> Set<Int> {
         switch trainingDays {
+        case 1: return [1, 2, 3, 4, 5, 6]
         case 2: return [1, 2, 4, 5, 6]
-        case 3: return [2, 4, 6]
+        case 3: return [1, 3, 5, 6]
         case 4: return [2, 4, 6]
         case 5: return [3, 6]
         case 6: return [6]
+        case 7: return []
         default: return [3, 6]
         }
     }

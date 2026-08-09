@@ -44,6 +44,7 @@ struct ActiveQuickStartView: View {
 
                         if quickStart.ghostActive {
                             ghostPacerSection
+                            targetPaceSection
                         }
 
                         timerDisplay
@@ -129,6 +130,64 @@ struct ActiveQuickStartView: View {
                 ghostClosingPulse += 1
             }
         }
+    }
+
+    /// Scalar target pace, settable here and on the watch. The ghost race above
+    /// still races a previous run; this is the "hold 9:00 per mile" control, and
+    /// it is the value that syncs between devices.
+    private var targetPaceSection: some View {
+        let link = PhoneConnectivityManager.shared
+        let current = quickStart.currentPaceSecondsPerMile
+        return VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "target")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MVMTheme.amber)
+                Text("TARGET PACE")
+                    .font(MVMTheme.mono(10))
+                    .kerning(1.6)
+                    .foregroundStyle(MVMTheme.textFaint)
+                Spacer()
+                Text(Self.paceText(link.targetPaceSecondsPerMile))
+                    .font(MVMTheme.mono(14, weight: .bold))
+                    .foregroundStyle(MVMTheme.text)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+
+            HStack(spacing: 12) {
+                Button { adjustTarget(-5) } label: {
+                    Image(systemName: "minus.circle.fill").font(.title2)
+                }
+                Button { adjustTarget(5) } label: {
+                    Image(systemName: "plus.circle.fill").font(.title2)
+                }
+                Spacer()
+                if let target = link.targetPaceSecondsPerMile, let current {
+                    let delta = current - target
+                    Text(delta <= 0 ? "AHEAD \(Int(-delta))s/mi" : "BEHIND \(Int(delta))s/mi")
+                        .font(MVMTheme.mono(11, weight: .bold))
+                        .foregroundStyle(delta <= 0 ? MVMTheme.success : MVMTheme.warning)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+            }
+            .foregroundStyle(MVMTheme.amber)
+        }
+        .padding(16)
+        .background(MVMTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func adjustTarget(_ delta: Double) {
+        let link = PhoneConnectivityManager.shared
+        let base = link.targetPaceSecondsPerMile ?? 9 * 60
+        link.setTargetPace(min(max(base + delta, 4 * 60), 20 * 60))
+    }
+
+    static func paceText(_ secondsPerMile: Double?) -> String {
+        guard let secondsPerMile, secondsPerMile.isFinite, secondsPerMile > 0 else { return "--'--\"" }
+        return String(format: "%d'%02d\"", Int(secondsPerMile) / 60, Int(secondsPerMile) % 60)
     }
 
     private var ghostPacerSection: some View {

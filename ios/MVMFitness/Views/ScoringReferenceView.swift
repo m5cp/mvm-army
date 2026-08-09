@@ -43,6 +43,7 @@ struct ScoringReferenceView: View {
                         airForceSection
                         marineSection
                         advancedSection
+                        applicantSection
                         bodyCompSection
 
                         Text("All values come from the same scoring engines the calculators use. Where a program has not published official tables, values are the app's practice scale and are labeled as such.")
@@ -357,21 +358,38 @@ struct ScoringReferenceView: View {
             }
             return (minPass.map { "\($0)" } ?? "—", maxRaw.map { "\($0)" } ?? "—")
         }
+        /// Lower-is-better timed events. `fastestMax` needs the same `nil` guard
+        /// `repsRange` already has — without it the loop runs down to 1 second
+        /// and every row printed "MAX 0:01".
         func timeRange(_ score: @escaping (Int) -> MarineEventScore?, limit: Int) -> (String, String) {
             var slowestPass: Int?
             var fastestMax: Int?
             for seconds in stride(from: limit, through: 1, by: -1) {
                 guard let result = score(seconds) else { continue }
                 if slowestPass == nil, result.passed { slowestPass = seconds }
-                if result.points >= result.maximumPoints { fastestMax = seconds }
+                if result.points >= result.maximumPoints, fastestMax == nil { fastestMax = seconds }
             }
             return (slowestPass.map(mmss) ?? "—", fastestMax.map(mmss) ?? "—")
+        }
+
+        /// Higher-is-better timed events (the plank). Routing these through
+        /// `timeRange` produced a minimum SLOWER than the maximum — "MIN 5:00 ·
+        /// MAX 3:45" — because it latched onto the first value it probed.
+        func heldTimeRange(_ score: @escaping (Int) -> MarineEventScore?, limit: Int) -> (String, String) {
+            var minPass: Int?
+            var maxPerformance: Int?
+            for seconds in 1...limit {
+                guard let result = score(seconds) else { continue }
+                if minPass == nil, result.passed { minPass = seconds }
+                if result.points >= result.maximumPoints, maxPerformance == nil { maxPerformance = seconds }
+            }
+            return (minPass.map(mmss) ?? "—", maxPerformance.map(mmss) ?? "—")
         }
 
         let rows = cachedRows("usmc-\(age)-\(marineSex.rawValue)") {
             let pulls = repsRange(min: { MarineCorpsScoring.scorePullUps(repetitions: $0, age: age, sex: marineSex) }, top: 40)
             let pushes = repsRange(min: { MarineCorpsScoring.scorePushUps(repetitions: $0, age: age, sex: marineSex) }, top: 130)
-            let plank = timeRange({ MarineCorpsScoring.scorePlank(seconds: $0) }, limit: 300)
+            let plank = heldTimeRange({ MarineCorpsScoring.scorePlank(seconds: $0) }, limit: 300)
             let run3 = timeRange({ MarineCorpsScoring.scoreThreeMileRun(seconds: $0, age: age, sex: marineSex) }, limit: 2400)
             let mtc = timeRange({ MarineCorpsScoring.scoreMovementToContact(seconds: $0, age: age, sex: marineSex) }, limit: 600)
             let ammo = repsRange(min: { MarineCorpsScoring.scoreAmmunitionLift(repetitions: $0, age: age, sex: marineSex) }, top: 140)
@@ -403,7 +421,10 @@ struct ScoringReferenceView: View {
             guard let curve = curves[id] else { return nil }
             let ordered = curve.anchors.sorted { $0.performance < $1.performance }
             guard let first = ordered.first, let last = ordered.last else { return nil }
-            let hundred = curve.direction == .lowerIsBetter ? first : last
+            // A GO/NO-GO event has two synthetic anchors; running them through the
+        // 100/60/0 maths printed the cap and the cap-plus-one, backwards.
+        if curve.isGate { return curve.standardLabel }
+        let hundred = curve.direction == .lowerIsBetter ? first : last
             let zero = curve.direction == .lowerIsBetter ? last : first
             // interpolate the 60-score crossing
             var at60: Double?
@@ -469,6 +490,53 @@ struct ScoringReferenceView: View {
     }
 
     // MARK: - Body composition
+
+    /// ROTC / Service Academy applicant standards. These five programs are
+    /// scored in the calculator's ROTC tab but had no entry in this sheet at all,
+    /// so an applicant had no way to see what they were training toward.
+    private var applicantSection: some View {
+        let rows: [(String, String, String)] = ApplicantAssessmentProgram.allCases.map { program in
+            (Self.applicantCode(program), Self.applicantName(program), Self.applicantStandard(program))
+        }
+        return VStack(spacing: 10) {
+            section(
+                "ROTC & Service Academy",
+                subtitle: "APPLICANT \(MVMTheme.dot) PRACTICE SCALE \(MVMTheme.dot) NOT AN OFFICIAL TABLE",
+                rows: rows
+            )
+        }
+    }
+
+    private static func applicantName(_ program: ApplicantAssessmentProgram) -> String {
+        switch program {
+        case .armyROTC: return "Army ROTC"
+        case .airForceROTC: return "Air Force ROTC"
+        case .navyROTC: return "Navy ROTC"
+        case .marineOptionROTC: return "Marine Option"
+        case .serviceAcademyCFA: return "Service Academy CFA"
+        }
+    }
+
+    private static func applicantCode(_ program: ApplicantAssessmentProgram) -> String {
+        switch program {
+        case .armyROTC: return "AROTC"
+        case .airForceROTC: return "AFROTC"
+        case .navyROTC: return "NROTC"
+        case .marineOptionROTC: return "USMC"
+        case .serviceAcademyCFA: return "CFA"
+        }
+    }
+
+    private static func applicantStandard(_ program: ApplicantAssessmentProgram) -> String {
+        switch program {
+        case .serviceAcademyCFA:
+            return "6 events \(MVMTheme.dot) composite 0\u{2013}100 \(MVMTheme.dot) all events required"
+        case .marineOptionROTC:
+            return "Scored on the official Marine PFT tables \(MVMTheme.dot) 1st class 235+"
+        default:
+            return "Composite 0\u{2013}100 \(MVMTheme.dot) practice scale \(MVMTheme.dot) per-event minimums apply"
+        }
+    }
 
     private var bodyCompSection: some View {
         section(

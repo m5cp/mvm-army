@@ -17,7 +17,14 @@ struct TrainingCalendarView: View {
     @State private var selectedCompletedRecord: CompletedWorkoutRecord?
 
     private let calendar = Calendar.current
-    private let daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+    /// Rotated to the user's locale. Hardcoding Sunday-first put every date one
+    /// column off from its weekday header across most of Europe.
+    private var daysOfWeek: [String] {
+        let base = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+        let shift = calendar.firstWeekday - 1
+        guard shift > 0 else { return base }
+        return Array(base[shift...] + base[..<shift])
+    }
 
     var body: some View {
         ZStack {
@@ -238,7 +245,9 @@ struct TrainingCalendarView: View {
             let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
 
             LazyVGrid(columns: columns, spacing: 6) {
-                ForEach(dates, id: \.self) { date in
+                // Padding cells are all nil, so `id: \.self` gave a dozen rows the
+                // same identity — SwiftUI collapsed and duplicated cells.
+                ForEach(Array(dates.enumerated()), id: \.offset) { _, date in
                     if let date {
                         dayCell(date)
                     } else {
@@ -549,7 +558,8 @@ struct TrainingCalendarView: View {
               let range = calendar.range(of: .day, in: .month, for: firstOfMonth) else { return [] }
 
         let firstWeekday = calendar.component(.weekday, from: firstOfMonth)
-        let leadingEmpty = firstWeekday - 1
+        // Offset relative to the locale's first day of the week, not to Sunday.
+        let leadingEmpty = (firstWeekday - calendar.firstWeekday + 7) % 7
 
         var dates: [Date?] = Array(repeating: nil, count: leadingEmpty)
 

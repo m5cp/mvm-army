@@ -2,6 +2,7 @@ import SwiftUI
 import AVFoundation
 
 struct QRScannerSheet: View {
+    @State private var cameraDenied = false
     @Environment(\.dismiss) private var dismiss
     @Environment(AppViewModel.self) private var vm
 
@@ -58,8 +59,11 @@ struct QRScannerSheet: View {
             #if targetEnvironment(simulator)
             cameraUnavailablePlaceholder
             #else
-            if AVCaptureDevice.default(for: .video) != nil {
-                QRCameraView { code in
+            // AVCaptureDevice.default is non-nil even when access is DENIED, so
+            // this branch alone rendered a permanent black rectangle. Check the
+            // denial flag too, and wire the callback that sets it.
+            if !cameraDenied, AVCaptureDevice.default(for: .video) != nil {
+                QRCameraView(onAccessDenied: { cameraDenied = true }) { code in
                     handleScannedCode(code)
                 }
                 .frame(height: 300)
@@ -90,10 +94,28 @@ struct QRScannerSheet: View {
                 .font(.title3.weight(.bold))
                 .foregroundStyle(MVMTheme.primaryText)
 
-            Text("Install this app on your device via the Rork App to use the camera for QR scanning.")
+            #if targetEnvironment(simulator)
+            Text("Camera preview is unavailable in the Simulator. Run on a device to scan.")
+            #else
+            Text(cameraDenied
+                 ? "Camera access is off. Turn it on in Settings to scan a code."
+                 : "Point the camera at a squad, plan or workout QR code.")
+            #endif
                 .font(.subheadline)
                 .foregroundStyle(MVMTheme.secondaryText)
                 .multilineTextAlignment(.center)
+
+            if cameraDenied {
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Text("Open Settings")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(MVMTheme.accent)
+                }
+            }
         }
         .frame(maxWidth: .infinity)
         .frame(height: 300)
@@ -316,11 +338,13 @@ struct QRScannerSheet: View {
 }
 
 struct QRCameraView: UIViewControllerRepresentable {
+    var onAccessDenied: (() -> Void)?
     let onCodeScanned: (String) -> Void
 
     func makeUIViewController(context: Context) -> QRCameraViewController {
         let vc = QRCameraViewController()
         vc.onCodeScanned = onCodeScanned
+        vc.onAccessDenied = onAccessDenied
         return vc
     }
 
@@ -329,6 +353,7 @@ struct QRCameraView: UIViewControllerRepresentable {
 
 class QRCameraViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
     var onCodeScanned: ((String) -> Void)?
+    var onAccessDenied: (() -> Void)?
     private var captureSession: AVCaptureSession?
     private var hasScanned = false
 
@@ -339,11 +364,32 @@ class QRCameraViewController: UIViewController, AVCaptureMetadataOutputObjectsDe
     }
 
     private func setupCamera() {
+        // There was no authorization handling at all: when access was denied the
+        // device is still non-nil, so the view rendered a black rectangle
+        // forever with no explanation and no way to fix it.
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            break
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                Task { @MainActor in
+                    if granted { self.setupCamera() } else { self.onAccessDenied?() }
+                }
+            }
+            return
+        default:
+            onAccessDenied?()
+            return
+        }
+
         let session = AVCaptureSession()
         captureSession = session
 
         guard let device = AVCaptureDevice.default(for: .video),
-              let input = try? AVCaptureDeviceInput(device: device) else { return }
+              let input = try? AVCaptureDeviceInput(device: device) else {
+            onAccessDenied?()
+            return
+        }
 
         if session.canAddInput(input) {
             session.addInput(input)
