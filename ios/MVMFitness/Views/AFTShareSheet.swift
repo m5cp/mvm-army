@@ -255,7 +255,7 @@ struct AFTShareSheet: View {
 
     private func shareCaption(for score: AFTScoreRecord) -> String {
         let appStoreURL = AppLinks.appStoreURLString
-        let passStatus = score.totalScore >= 300 ? "PASSED ✅" : "in training 💪"
+        let passStatus = AFTCardRenderer.isPassing(score) ? "PASSED ✅" : "in training 💪"
         return """
         Just scored \(score.totalScore) on my Army Fitness Test — \(passStatus) 🎯
 
@@ -323,6 +323,16 @@ enum AFTCardRenderer {
 
     /// Renders the score card. `background` is the user's own photo (library or
     /// camera); nil falls back to the bundled golden-hour silhouette.
+    /// Single source of truth for pass/fail on the share card, delegating to the
+    /// scoring engine exactly like the squad card already does.
+    nonisolated static func isPassing(_ score: AFTScoreRecord) -> Bool {
+        let minimumTotal = AFTScoringEngine.shared.minimumTotal(for: score.standard)
+        let perEvent = score.standard.minimumPerEvent
+        return score.totalScore >= minimumTotal
+            && [score.deadliftPoints, score.pushUpPoints, score.sdcPoints,
+                score.plankPoints, score.runPoints].allSatisfy { $0 >= perEvent }
+    }
+
     static func render(score: AFTScoreRecord, previous: AFTScoreRecord?, background: UIImage? = nil) -> UIImage? {
         let width: CGFloat = 1080
         let height: CGFloat = 1350
@@ -446,8 +456,10 @@ enum AFTCardRenderer {
     // MARK: Score block (big number on a plate, GO seal, delta)
 
     private static func drawScoreBlock(context: CGContext, score: AFTScoreRecord, previous: AFTScoreRecord?, width: CGFloat) {
-        let passed = score.deadliftPoints >= 60 && score.pushUpPoints >= 60 && score.sdcPoints >= 60
-            && score.plankPoints >= 60 && score.runPoints >= 60 && score.totalScore >= 300
+        // The pass line is not a constant — AFTStandard.combat requires 350,
+        // and the per-event minimum is a property of the standard too. Hardcoding
+        // 300/60 published a green GO on a card the calculator scored NO GO.
+        let passed = Self.isPassing(score)
 
         // Score plate — centered, generous, rounded.
         let plateRect = CGRect(x: width / 2 - 300, y: 560, width: 600, height: 330)

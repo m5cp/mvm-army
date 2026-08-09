@@ -83,6 +83,20 @@ final class SquadStore {
 
     private func persist() { DataStore.save(data, forKey: Self.storageKey) }
 
+    /// Wipes the roster in memory and on disk. The squad holds other soldiers'
+    /// names, emails and phone numbers, so "Delete All Data" must reach it.
+    func clear() {
+        data = SquadData()
+        DataStore.delete(forKey: Self.storageKey)
+    }
+
+    /// Re-reads from disk. The store is view-local `@State`, so after a global
+    /// wipe a still-alive Squad screen would otherwise keep showing the roster
+    /// that was just deleted.
+    func reload() {
+        data = DataStore.load(SquadData.self, forKey: Self.storageKey, fallback: SquadData())
+    }
+
     var activeMembers: [SquadMember] { data.members.filter { !$0.isArchived } }
 
     func addMember(_ member: SquadMember) { data.members.append(member); persist() }

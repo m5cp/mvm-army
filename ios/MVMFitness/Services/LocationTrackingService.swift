@@ -137,9 +137,18 @@ final class LocationTrackingService: NSObject, CLLocationManagerDelegate {
         }
     }
 
+    /// Called when the user answers the permission prompt. Set by the view model
+    /// while a session is live, so a first-ever run actually starts recording the
+    /// moment access is granted instead of silently logging nothing.
+    var startTrackingWhenAuthorized = false
+
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
-            authorizationStatus = manager.authorizationStatus
+            self.authorizationStatus = manager.authorizationStatus
+            if self.startTrackingWhenAuthorized, self.isAuthorized {
+                self.startTrackingWhenAuthorized = false
+                self.startTracking()
+            }
         }
     }
 

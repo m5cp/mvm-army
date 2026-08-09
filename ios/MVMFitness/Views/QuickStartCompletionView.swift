@@ -88,6 +88,16 @@ struct QuickStartCompletionView: View {
             }
         }
         .onAppear {
+            // The session used to persist ONLY if the user noticed an optional
+            // row. Tapping Done or swiping the sheet away threw the run, its
+            // distance and its GPS route away permanently. Save on arrival.
+            // Auto-save, but not a mis-tapped start/stop: a 3-second session
+            // with no distance would otherwise enter history, feed the streak
+            // and queue a HealthKit write.
+            if !logged, record.elapsedSeconds >= 30 || record.distanceMeters > 0 {
+                vm.saveQuickStartRecord(record)
+                logged = true
+            }
             withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
                 checkScale = 1
             }

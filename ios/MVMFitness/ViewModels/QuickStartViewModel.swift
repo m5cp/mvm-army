@@ -83,6 +83,9 @@ final class QuickStartViewModel {
             if locationService.isAuthorized {
                 locationService.startTracking()
             } else {
+                // requestPermission is async from the user's point of view; arm
+                // the callback so the session records once they tap Allow.
+                locationService.startTrackingWhenAuthorized = true
                 locationService.requestPermission()
             }
         }
@@ -205,6 +208,7 @@ final class QuickStartViewModel {
     func endSession() {
         timer?.invalidate()
         timer = nil
+        locationService.startTrackingWhenAuthorized = false
         locationService.stopTracking()
 
         guard let activity = selectedActivity else { return }
@@ -229,6 +233,7 @@ final class QuickStartViewModel {
     }
 
     func dismiss() {
+        locationService.startTrackingWhenAuthorized = false
         showCompletion = false
         completedRecord = nil
         selectedActivity = nil

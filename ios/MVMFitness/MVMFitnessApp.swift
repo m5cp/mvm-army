@@ -34,6 +34,13 @@ struct MVMFitnessApp: App {
                         }
                         viewModel.syncWidgetData()
                     }
+                    if newPhase == .background {
+                        // Persistence writes are asynchronous so they stay off
+                        // the main thread; block briefly here so a swipe-kill
+                        // right after a workout cannot lose it.
+                        viewModel.persistAll()
+                        DataStore.flush()
+                    }
                 }
         }
     }

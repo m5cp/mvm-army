@@ -335,7 +335,9 @@ struct HomeView: View {
         }
         .sheet(item: Binding<QuickStartRecord?>(
             get: { quickStartVM.completedRecord },
-            set: { _ in }
+            // SwiftUI writes nil on interactive dismissal; swallowing it left
+            // completedRecord set, so the sheet could re-present with stale state.
+            set: { if $0 == nil { quickStartVM.dismiss() } }
         )) { record in
             QuickStartCompletionView(record: record) {
                 quickStartVM.dismiss()

@@ -34,6 +34,7 @@ struct UpgradeView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 28) {
                         headerSection
+                        comparisonSection
                         freeTierSection
                         subscriptionTiersSection
                         lifetimeDealSection
@@ -69,6 +70,19 @@ struct UpgradeView: View {
             }
             .onChange(of: store.isPremium) { _, isPremium in
                 if isPremium { dismiss() }
+            }
+            .task {
+                // fetchOfferings() ran once in StoreViewModel.init with no retry.
+                // If that single call failed (airplane mode, StoreKit hiccup) the
+                // CTA never rendered and the only upgrade path in the app was
+                // dead for the rest of the session.
+                if store.offerings?.current == nil { await store.fetchOfferings() }
+                if selectedPackageID == nil,
+                   let current = store.offerings?.current,
+                   let preferred = current.availablePackages.first(where: { $0.packageType == .annual })
+                        ?? current.availablePackages.first {
+                    selectedPackageID = preferred.identifier
+                }
             }
             .onAppear {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.82).delay(0.1)) {
@@ -119,6 +133,83 @@ struct UpgradeView: View {
             .offset(y: animateIn ? 0 : 10)
         }
     }
+
+    // MARK: - What's free vs what's paid
+
+    /// A single, unambiguous side-by-side of what every user gets and what Pro
+    /// adds — so nobody pays to find out what they already had.
+    private var comparisonSection: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Text("What you get")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text("FREE")
+                    .font(MVMTheme.mono(10, weight: .bold))
+                    .kerning(1.2)
+                    .foregroundStyle(MVMTheme.secondaryText)
+                    .frame(width: 52)
+                Text("PRO")
+                    .font(MVMTheme.mono(10, weight: .bold))
+                    .kerning(1.2)
+                    .foregroundStyle(MVMTheme.accent)
+                    .frame(width: 52)
+            }
+            .padding(.bottom, 10)
+
+            ForEach(Self.comparisonRows, id: \.title) { row in
+                HStack(spacing: 0) {
+                    Text(row.title)
+                        .font(.footnote)
+                        .foregroundStyle(MVMTheme.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
+                    marker(row.free, tint: MVMTheme.secondaryText)
+                        .frame(width: 52)
+                    marker(true, tint: MVMTheme.accent)
+                        .frame(width: 52)
+                }
+                .padding(.vertical, 7)
+
+                if row.title != Self.comparisonRows.last?.title {
+                    Rectangle()
+                        .fill(MVMTheme.secondaryText.opacity(0.12))
+                        .frame(height: 1)
+                }
+            }
+        }
+        .padding(16)
+        .background(MVMTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .opacity(animateIn ? 1 : 0)
+    }
+
+    @ViewBuilder
+    private func marker(_ included: Bool, tint: Color) -> some View {
+        Image(systemName: included ? "checkmark" : "minus")
+            .font(.footnote.weight(.bold))
+            .foregroundStyle(included ? tint : MVMTheme.tertiaryText)
+            .accessibilityLabel(included ? "Included" : "Not included")
+    }
+
+    /// Kept in one place so the paywall copy cannot drift from the actual gates
+    /// enforced in ProGate.
+    private static let comparisonRows: [(title: String, free: Bool)] = [
+        ("AFT calculator & official scoring", true),
+        ("CFT, Navy, Air Force & Marine tests", true),
+        ("Quick Start with GPS & route map", true),
+        ("Badges, streaks & step tracking", true),
+        ("Apple Watch companion", true),
+        ("2-week starter training plan", true),
+        ("Full multi-week PT plans", false),
+        ("Unlimited Unit PT plans", false),
+        ("Unlimited squad members", false),
+        ("DA-705 & plan PDF export", false),
+        ("All share card templates", false),
+        ("Priority support", false)
+    ]
 
     // MARK: - Free Tier
 
@@ -288,7 +379,10 @@ struct UpgradeView: View {
         Group {
             if let current = store.offerings?.current,
                let lifetimePackage = current.availablePackages.first(where: { $0.packageType == .lifetime }) {
-                let isSelected = selectedPackageID == lifetimePackage.identifier || (selectedPackageID == nil)
+                // Must not treat "nothing chosen yet" as Lifetime: selectedPackage(from:)
+                // falls back to the ANNUAL package in that state, so the card
+                // used to render as selected while Continue charged a subscription.
+                let isSelected = selectedPackageID == lifetimePackage.identifier
 
                 Button {
                     selectedPackageID = lifetimePackage.identifier
@@ -402,7 +496,23 @@ struct UpgradeView: View {
 
     private var ctaButton: some View {
         Group {
-            if let current = store.offerings?.current, let selected = selectedPackage(from: current) {
+            if store.offerings?.current == nil && !store.isLoading {
+                Button {
+                    Task { await store.fetchOfferings() }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Retry")
+                    }
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(MVMTheme.primaryText)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(MVMTheme.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                }
+                .buttonStyle(PressScaleButtonStyle())
+            } else if let current = store.offerings?.current, let selected = selectedPackage(from: current) {
                 Button {
                     Task { await store.purchase(package: selected) }
                 } label: {

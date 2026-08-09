@@ -39,6 +39,10 @@ struct OnboardingView: View {
                 VStack(spacing: 0) {
                     HStack {
                         Spacer()
+                        // Hidden from the disclaimer onward: past that point
+                        // "Skip" would navigate BACKWARDS to the disclaimer,
+                        // which reads as a dead end on the paywall step.
+                        if step < 3 {
                         Button {
                             skipOnboarding()
                         } label: {
@@ -52,6 +56,7 @@ struct OnboardingView: View {
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
+                        }
                     }
                     .padding(.top, 8)
                     .padding(.horizontal, 20)
@@ -85,9 +90,13 @@ struct OnboardingView: View {
     }
 
     private func skipOnboarding() {
-        disclaimerAccepted = false
-        hasAgreed = false
-        onboardingComplete = true
+        // `disclaimerAccepted` was written here and read nowhere, so skipping
+        // granted full access to plan generation and the calculator while
+        // recording that the medical disclaimer had been declined. Skipping now
+        // jumps to the terms step instead of completing onboarding, so the
+        // disclaimer is unavoidable — it does not gate features, it just cannot
+        // be bypassed.
+        withAnimation { step = 3 }
         AnalyticsService.track(.onboardingSkipped)
     }
 

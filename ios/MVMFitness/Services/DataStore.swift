@@ -4,9 +4,16 @@ import Foundation
 /// - Local: Application Support/MVMData/<key>.json (atomic writes)
 /// - iCloud: mirrored to the ubiquity container's Documents/MVMData when available;
 ///   on load, the newer of local vs iCloud wins (last-write-wins by modification date).
+///
+/// Writes are performed off the calling thread. `url(forUbiquityContainerIdentifier:)`
+/// is documented as potentially long-blocking, and the app previously resolved it
+/// twice per key on every save — 26 blocking lookups on the main thread for a
+/// single `persistAll()`. It is now resolved once and cached.
 enum DataStore {
 
     private static let folderName = "MVMData"
+
+    private static let ioQueue = DispatchQueue(label: "app.rork.mvmfitness.datastore", qos: .utility)
 
     private static var localFolder: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -15,12 +22,13 @@ enum DataStore {
         return folder
     }
 
-    private static var iCloudFolder: URL? {
+    /// Resolved at most once for the lifetime of the process.
+    private static let iCloudFolder: URL? = {
         guard let container = FileManager.default.url(forUbiquityContainerIdentifier: nil) else { return nil }
         let folder = container.appendingPathComponent("Documents/\(folderName)", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder
-    }
+    }()
 
     private static func localURL(_ key: String) -> URL {
         localFolder.appendingPathComponent("\(key).json")
@@ -29,14 +37,25 @@ enum DataStore {
     // MARK: - Public API (matches LocalStore exactly)
 
     static func save<T: Codable>(_ value: T, forKey key: String) {
+        // Encode on the caller so the value is captured as bytes and the write
+        // can safely hop threads.
+        let data: Data
         do {
-            let data = try JSONEncoder().encode(value)
-            try data.write(to: localURL(key), options: [.atomic])
+            data = try JSONEncoder().encode(value)
+        } catch {
+            print("DataStore encode failed for \(key): \(error.localizedDescription)")
+            return
+        }
+        let local = localURL(key)
+        ioQueue.async {
+            do {
+                try data.write(to: local, options: [.atomic])
+            } catch {
+                print("DataStore save failed for \(key): \(error.localizedDescription)")
+            }
             if let cloud = iCloudFolder {
                 try? data.write(to: cloud.appendingPathComponent("\(key).json"), options: [.atomic])
             }
-        } catch {
-            print("DataStore save failed for \(key): \(error.localizedDescription)")
         }
     }
 
@@ -55,7 +74,88 @@ enum DataStore {
             return da < db
         }
         guard let url = newest, let data = try? Data(contentsOf: url) else { return fallback }
-        return (try? JSONDecoder().decode(type, from: data)) ?? fallback
+
+        do {
+            return try JSONDecoder().decode(type, from: data)
+        } catch {
+            // Returning the fallback silently means the next persistAll() writes
+            // an empty array over the user's real data, locally AND in iCloud —
+            // one added non-optional field in a future model would wipe the
+            // store permanently. Quarantine the file instead so it is
+            // recoverable, and leave a marker so the app can surface it.
+            quarantine(url, key: key, reason: error.localizedDescription)
+            return fallback
+        }
+    }
+
+    /// Set when a file failed to decode, so the app can tell the user their data
+    /// could not be read instead of silently presenting an empty state.
+    private(set) static var lastCorruptionKey: String?
+
+    private static func quarantine(_ url: URL, key: String, reason: String) {
+        lastCorruptionKey = key
+        print("DataStore decode failed for \(key): \(reason) — quarantining")
+        let backup = url.deletingPathExtension().appendingPathExtension("corrupt.json")
+        ioQueue.async {
+            try? FileManager.default.removeItem(at: backup)
+            try? FileManager.default.moveItem(at: url, to: backup)
+        }
+    }
+
+    // MARK: - Deletion
+
+    /// Removes the backing files for a key, locally and in iCloud. Without this
+    /// "Delete All Data" only cleared memory and UserDefaults, so everything
+    /// reloaded from disk on the next launch.
+    static func delete(forKey key: String) {
+        let local = localURL(key)
+        ioQueue.async {
+            try? FileManager.default.removeItem(at: local)
+            if let cloud = iCloudFolder {
+                try? FileManager.default.removeItem(at: cloud.appendingPathComponent("\(key).json"))
+            }
+        }
+    }
+
+    static func delete(keys: [String]) {
+        keys.forEach { delete(forKey: $0) }
+    }
+
+    /// Blocks until every queued write has committed. Writes are asynchronous so
+    /// they stay off the main thread, which means a swipe-kill or a jetsam right
+    /// after a workout could otherwise lose it. Call this when the scene
+    /// backgrounds — it is the only place a synchronous wait is warranted.
+    static func flush() {
+        ioQueue.sync {}
+    }
+
+    /// Every key the app has ever written through this store. Used by
+    /// "Delete All Data" so a key added later cannot be quietly left behind.
+    static let allKnownKeys: [String] = [
+        "currentPlan", "completedRecords", "unitPTPlans", "unitPTFullPlan",
+        "scheduledUnitPT", "importedWorkouts", "aftScores", "aftCalculatorResults",
+        "wodPlan", "quickStartRecords", "dailyLogs", "serviceTestRecords",
+        "todayFunctionalWOD", "shownMilestones", "stepHistory", "squadData"
+    ]
+
+    /// Deletes every known store file plus anything else left in the folder,
+    /// so nothing survives a wipe just because it was not on the list.
+    static func deleteEverything() {
+        delete(keys: allKnownKeys)
+        let local = localFolder
+        ioQueue.async {
+            if let contents = try? FileManager.default.contentsOfDirectory(at: local, includingPropertiesForKeys: nil) {
+                for file in contents where file.pathExtension == "json" {
+                    try? FileManager.default.removeItem(at: file)
+                }
+            }
+            if let cloud = iCloudFolder,
+               let contents = try? FileManager.default.contentsOfDirectory(at: cloud, includingPropertiesForKeys: nil) {
+                for file in contents where file.pathExtension == "json" {
+                    try? FileManager.default.removeItem(at: file)
+                }
+            }
+        }
     }
 
     // MARK: - One-time migration from UserDefaults (LocalStore keys)

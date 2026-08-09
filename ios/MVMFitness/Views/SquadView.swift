@@ -61,7 +61,10 @@ struct SquadView: View {
             } message: {
                 Text("Squad data stays on this device. You are responsible for it. Consider using initials or roster numbers instead of full names. Records here are unofficial training aids — official results live on DA Form 705/DA 5500 and in ATIS.")
             }
-            .onAppear { if !noticeShown { showFirstUseNotice = true } }
+            .onAppear {
+                store.reload()
+                if !noticeShown { showFirstUseNotice = true }
+            }
         }
         .preferredColorScheme(.dark)
     }

@@ -68,6 +68,7 @@ struct AFTCalculatorView: View {
     @State private var showExportSheet = false
     @State private var showAFTShareSheet: Bool = false
     @State private var showScoreHistory: Bool = false
+    @State private var showGoalMode: Bool = false
     @State private var showScoringReference: Bool = false
     @State private var showResultPDFSheet: Bool = false
     @State private var resultPDFURL: URL?
@@ -257,6 +258,16 @@ struct AFTCalculatorView: View {
             if selectedTest == .aft {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        showGoalMode = true
+                    } label: {
+                        Image(systemName: "target")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(MVMTheme.secondaryText)
+                    }
+                    .accessibilityLabel("Goal mode")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
                         showScoreHistory = true
                     } label: {
                         Image(systemName: "clock.arrow.circlepath")
@@ -277,6 +288,33 @@ struct AFTCalculatorView: View {
         }
         .sheet(isPresented: $showScoreHistory) {
             AFTScoreSheet()
+        }
+        // Goal mode was a complete, working feature with no entry point:
+        // "what do I need on each event to reach X" is the most-asked question
+        // the calculator can answer, and nothing in the UI opened it.
+        .sheet(isPresented: $showGoalMode) {
+            // AFTGoalModeView's body is a bare VStack of cards authored to sit
+            // inside a parent scroll view, so it needs a container of its own
+            // or it overflows the sheet with no way to reach the buttons.
+            NavigationStack {
+                ScrollView {
+                    AFTGoalModeView(
+                        age: Int(ageText) ?? 25,
+                        sex: sex,
+                        standard: standard,
+                        soldierName: ""
+                    )
+                    .padding(20)
+                }
+                .background(MVMTheme.background)
+                .navigationTitle("Goal Mode")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") { showGoalMode = false }
+                    }
+                }
+            }
         }
         .sheet(isPresented: $showScoringReference) {
             ScoringReferenceView()

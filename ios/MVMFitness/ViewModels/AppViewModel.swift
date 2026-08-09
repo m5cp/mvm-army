@@ -78,6 +78,20 @@ final class AppViewModel {
         loadTodayFunctionalWOD()
     }
 
+    /// A completed workout often has no recorded start/end (they are optional and
+    /// rarely set). Writing `.now`/`.now` produced a zero-duration entry in Apple
+    /// Health; fall back to the user's configured session length ending now.
+    private func healthInterval(start: Date?, end: Date?) -> (start: Date, end: Date) {
+        let finish = end ?? .now
+        // Prefer anything real we actually recorded.
+        if let start, finish > start { return (start, finish) }
+        // Otherwise fall back to the session length the user configured. This is
+        // their own stated intent rather than an invented figure, and it is the
+        // same number the plan generator schedules against.
+        let minutes = currentMinutes
+        return (finish.addingTimeInterval(-Double(minutes) * 60), finish)
+    }
+
     func persistAll() {
         PersistenceCoordinator.save(PersistenceCoordinator.PersistableData(
             currentPlan: currentPlan,
@@ -107,7 +121,7 @@ final class AppViewModel {
             todayWorkoutTitle: todayWork?.title,
             todayWorkoutExerciseCount: todayWork?.exercises.count ?? 0,
             aftScore: latestAFTScore?.totalScore,
-            aftPassed: latestAFTScore.map { $0.totalScore >= 300 && $0.deadliftPoints >= 60 && $0.pushUpPoints >= 60 && $0.sdcPoints >= 60 && $0.plankPoints >= 60 && $0.runPoints >= 60 },
+            aftPassed: latestAFTScore.map { AFTCardRenderer.isPassing($0) },
             streak: streak,
             stepsToday: pedometer.todaySteps,
             completedToday: completedToday,
@@ -587,12 +601,13 @@ final class AppViewModel {
         persistAll()
         AnalyticsService.track(.workoutCompleted)
 
+        let interval = healthInterval(start: day.startTime, end: day.endTime)
         Task {
             if await HealthKitManager.shared.requestAuthorization() {
                 await HealthKitManager.shared.saveWorkout(
                     activityTag: day.title,
-                    start: day.startTime ?? .now,
-                    end: day.endTime ?? .now
+                    start: interval.start,
+                    end: interval.end
                 )
             }
         }
@@ -616,6 +631,7 @@ final class AppViewModel {
         activeMilestone = nil
         lastWorkoutTag = ""
         dailyLogs = []
+        serviceTestRecords = []
 
         let keysToDelete = [
             "currentPlan", "completedRecords", "stepHistory",
@@ -626,11 +642,25 @@ final class AppViewModel {
             "daysPerWeek", "minutesPerWorkout", "ptMode",
             "dutyType", "ptGoal", "planWeeks",
             "onboardingComplete", "disclaimerAccepted",
-            "lastFunctionalWODDate"
+            "lastFunctionalWODDate", "dailyLogs", "serviceTestRecords",
+            "hasSharedOnce", "seenEarnedBadgeAssets",
+            "seenEarnedBadgeKeysMigratedV2", "profileAvatarIndex",
+            "calendarSyncEnabled", "profileDisplayName"
         ]
         keysToDelete.forEach { UserDefaults.standard.removeObject(forKey: $0) }
-        DataStore.save(Optional<WODTemplate>.none, forKey: "todayFunctionalWOD")
-        DataStore.save([String](), forKey: "shownMilestones")
+
+        // The legacy UserDefaults blobs are deliberately kept as a one-release
+        // backup, and migration re-seeds the files from them whenever
+        // dataStoreMigrated_v1 is unset. Clearing them here — and NEVER clearing
+        // that flag — is what stops a wipe from being undone on next launch.
+        PersistenceCoordinator.migrationKeys.forEach {
+            UserDefaults.standard.removeObject(forKey: $0)
+        }
+
+        // The real store is a set of JSON files in Application Support and
+        // iCloud. Clearing memory and UserDefaults alone left every one of them
+        // on disk, so the next launch restored everything the user just deleted.
+        DataStore.deleteEverything()
         syncWidgetData()
     }
 
@@ -793,12 +823,13 @@ final class AppViewModel {
             recordDailyLog(workoutTitle: day.title)
             checkMilestonesAfterWorkout()
 
+            let interval = healthInterval(start: day.startTime, end: day.endTime)
             Task {
                 if await HealthKitManager.shared.requestAuthorization() {
                     await HealthKitManager.shared.saveWorkout(
                         activityTag: day.title,
-                        start: day.startTime ?? .now,
-                        end: day.endTime ?? .now
+                        start: interval.start,
+                        end: interval.end
                     )
                 }
             }
@@ -832,12 +863,13 @@ final class AppViewModel {
         persistAll()
         AnalyticsService.track(.workoutCompleted)
 
+        let interval = healthInterval(start: workout.startTime, end: workout.endTime)
         Task {
             if await HealthKitManager.shared.requestAuthorization() {
                 await HealthKitManager.shared.saveWorkout(
                     activityTag: workout.title,
-                    start: workout.startTime ?? .now,
-                    end: workout.endTime ?? .now
+                    start: interval.start,
+                    end: interval.end
                 )
             }
         }
@@ -1692,6 +1724,9 @@ final class AppViewModel {
     // MARK: - Quick Start
 
     func saveQuickStartRecord(_ record: QuickStartRecord) {
+        // Idempotent: the session is now saved automatically when the completion
+        // screen appears, and the "Log to Progress" row can still be tapped.
+        guard !quickStartRecords.contains(where: { $0.id == record.id }) else { return }
         quickStartRecords.insert(record, at: 0)
         completedRecords.insert(
             CompletedWorkoutRecord(
@@ -1706,7 +1741,11 @@ final class AppViewModel {
 
         Task {
             if await HealthKitManager.shared.requestAuthorization() {
-                let kcal = record.distanceMeters > 0 ? record.distanceMeters / 1609.34 * 100 : nil
+                // Calories were fabricated as miles x 100 — the same figure for a
+                // run, a ride and a hike, with no body weight — and written to
+                // Health as measured active energy. Better to write none than to
+                // write a number the user will believe.
+                let kcal: Double? = nil
                 await HealthKitManager.shared.saveWorkout(
                     activityTag: record.activity.rawValue,
                     start: record.startDate,
@@ -1777,18 +1816,8 @@ final class AppViewModel {
     }
 
     func resetAllData() {
-        currentPlan = nil
-        completedRecords = []
-        stepService.clear()
-        lastWorkoutTag = ""
-        unitPTPlans = []
-        unitPTFullPlan = nil
-        scheduledUnitPT = []
-        importedWorkouts = []
-        aftScores = []
-        aftCalculatorResults = []
-        wodPlan = nil
-        todayFunctionalWOD = nil
-        persistAll()
+        // Same contract as deleteAllData — previously this left
+        // quickStartRecords, dailyLogs, serviceTestRecords and the squad behind.
+        deleteAllData()
     }
 }
