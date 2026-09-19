@@ -18,6 +18,10 @@ import Observation
 /// This is a client-side check by design. Anyone willing to pull apart the
 /// binary could find these values, which is why every shared code carries an
 /// expiry: a leak then costs one release to fix instead of being permanent.
+///
+/// The redeemed grant lives in the Keychain rather than `UserDefaults`, so it
+/// survives a delete-and-reinstall and is not sitting in a plist that can be
+/// edited to fake access. It is still device-only and never leaves the phone.
 @Observable
 @MainActor
 final class ComplimentaryAccessService {
@@ -111,32 +115,61 @@ final class ComplimentaryAccessService {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        migrateLegacyGrantIfNeeded()
         revalidate()
+    }
+
+    /// Moves a grant redeemed by an earlier build out of `UserDefaults` and into
+    /// the Keychain. Without this, updating the app would silently drop Pro for
+    /// everyone who had already redeemed.
+    ///
+    /// The old value is only cleared once the Keychain write is confirmed, so a
+    /// failed write leaves the user with working access to migrate next launch
+    /// rather than no access at all.
+    private func migrateLegacyGrantIfNeeded() {
+        if let legacyCode = defaults.string(forKey: Keys.code) {
+            if KeychainStore.string(forKey: Keys.code) != nil || KeychainStore.set(legacyCode, forKey: Keys.code) {
+                defaults.removeObject(forKey: Keys.code)
+            }
+        }
+
+        if let legacyEmail = defaults.string(forKey: Keys.email) {
+            if KeychainStore.string(forKey: Keys.email) != nil || KeychainStore.set(legacyEmail, forKey: Keys.email) {
+                defaults.removeObject(forKey: Keys.email)
+            }
+        }
     }
 
     /// Re-checks the stored grant against the current rules rather than trusting
     /// a saved flag. A code that has since expired or been pulled from the list
     /// stops working on the next launch instead of persisting forever.
     private func revalidate() {
-        if let storedCode = defaults.string(forKey: Keys.code) {
+        if let storedCode = KeychainStore.string(forKey: Keys.code) {
             if let match = Self.matchingCode(storedCode), !Self.isExpired(match) {
                 grantLabel = match.label
+                grantedEmail = nil
                 return
             }
-            defaults.removeObject(forKey: Keys.code)
+            KeychainStore.removeValue(forKey: Keys.code)
         }
 
-        if let storedEmail = defaults.string(forKey: Keys.email) {
+        if let storedEmail = KeychainStore.string(forKey: Keys.email) {
             if Self.isEligibleEmail(storedEmail) {
                 grantedEmail = storedEmail
                 grantLabel = storedEmail
                 return
             }
-            defaults.removeObject(forKey: Keys.email)
+            KeychainStore.removeValue(forKey: Keys.email)
         }
 
         grantLabel = nil
         grantedEmail = nil
+    }
+
+    /// Re-runs the grant check. Called on foreground so a code that lapsed while
+    /// the app sat in the background stops working without needing a cold start.
+    func refresh() {
+        revalidate()
     }
 
     // MARK: - Redeeming
@@ -154,8 +187,8 @@ final class ComplimentaryAccessService {
             let email = trimmed.lowercased()
             guard Self.isEligibleEmail(email) else { return .notRecognized }
 
-            defaults.removeObject(forKey: Keys.code)
-            defaults.set(email, forKey: Keys.email)
+            KeychainStore.removeValue(forKey: Keys.code)
+            guard KeychainStore.set(email, forKey: Keys.email) else { return .notRecognized }
             revalidate()
             return .granted(label: email)
         }
@@ -166,14 +199,20 @@ final class ComplimentaryAccessService {
             return .expired(on: expiry)
         }
 
-        defaults.removeObject(forKey: Keys.email)
-        defaults.set(Self.normalizedCode(match.code), forKey: Keys.code)
+        KeychainStore.removeValue(forKey: Keys.email)
+        guard KeychainStore.set(Self.normalizedCode(match.code), forKey: Keys.code) else {
+            return .notRecognized
+        }
         revalidate()
         return .granted(label: match.label)
     }
 
     /// Lets someone hand a device on, or move their access elsewhere.
     func revoke() {
+        KeychainStore.removeValue(forKey: Keys.code)
+        KeychainStore.removeValue(forKey: Keys.email)
+        // Clear any legacy copy too, so a revoked grant cannot be resurrected by
+        // the migration on the next launch.
         defaults.removeObject(forKey: Keys.code)
         defaults.removeObject(forKey: Keys.email)
         revalidate()

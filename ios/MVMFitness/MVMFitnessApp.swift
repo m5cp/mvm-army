@@ -36,6 +36,10 @@ struct MVMFitnessApp: App {
                 }
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
+                        // Re-check the access grant here as well as at launch,
+                        // so a code that lapsed while the app was backgrounded
+                        // does not stay unlocked until the next cold start.
+                        ComplimentaryAccessService.shared.refresh()
                         viewModel.pedometer.refreshTodaySteps()
                         Task {
                             try? await Task.sleep(for: .milliseconds(300))
