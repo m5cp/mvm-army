@@ -19,8 +19,19 @@ nonisolated struct ToastMessage: Equatable, Identifiable {
 
 struct SuccessToastView: View {
     let message: ToastMessage
+    let onDismiss: () -> Void
 
     var body: some View {
+        Button(action: onDismiss) {
+            banner
+        }
+        .buttonStyle(ToastDismissButtonStyle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel([message.title, message.detail].compactMap { $0 }.joined(separator: ". "))
+        .accessibilityHint("Double tap to dismiss")
+    }
+
+    private var banner: some View {
         HStack(spacing: 12) {
             Image(systemName: message.icon)
                 .font(.subheadline.weight(.bold))
@@ -45,6 +56,10 @@ struct SuccessToastView: View {
             }
 
             Spacer(minLength: 0)
+
+            Image(systemName: "xmark")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(MVMTheme.tertiaryText)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -56,8 +71,19 @@ struct SuccessToastView: View {
         }
         .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
         .padding(.horizontal, 20)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isStaticText)
+        // Whole banner is the hit target, including the padding around it.
+        .contentShape(.rect)
+    }
+}
+
+/// Presses inward slightly so the banner reads as tappable, without the default
+/// button tint fighting the card styling.
+private struct ToastDismissButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.75 : 1)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: configuration.isPressed)
     }
 }
 
@@ -71,20 +97,26 @@ private struct SuccessToastOverlay: ViewModifier {
         content
             .overlay(alignment: .top) {
                 if let active = message {
-                    SuccessToastView(message: active)
+                    SuccessToastView(message: active) { dismiss() }
                         .transition(.move(edge: .top).combined(with: .opacity))
                         // Keyed by id so a second toast restarts the timer
-                        // instead of inheriting the first one's countdown.
+                        // instead of inheriting the first one's countdown. A
+                        // tap clears the message, which cancels this task, so
+                        // a dismissed toast can never fire again later.
                         .task(id: active.id) {
                             try? await Task.sleep(for: visibleDuration)
                             guard !Task.isCancelled else { return }
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                message = nil
-                            }
+                            dismiss()
                         }
                 }
             }
             .animation(.spring(response: 0.4, dampingFraction: 0.75), value: message?.id)
+    }
+
+    private func dismiss() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            message = nil
+        }
     }
 }
 

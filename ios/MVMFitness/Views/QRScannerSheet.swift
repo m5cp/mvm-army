@@ -12,6 +12,7 @@ struct QRScannerSheet: View {
     @State private var scannedWorkout: WorkoutDay?
     @State private var errorMessage: String?
     @State private var savedConfirmation = false
+    @State private var toast: ToastMessage?
 
     var body: some View {
         NavigationStack {
@@ -61,6 +62,7 @@ struct QRScannerSheet: View {
             .toolbarBackground(MVMTheme.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .sensoryFeedback(.success, trigger: savedConfirmation)
+            .successToast($toast)
         }
     }
 
@@ -261,7 +263,16 @@ struct QRScannerSheet: View {
             Button {
                 vm.saveImportedWorkout(workout)
                 savedConfirmation.toggle()
-                dismiss()
+                // Stay on the sheet so the confirmation is actually seen, and
+                // reset to the scanner since importing several codes in a row
+                // is the common case. "Done" closes out.
+                toast = ToastMessage(
+                    title: "Workout saved",
+                    detail: "\(workout.title) \u{00B7} find it under Imported Workouts."
+                )
+                scannedPlan = nil
+                scannedWorkout = nil
+                errorMessage = nil
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "square.and.arrow.down.on.square")
