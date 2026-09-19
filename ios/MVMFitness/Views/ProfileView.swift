@@ -16,6 +16,7 @@ struct ProfileView: View {
     @AppStorage("profileDisplayName") private var profileDisplayName = ""
     @AppStorage("timeFormatPreference") private var timeFormatRaw = TimeFormatPreference.system.rawValue
     @AppStorage("appLockEnabled") private var appLockEnabled = false
+    @AppStorage(HealthKitManager.SyncKeys.syncEnabled) private var healthSyncEnabled = true
     private var opsec = OPSECService.shared
 
     @State private var reminderTime = Calendar.current.date(from: DateComponents(hour: 6, minute: 0)) ?? .now
@@ -37,6 +38,9 @@ struct ProfileView: View {
     @State private var memberIDCopyTrigger = false
     @State private var appLockService = AppLockService()
     @State private var appLockErrorMessage: String?
+    @State private var isSyncingHealth = false
+    @State private var healthSyncMessage: String?
+    @State private var healthSyncTrigger = false
     @FocusState private var nameFieldFocused: Bool
 
     var body: some View {
@@ -596,6 +600,10 @@ struct ProfileView: View {
             .accessibilityLabel("App Lock, requires \(appLockService.biometryLabel) to open the app")
 
             sectionDivider
+
+            appleHealthRows
+
+            sectionDivider
             opsecRows
 
             if let appLockErrorMessage {
@@ -810,6 +818,89 @@ struct ProfileView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 4)
             .mvmCard(cornerRadius: 16)
+        }
+    }
+
+    /// Apple Health sync. Writing is the only direction that changes the user's
+    /// own Health data, so it gets an explicit switch plus a manual backfill for
+    /// anyone who turns it on after already logging workouts here.
+    @ViewBuilder
+    private var appleHealthRows: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "heart.text.square")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(MVMTheme.accent)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Apple Health")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(MVMTheme.primaryText)
+                Text(HealthKitManager.shared.statusDescription)
+                    .font(.caption2)
+                    .foregroundStyle(MVMTheme.tertiaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            Toggle("", isOn: $healthSyncEnabled)
+                .labelsHidden()
+                .tint(MVMTheme.accent)
+                .disabled(!HealthKitManager.shared.isAvailable)
+        }
+        .frame(minHeight: 48)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Apple Health sync")
+        .accessibilityValue(HealthKitManager.shared.statusDescription)
+
+        if healthSyncEnabled, HealthKitManager.shared.isAvailable {
+            sectionDivider
+
+            Button {
+                syncPastWorkoutsToHealth()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.subheadline)
+                        .foregroundStyle(MVMTheme.tertiaryText)
+                        .frame(width: 24)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Sync Past Workouts")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(MVMTheme.primaryText)
+                        Text(healthSyncMessage ?? "Adds anything already logged here that Health is missing")
+                            .font(.caption2)
+                            .foregroundStyle(healthSyncMessage == nil ? MVMTheme.tertiaryText : MVMTheme.accent)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer()
+                    if isSyncingHealth {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(MVMTheme.accent)
+                    }
+                }
+                .frame(minHeight: 48)
+                .contentShape(Rectangle())
+            }
+            .disabled(isSyncingHealth)
+            .sensoryFeedback(.success, trigger: healthSyncTrigger)
+        }
+    }
+
+    /// Mirrors every locally saved workout Health does not already have.
+    /// Duplicate protection lives in `HealthKitManager`, so tapping this twice
+    /// is safe and simply reports that nothing new was needed.
+    private func syncPastWorkoutsToHealth() {
+        isSyncingHealth = true
+        healthSyncMessage = nil
+        Task {
+            let written = await vm.backfillAppleHealth()
+            isSyncingHealth = false
+            healthSyncTrigger.toggle()
+            switch written {
+            case 0: healthSyncMessage = "Apple Health is already up to date"
+            case 1: healthSyncMessage = "Added 1 workout to Apple Health"
+            default: healthSyncMessage = "Added \(written) workouts to Apple Health"
+            }
         }
     }
 

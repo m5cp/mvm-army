@@ -731,14 +731,15 @@ final class AppViewModel {
         AnalyticsService.track(.workoutCompleted)
 
         let interval = healthInterval(start: day.startTime, end: day.endTime)
+        let record = completedRecords[0]
         Task {
-            if await HealthKitManager.shared.requestAuthorization() {
-                await HealthKitManager.shared.saveWorkout(
-                    activityTag: day.title,
-                    start: interval.start,
-                    end: interval.end
-                )
-            }
+            await HealthKitManager.shared.sync(PendingHealthWorkout(
+                externalID: record.id,
+                activityTag: day.title,
+                title: day.title,
+                start: interval.start,
+                end: interval.end
+            ))
         }
     }
 
@@ -953,14 +954,15 @@ final class AppViewModel {
             checkMilestonesAfterWorkout()
 
             let interval = healthInterval(start: day.startTime, end: day.endTime)
+            let record = completedRecords[0]
             Task {
-                if await HealthKitManager.shared.requestAuthorization() {
-                    await HealthKitManager.shared.saveWorkout(
-                        activityTag: day.title,
-                        start: interval.start,
-                        end: interval.end
-                    )
-                }
+                await HealthKitManager.shared.sync(PendingHealthWorkout(
+                    externalID: record.id,
+                    activityTag: day.title,
+                    title: day.title,
+                    start: interval.start,
+                    end: interval.end
+                ))
             }
             AnalyticsService.track(.workoutCompleted)
         }
@@ -993,14 +995,15 @@ final class AppViewModel {
         AnalyticsService.track(.workoutCompleted)
 
         let interval = healthInterval(start: workout.startTime, end: workout.endTime)
+        let record = completedRecords[0]
         Task {
-            if await HealthKitManager.shared.requestAuthorization() {
-                await HealthKitManager.shared.saveWorkout(
-                    activityTag: workout.title,
-                    start: interval.start,
-                    end: interval.end
-                )
-            }
+            await HealthKitManager.shared.sync(PendingHealthWorkout(
+                externalID: record.id,
+                activityTag: workout.title,
+                title: workout.title,
+                start: interval.start,
+                end: interval.end
+            ))
         }
     }
 
@@ -1874,21 +1877,21 @@ final class AppViewModel {
         showRecap(PerformanceHighlightsService.workoutRecap(title: record.activity.rawValue, exerciseCount: 1))
         persistAll()
 
+        // Calories are deliberately never written. They were fabricated as
+        // miles x 100 — the same figure for a run, a ride and a hike, with no
+        // body weight — and written to Health as measured active energy.
+        // Better to write none than a number the user will believe.
         Task {
-            if await HealthKitManager.shared.requestAuthorization() {
-                // Calories were fabricated as miles x 100 — the same figure for a
-                // run, a ride and a hike, with no body weight — and written to
-                // Health as measured active energy. Better to write none than to
-                // write a number the user will believe.
-                let kcal: Double? = nil
-                await HealthKitManager.shared.saveWorkout(
-                    activityTag: record.activity.rawValue,
-                    start: record.startDate,
-                    end: record.endDate,
-                    distanceMeters: record.distanceMeters > 0 ? record.distanceMeters : nil,
-                    kilocalories: kcal
-                )
-            }
+            await HealthKitManager.shared.sync(PendingHealthWorkout(
+                externalID: record.id,
+                activityTag: record.activity.rawValue,
+                title: record.activity.rawValue,
+                start: record.startDate,
+                end: record.endDate,
+                distanceMeters: record.distanceMeters > 0 ? record.distanceMeters : nil,
+                // A GPS-tracked session is measured, not hand-entered.
+                wasUserEntered: record.distanceMeters <= 0
+            ))
         }
     }
 
@@ -1907,6 +1910,54 @@ final class AppViewModel {
             notes: notes,
             durationMinutes: durationMinutes
         )
+    }
+
+    // MARK: - Apple Health backfill
+
+    /// Every locally saved session, newest first, shaped for Apple Health.
+    ///
+    /// GPS sessions are emitted from `quickStartRecords` because only those
+    /// carry real distance and real start/end timestamps. Everything else comes
+    /// from `completedRecords`, whose ids are the same values `sync` already
+    /// writes as the Health external UUID — so a record synced at completion is
+    /// recognised here and never written twice.
+    var healthBackfillCandidates: [PendingHealthWorkout] {
+        let gpsTitles = Set(quickStartRecords.map(\.activity.rawValue))
+
+        let gps: [PendingHealthWorkout] = quickStartRecords.map { record in
+            PendingHealthWorkout(
+                externalID: record.id,
+                activityTag: record.activity.rawValue,
+                title: record.activity.rawValue,
+                start: record.startDate,
+                end: record.endDate,
+                distanceMeters: record.distanceMeters > 0 ? record.distanceMeters : nil,
+                wasUserEntered: record.distanceMeters <= 0
+            )
+        }
+
+        // A Quick Start session also inserts a CompletedWorkoutRecord with the
+        // same title. Emitting both would write the session twice under two
+        // different ids, so the mirror rows are dropped here.
+        let logged: [PendingHealthWorkout] = completedRecords.compactMap { record in
+            guard !gpsTitles.contains(record.title) else { return nil }
+            let interval = healthInterval(start: nil, end: record.date)
+            return PendingHealthWorkout(
+                externalID: record.id,
+                activityTag: record.title,
+                title: record.title,
+                start: interval.start,
+                end: interval.end
+            )
+        }
+
+        return (gps + logged).sorted { $0.start > $1.start }
+    }
+
+    /// Writes any locally saved workout that is not yet in Apple Health.
+    /// Returns how many were newly added, for the confirmation message.
+    func backfillAppleHealth() async -> Int {
+        await HealthKitManager.shared.backfill(healthBackfillCandidates)
     }
 
     // MARK: - Milestones & Review Prompts
