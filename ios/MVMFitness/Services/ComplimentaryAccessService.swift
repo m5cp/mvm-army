@@ -39,11 +39,34 @@ final class ComplimentaryAccessService {
         }
     }
 
+    /// Middle dot separator, matching the app's typography rule that compound
+    /// values never use a hyphen (hyphens invite a line wrap mid-label).
+    private static let separator = "·"
+
     /// Add a new entry here to issue a code; remove one to kill it immediately.
+    ///
+    /// The year in a code names the *season it opens*, not the month it dies:
+    /// a `26` code covers the 2026-27 year and lapses the following August, so
+    /// it stays good through the whole season it was handed out for.
     private static let accessCodes: [AccessCode] = [
         AccessCode(
-            code: "BULLDOGS",
-            label: "Bulldogs team access",
+            code: "BULLDOGS26",
+            label: "Bulldogs team access \(separator) 2026-27",
+            expires: DateComponents(year: 2027, month: 8, day: 1)
+        ),
+        AccessCode(
+            code: "BULLDOGS27",
+            label: "Bulldogs team access \(separator) 2027-28",
+            expires: DateComponents(year: 2028, month: 8, day: 1)
+        ),
+        AccessCode(
+            code: "AIRBORNE26",
+            label: "Airborne access \(separator) 2026-27",
+            expires: DateComponents(year: 2027, month: 8, day: 1)
+        ),
+        AccessCode(
+            code: "BENNY26",
+            label: "Benny access \(separator) 2026-27",
             expires: DateComponents(year: 2027, month: 8, day: 1)
         )
     ]
