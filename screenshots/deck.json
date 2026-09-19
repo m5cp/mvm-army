@@ -1,52 +1,76 @@
 {
+  "appContext": {
+    "appName": "MVM Fitness",
+    "category": "military fitness testing and training",
+    "summary": "A military fitness app for soldiers, ROTC cadets, and service members to calculate official fitness test scores (Army AFT/CFT, Navy PRT, Air Force PT, Marine PFT/CFT, Advanced Readiness, ROTC/Academy), track workouts and GPS runs, follow training plans, earn badges, and manage squad standings for unit PT leaders.",
+    "domainKeywords": [
+      "AFT",
+      "CFT",
+      "fitness test score",
+      "deadlift",
+      "plank",
+      "two-mile run",
+      "ruck",
+      "squad",
+      "unit PT",
+      "training plan",
+      "GPS run",
+      "readiness score",
+      "badges",
+      "military",
+      "soldier"
+    ],
+    "forbiddenInterpretations": [
+      "generic gym or bodybuilding app",
+      "diet or nutrition tracking app",
+      "meditation or wellness app",
+      "video game or shooter",
+      "medical or clinical app"
+    ]
+  },
   "theme": {
-    "style": "Dark tactical aesthetic rooted in military operations — deep navy and near-black backgrounds command authority, while vivid electric gradients of blue, violet, and plasma energy surge through each scene like power under pressure. Lighting is cinematic and directional, evoking hardened precision and peak performance. Textures lean into glossy aurora waves and superheated plasma ribbons, creating a world that feels high-stakes and elite.",
-    "headlineFont": "font-family: 'Inter', sans-serif; font-weight: 900; @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap')",
+    "style": "A dark tactical command-center world: deep navy-black bases lit by electric cobalt, amber plasma, and neon green light. Surfaces feel like brushed gunmetal, night-vision haze, and cold glass with fine sensor grain; light rakes across the frame in hard directional beams like a briefing room display at 0500. Energy is disciplined and elite — high contrast, heavy shadow, no softness or wellness pastel. Upper thirds stay dark and quiet so headlines read like stenciled mission titles.",
+    "headlineFont": "font-family: 'Barlow Condensed', sans-serif — @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&display=swap')",
     "headlineFontSize": 140,
     "mockupIds": {
       "iphone": "deep-blue",
       "ipad": "space-gray"
     },
     "palette": {
-      "primary": "#090B1A",
-      "secondary": "#3A2EC2",
-      "accent": "#8B3FFF"
-    }
+      "primary": "#0A1020",
+      "secondary": "#1E6BFF",
+      "accent": "#C6FF3D"
+    },
+    "layoutId": "hero-clipped"
   },
   "slides": [
     {
       "label": "Home Screen",
-      "backgroundPrompt": "Abstract digital art with sweeping aurora ribbons of deep cobalt blue and electric violet erupting from the lower center, expanding upward in massive luminous arcs across a near-black midnight navy canvas. The color palette flows from deep navy black at the upper edges through vivid royal blue to rich electric violet pooling at the core, with soft floating particle trails and frosted translucent glass layers catching the light. The upper 30% is calm and very dark, fading into pure near-black for unobstructed text overlay. 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups.",
-      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/34c35d73-9cf0-4933-851a-877d9a6e030a.png"
+      "backgroundPrompt": "Abstract 3D rendered scene of vast brushed gunmetal planes receding into darkness, cut by long sweeping beams of electric cobalt blue light raking in from the lower left across near-black navy. Deep shadow pools fill the upper region, thin cyan rim highlights trace the edges of the planes, fine sensor grain and drifting dust particles add atmosphere, shallow depth of field blurring the outer corners. 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/ec107a4d-7f79-4440-b4cd-f8054edab94b.png"
     },
     {
-      "label": "AFT Calculator",
-      "backgroundPrompt": "Abstract digital art featuring sweeping molten arcs of deep amber orange and electric hot magenta cutting diagonally across a dark charcoal base, like superheated plasma trails curving at high velocity through deep space. The palette transitions from burnt sienna through vivid coral orange to blazing magenta-pink, with dramatic rim lighting from the lower right casting wide warm luminous halos and fine glowing ember particles drifting upward. The upper region is calm and near-black, with only the faintest warm orange tint bleeding softly into the dark. 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups.",
-      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/c02a9890-69ba-4a96-ab34-8057f246c8d0.png"
+      "label": "Test Score Calculator",
+      "backgroundPrompt": "Abstract digital art of superheated plasma ribbons twisting through a near-black charcoal void, glowing from deep ember red into blazing amber and hot magenta at their cores. Intense volumetric glow radiates from the lower center while the top third stays smoky and dark, with soft heat distortion, floating sparks, and subtle grain texture across the frame. 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/9cc35655-9b25-4b6a-8555-2c0a6c8205dd.png"
     },
     {
-      "label": "Quick Start Workout",
-      "backgroundPrompt": "Abstract digital art with flowing liquid silk curtains of electric neon green and deep ocean teal cascading from the upper left, colliding in a luminous burst of cyan-emerald light at the lower center of the frame. The palette sweeps from vivid lime green through bright cyan to dark teal-black at the edges, with soft volumetric light rays cutting through translucent wave layers and a subtle fine grain texture adding depth. The upper 30% darkens sharply to near-black with only a whisper of teal tint, clean and open for text overlay. 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups.",
-      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/0e962703-cd71-4086-832c-bcc72803e59d.png"
+      "label": "Score Sheet PDF",
+      "backgroundPrompt": "Layered translucent frosted glass panels stacked at crisp parallel angles across a deep slate shadow field, each edge catching a razor-thin line of cool steel blue and crisp white light from the upper right. Hard directional lighting creates long clean shadows between layers, the upper portion fading to near-black charcoal, subtle glass morphism reflections and fine matte grain. 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/acbf4c72-e1a1-4dd6-a5c2-87856c808af1.png"
     },
     {
-      "label": "Progress & Charts",
-      "backgroundPrompt": "Abstract digital art with layered translucent geometric shards of deep indigo and midnight blue stacked at sharp converging angles, each hard edge catching a thin razor line of electric cobalt light against deep shadow. The color palette moves from near-black navy through rich indigo to vibrant royal blue with soft diffused light pooling at the lower center and luminous micro-particles slowly drifting upward like suspended light dust. The upper 30% fades cleanly into deep indigo-black, still and uncluttered for text readability. 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups.",
-      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/dae42886-a872-4be3-8328-89dd87ccf160.png"
-    },
-    {
-      "label": "Unit PT Planner",
-      "backgroundPrompt": "Abstract digital art with massive colliding waves of deep blood crimson and dark amethyst purple meeting at the center of the frame in a cascading burst of magenta-violet light, radiating outward in luminous concentric arcs. The palette transitions from deep wine crimson through dark ruby red to rich dark purple and near-black at the corners, with dramatic cinematic top-down lighting creating strong volumetric shadows and intense contrast throughout the composition. The upper 30% settles into very dark near-black with a subdued deep purple tint, quiet and ready for text. 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups.",
-      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/eb403b11-0fa7-42e5-9406-0f97d9784dc7.png"
+      "label": "Quick Start Run",
+      "backgroundPrompt": "Abstract long-exposure light streaks of electric neon green and deep ocean teal ripping horizontally across a black void, stretched and motion blurred with bright hot cores and soft bleeding halos. Light enters low from the right and trails off left, the top third left dark and empty, with faint teal atmospheric haze, speckled particle trails, and depth of field blur on the outer edges. 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/2e69c90e-c77f-4aa0-99e7-ac3b366a73a8.png"
     }
   ],
   "headlines": {
     "en": {
-      "Home Screen": "Fitness<br>Command Center",
-      "AFT Calculator": "Know Your<br>Score Instantly",
-      "Quick Start Workout": "Train<br>Instantly",
-      "Progress & Charts": "See Your<br>Growth",
-      "Unit PT Planner": "Lead Your<br>Formation"
+      "Home Screen": "Mission<br>Ready",
+      "Test Score Calculator": "Know Your<br>Score",
+      "Score Sheet PDF": "Proof On<br>Paper",
+      "Quick Start Run": "Every Mile<br>Logged"
     }
   }
 }
