@@ -318,9 +318,9 @@ struct ProfileView: View {
                 showComplimentaryAccess = true
             } label: {
                 settingsRowWithSubtitle(
-                    icon: "building.columns",
-                    title: "Organization Access",
-                    subtitle: complimentaryAccess.grantedEmail ?? "Approved emails unlock every Pro feature free"
+                    icon: "ticket",
+                    title: "Redeem Access Code",
+                    subtitle: complimentaryAccess.grantLabel ?? "Unlock every Pro feature free with a code"
                 )
             }
         }

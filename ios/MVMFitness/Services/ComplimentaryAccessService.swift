@@ -1,30 +1,61 @@
 import Foundation
 import Observation
 
-/// Grants full Pro access, for free, to a fixed allowlist of people.
+/// Grants full Pro access, for free, without an account.
 ///
-/// The app deliberately has no accounts — the privacy policy promises no
-/// registration and no password — so there is no "login" to key this off. The
-/// user enters an email once, it is checked against the list below, and the
-/// grant is stored locally on that device. The address is never transmitted
-/// anywhere; it is only compared against the constants in this file.
+/// Two ways in:
 ///
-/// This is intentionally a plain client-side allowlist. Anyone willing to read
-/// the binary could find these addresses and unlock Pro, which is an accepted
-/// trade-off: the alternative is a real accounts system and a server, and the
-/// people on this list are known individuals, not a revenue segment worth
-/// defending.
+/// 1. **An access code** — the main path. One code can be read aloud to a whole
+///    team, and it can be rotated or expired if it escapes.
+/// 2. **A named email** — for family. These never expire, so they do not depend
+///    on a code that may later be rotated.
+///
+/// The app deliberately has no accounts (the privacy policy promises no
+/// registration and no password), so nothing here is transmitted anywhere. Both
+/// checks happen against the constants in this file and the result is stored on
+/// the device only.
+///
+/// This is a client-side check by design. Anyone willing to pull apart the
+/// binary could find these values, which is why every shared code carries an
+/// expiry: a leak then costs one release to fix instead of being permanent.
 @Observable
 @MainActor
 final class ComplimentaryAccessService {
     static let shared = ComplimentaryAccessService()
 
-    /// Everyone at this domain is covered, including any subdomain of it.
+    // MARK: - Access codes
+
+    nonisolated struct AccessCode: Sendable {
+        /// Compared after normalizing, so case and dashes do not matter.
+        let code: String
+        /// Shown to the user once redeemed, so they know which grant is active.
+        let label: String
+        /// Last day the code works. Codes are shared out loud and screenshotted;
+        /// an expiry means a leak ages out instead of living forever.
+        let expires: DateComponents
+
+        var expiryDate: Date? {
+            Calendar(identifier: .gregorian).date(from: expires)
+        }
+    }
+
+    /// Add a new entry here to issue a code; remove one to kill it immediately.
+    private static let accessCodes: [AccessCode] = [
+        AccessCode(
+            code: "BULLDOGS",
+            label: "Bulldogs team access",
+            expires: DateComponents(year: 2027, month: 8, day: 1)
+        )
+    ]
+
+    // MARK: - Email allowlist
+
+    /// Everyone at this domain is covered, including any subdomain.
     private static let allowedDomains: Set<String> = [
         "hardin.kyschools.us"
     ]
 
-    /// Individually named addresses.
+    /// Individually named addresses. No expiry.
     private static let allowedAddresses: Set<String> = [
         "suemcgee83@gmail.com",
         "audrey.mcgee1524@gmail.com",
@@ -32,58 +63,124 @@ final class ComplimentaryAccessService {
         "eboliver1911@gmail.com"
     ]
 
-    enum RedeemResult: Equatable {
-        case granted
-        case notEligible
-        case malformed
+    // MARK: - State
+
+    nonisolated enum RedeemResult: Equatable {
+        case granted(label: String)
+        case expired(on: Date)
+        case notRecognized
     }
 
     private enum Keys {
+        static let code = "complimentaryAccessCode"
         static let email = "complimentaryAccessEmail"
     }
 
-    /// The address that unlocked this device, shown back to the user so they
-    /// can see which one is active. `nil` means no complimentary grant.
+    /// Human-readable description of the active grant, or `nil` if there is none.
+    private(set) var grantLabel: String?
+
+    /// The email that unlocked this device, when that was the route in.
     private(set) var grantedEmail: String?
 
-    var isActive: Bool { grantedEmail != nil }
+    var isActive: Bool { grantLabel != nil }
 
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-
-        // Re-validate on every launch rather than trusting the stored flag. If
-        // this list ever changes, a grant that no longer qualifies falls away
-        // instead of living forever in UserDefaults.
-        guard let stored = defaults.string(forKey: Keys.email) else { return }
-        if Self.isEligible(stored) {
-            grantedEmail = stored
-        } else {
-            defaults.removeObject(forKey: Keys.email)
-        }
+        revalidate()
     }
 
-    @discardableResult
-    func redeem(_ rawEmail: String) -> RedeemResult {
-        let trimmed = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard Self.canonical(trimmed) != nil else { return .malformed }
-        guard Self.isEligible(trimmed) else { return .notEligible }
+    /// Re-checks the stored grant against the current rules rather than trusting
+    /// a saved flag. A code that has since expired or been pulled from the list
+    /// stops working on the next launch instead of persisting forever.
+    private func revalidate() {
+        if let storedCode = defaults.string(forKey: Keys.code) {
+            if let match = Self.matchingCode(storedCode), !Self.isExpired(match) {
+                grantLabel = match.label
+                return
+            }
+            defaults.removeObject(forKey: Keys.code)
+        }
 
-        grantedEmail = trimmed
-        defaults.set(trimmed, forKey: Keys.email)
-        return .granted
+        if let storedEmail = defaults.string(forKey: Keys.email) {
+            if Self.isEligibleEmail(storedEmail) {
+                grantedEmail = storedEmail
+                grantLabel = storedEmail
+                return
+            }
+            defaults.removeObject(forKey: Keys.email)
+        }
+
+        grantLabel = nil
+        grantedEmail = nil
+    }
+
+    // MARK: - Redeeming
+
+    /// Accepts either an access code or an allowlisted email in one field, so
+    /// the user does not have to know which kind of thing they were given.
+    @discardableResult
+    func redeem(_ rawInput: String) -> RedeemResult {
+        let trimmed = rawInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return .notRecognized }
+
+        // An "@" means they are clearly trying an email, so never answer that
+        // attempt with a message about codes.
+        if trimmed.contains("@") {
+            let email = trimmed.lowercased()
+            guard Self.isEligibleEmail(email) else { return .notRecognized }
+
+            defaults.removeObject(forKey: Keys.code)
+            defaults.set(email, forKey: Keys.email)
+            revalidate()
+            return .granted(label: email)
+        }
+
+        guard let match = Self.matchingCode(trimmed) else { return .notRecognized }
+
+        if Self.isExpired(match), let expiry = match.expiryDate {
+            return .expired(on: expiry)
+        }
+
+        defaults.removeObject(forKey: Keys.email)
+        defaults.set(Self.normalizedCode(match.code), forKey: Keys.code)
+        revalidate()
+        return .granted(label: match.label)
     }
 
     /// Lets someone hand a device on, or move their access elsewhere.
     func revoke() {
-        grantedEmail = nil
+        defaults.removeObject(forKey: Keys.code)
         defaults.removeObject(forKey: Keys.email)
+        revalidate()
     }
 
-    // MARK: - Matching
+    // MARK: - Code matching
 
-    private static func isEligible(_ email: String) -> Bool {
+    /// Codes get read aloud and typed on phone keyboards, so case, spaces and
+    /// dashes are all ignored when matching.
+    private static func normalizedCode(_ raw: String) -> String {
+        raw.uppercased().filter { $0.isLetter || $0.isNumber }
+    }
+
+    private static func matchingCode(_ raw: String) -> AccessCode? {
+        let normalized = normalizedCode(raw)
+        guard !normalized.isEmpty else { return nil }
+        return accessCodes.first { normalizedCode($0.code) == normalized }
+    }
+
+    private static func isExpired(_ code: AccessCode) -> Bool {
+        guard let expiry = code.expiryDate else { return false }
+        // Valid through the end of the expiry day, not from its midnight.
+        let endOfDay = Calendar(identifier: .gregorian)
+            .date(byAdding: .day, value: 1, to: expiry) ?? expiry
+        return Date() >= endOfDay
+    }
+
+    // MARK: - Email matching
+
+    private static func isEligibleEmail(_ email: String) -> Bool {
         guard let parsed = canonical(email) else { return false }
 
         if allowedDomains.contains(where: { parsed.domain == $0 || parsed.domain.hasSuffix(".\($0)") }) {
