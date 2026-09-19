@@ -15,6 +15,7 @@ struct ComplimentaryAccessSheet: View {
     @State private var entry = ""
     @State private var errorMessage: String?
     @State private var grantTrigger = false
+    @State private var toast: ToastMessage?
     @FocusState private var fieldFocused: Bool
 
     private var trimmedEntry: String {
@@ -56,6 +57,7 @@ struct ComplimentaryAccessSheet: View {
                 }
             }
             .sensoryFeedback(.success, trigger: grantTrigger)
+            .successToast($toast)
         }
     }
 
@@ -169,10 +171,17 @@ struct ComplimentaryAccessSheet: View {
     private func redeem() {
         fieldFocused = false
         switch access.redeem(entry) {
-        case .granted:
+        case .granted(let label):
             errorMessage = nil
             entry = ""
             grantTrigger.toggle()
+            // Confirm the unlock explicitly. The card behind the toast also
+            // swaps to the active state, but the toast names what changed so
+            // the user is not left inferring it from a layout shift.
+            toast = ToastMessage(
+                title: "MVM Pro unlocked",
+                detail: "\(label) \u{00B7} every Pro feature is open, with nothing to renew."
+            )
         case .expired(let date):
             errorMessage = "That code expired on \(date.formatted(date: .abbreviated, time: .omitted)). Ask for the current one."
         case .notRecognized:
