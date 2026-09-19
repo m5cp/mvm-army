@@ -791,6 +791,13 @@ final class AppViewModel {
         // iCloud. Clearing memory and UserDefaults alone left every one of them
         // on disk, so the next launch restored everything the user just deleted.
         DataStore.deleteEverything()
+
+        // Keychain items outlive both app deletion and a UserDefaults wipe, so
+        // the redeemed access code/email has to be cleared explicitly or
+        // "permanently erase everything" would not be true.
+        KeychainStore.removeAll()
+        ComplimentaryAccessService.shared.refresh()
+
         syncWidgetData()
     }
 

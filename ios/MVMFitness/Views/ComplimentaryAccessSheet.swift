@@ -16,6 +16,7 @@ struct ComplimentaryAccessSheet: View {
     @State private var errorMessage: String?
     @State private var grantTrigger = false
     @State private var toast: ToastMessage?
+    @State private var showRemoveConfirm = false
     @FocusState private var fieldFocused: Bool
 
     private var trimmedEntry: String {
@@ -154,18 +155,44 @@ struct ComplimentaryAccessSheet: View {
             Divider().overlay(MVMTheme.border)
 
             Button(role: .destructive) {
-                access.revoke()
-                entry = ""
+                showRemoveConfirm = true
             } label: {
                 Text("Remove From This Device")
                     .font(.subheadline.weight(.medium))
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 44)
             }
+            .confirmationDialog(
+                "Remove access from this device?",
+                isPresented: $showRemoveConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Remove Access", role: .destructive) { removeAccess() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This erases the stored code or email from this device for good. Your workouts and scores are kept, and you can enter a code again at any time.")
+            }
+
+            Text("Stored only on this phone. Removing it here erases it completely.")
+                .font(.caption2)
+                .foregroundStyle(MVMTheme.tertiaryText)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(18)
         .background(MVMTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func removeAccess() {
+        access.revoke()
+        entry = ""
+        errorMessage = nil
+        toast = ToastMessage(
+            title: "Access removed",
+            detail: "The stored code was erased from this device. Pro features are locked again.",
+            icon: "lock.fill"
+        )
     }
 
     private func redeem() {

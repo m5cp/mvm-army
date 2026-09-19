@@ -78,4 +78,18 @@ nonisolated enum KeychainStore {
             print("[Keychain] delete failed for \(key): \(status)")
         }
     }
+
+    /// Wipes every item this app stored, without needing a list of keys.
+    ///
+    /// Keychain items outlive app deletion, so "Delete All Data" has to clear
+    /// them explicitly or the promise that nothing is left behind is false.
+    static func removeAll() {
+        let status = SecItemDelete([
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service
+        ] as CFDictionary)
+        if status != errSecSuccess && status != errSecItemNotFound {
+            print("[Keychain] wipe failed: \(status)")
+        }
+    }
 }
