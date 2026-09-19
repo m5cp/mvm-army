@@ -1,0 +1,10 @@
+What's New
+
+New: Redeem an access code in Settings to unlock Pro free
+New: Squad standings + tighter privacy controls for shared stats
+New: One QR flow for squad invites and stats sharing
+New: Mileage now shows in Progress
+New: Printable score sheets + PDF export for every test
+New: Face ID / Touch ID app lock (optional)
+Fixed: Tab bar no longer covers buttons or content
+Bug fixes and stability improvements
