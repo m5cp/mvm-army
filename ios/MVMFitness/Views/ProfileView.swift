@@ -18,6 +18,7 @@ struct ProfileView: View {
     @AppStorage("appLockEnabled") private var appLockEnabled = false
     @AppStorage(HealthKitManager.SyncKeys.syncEnabled) private var healthSyncEnabled = true
     private var opsec = OPSECService.shared
+    private var complimentaryAccess = ComplimentaryAccessService.shared
 
     @State private var reminderTime = Calendar.current.date(from: DateComponents(hour: 6, minute: 0)) ?? .now
     @State private var showResetAlert = false
@@ -26,6 +27,7 @@ struct ProfileView: View {
     @State private var resetAllTrigger = false
     @State private var showAvatarPicker = false
     @State private var showUpgrade = false
+    @State private var showComplimentaryAccess = false
     @State private var restoreTrigger = false
     @State private var imageManager = ProfileImageManager()
     @State private var isEditingName: Bool = false
@@ -259,9 +261,19 @@ struct ProfileView: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(MVMTheme.heroAmber)
                         .frame(width: 24)
-                    Text("MVM Pro Active")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(MVMTheme.primaryText)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("MVM Pro Active")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(MVMTheme.primaryText)
+                        // Name the source, so a comped user never wonders
+                        // whether they are about to be billed for something.
+                        if !store.hasPaidSubscription, complimentaryAccess.isActive {
+                            Text("Complimentary access \(MVMTheme.dot) nothing to renew")
+                                .font(.caption2)
+                                .foregroundStyle(MVMTheme.tertiaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
                     Spacer()
                     Text("PRO")
                         .font(.caption2.weight(.heavy))
@@ -299,9 +311,24 @@ struct ProfileView: View {
             } label: {
                 settingsRow(icon: "creditcard", title: "Manage Subscription", color: MVMTheme.slateAccent, showChevron: true)
             }
+
+            sectionDivider
+
+            Button {
+                showComplimentaryAccess = true
+            } label: {
+                settingsRowWithSubtitle(
+                    icon: "building.columns",
+                    title: "Organization Access",
+                    subtitle: complimentaryAccess.grantedEmail ?? "Approved emails unlock every Pro feature free"
+                )
+            }
         }
         .sheet(isPresented: $showUpgrade) {
             UpgradeView()
+        }
+        .sheet(isPresented: $showComplimentaryAccess) {
+            ComplimentaryAccessSheet()
         }
     }
 

@@ -6,7 +6,17 @@ import RevenueCat
 @MainActor
 class StoreViewModel {
     var offerings: Offerings?
-    var isPremium = false
+
+    /// A paid, RevenueCat-backed entitlement. Kept separate from `isPremium` so
+    /// subscription UI can still tell a real subscriber from a comped one.
+    private(set) var hasPaidSubscription = false
+
+    /// What every feature gate should read. A complimentary grant unlocks the
+    /// same surface as a paid subscription — there is no partial tier.
+    var isPremium: Bool {
+        hasPaidSubscription || ComplimentaryAccessService.shared.isActive
+    }
+
     var isLoading = false
     var isPurchasing = false
     var error: String?
@@ -18,7 +28,7 @@ class StoreViewModel {
 
     private func listenForUpdates() async {
         for await info in Purchases.shared.customerInfoStream {
-            self.isPremium = info.entitlements["premium"]?.isActive == true
+            self.hasPaidSubscription = info.entitlements["premium"]?.isActive == true
         }
     }
 
@@ -37,7 +47,7 @@ class StoreViewModel {
         do {
             let result = try await Purchases.shared.purchase(package: package)
             if !result.userCancelled {
-                isPremium = result.customerInfo.entitlements["premium"]?.isActive == true
+                hasPaidSubscription = result.customerInfo.entitlements["premium"]?.isActive == true
             }
         } catch ErrorCode.purchaseCancelledError {
         } catch ErrorCode.paymentPendingError {
@@ -50,7 +60,7 @@ class StoreViewModel {
     func restore() async {
         do {
             let info = try await Purchases.shared.restorePurchases()
-            isPremium = info.entitlements["premium"]?.isActive == true
+            hasPaidSubscription = info.entitlements["premium"]?.isActive == true
         } catch {
             self.error = error.localizedDescription
         }
@@ -59,7 +69,7 @@ class StoreViewModel {
     func checkStatus() async {
         do {
             let info = try await Purchases.shared.customerInfo()
-            isPremium = info.entitlements["premium"]?.isActive == true
+            hasPaidSubscription = info.entitlements["premium"]?.isActive == true
         } catch {
             self.error = error.localizedDescription
         }
